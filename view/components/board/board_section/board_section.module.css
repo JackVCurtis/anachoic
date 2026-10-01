@@ -9,6 +9,12 @@
   padding: var(--space-3) var(--space-4);
 }
 
+/* The text roles name light colors, so the header's title and count take the tone's */
+.inverseHeader h2,
+.inverseHeader span {
+  color: var(--tone-fg);
+}
+
 .list {
   display: flex;
   flex-direction: column;

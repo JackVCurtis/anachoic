@@ -4,6 +4,7 @@ import { page } from 'vitest/browser'
 import { EMPTY_BOARD_VIEW, numberedTasks } from '../../fixtures/empty_views'
 import { assistive, yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
+import { resolvedColor } from '../../testing/resolved_color'
 import { ViewFrame } from '../../testing/view_frame'
 import type { BacklogTask, QueueTask } from '../board_data'
 import { BoardView, type BoardViewProps } from './board_view'
@@ -74,6 +75,10 @@ describe('BoardView', () => {
     }
     const yourTurnHeading = screen.getByRole('heading', { level: 2, name: 'Your turn' })
     expect(yourTurnHeading.closest('[data-tone]')?.getAttribute('data-tone')).toBe('inverse')
+    expect(getComputedStyle(yourTurnHeading).color).toBe(resolvedColor('--inverse-fg'))
+    expect(getComputedStyle(yourTurnHeading.nextElementSibling!).color).toBe(
+      resolvedColor('--inverse-fg')
+    )
     expect(within(section('Your turn')).getByText(yourTurn.nothingWaiting)).toBeTruthy()
     expect(within(section('Done')).getByText('Nothing waiting for sign-off')).toBeTruthy()
     expect(within(section('Queue')).queryByRole('list')).toBeNull()
