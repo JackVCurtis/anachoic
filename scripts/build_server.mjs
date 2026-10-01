@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { build, context } from 'esbuild'
 
 const ROOT = resolve(import.meta.dirname, '..')
+
+const { version } = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'))
 
 const OPTIONS = {
   entryPoints: [resolve(ROOT, 'server/main.ts')],
@@ -11,6 +14,7 @@ const OPTIONS = {
   target: 'node24',
   outfile: resolve(ROOT, 'dist/server.js'),
   logLevel: 'warning',
+  define: { ANACHOIC_VERSION: JSON.stringify(version) },
   banner: {
     js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
   },
