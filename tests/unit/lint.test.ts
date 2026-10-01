@@ -26,6 +26,11 @@ describe('lint refuses', () => {
       'view/components/primitives/example/example.tsx',
       "import { Other } from '../../patterns/other/other.js'",
     ],
+    [
+      'fixtures in a component',
+      'view/components/patterns/example/example.tsx',
+      "import { FIXED_NOW } from '../../fixtures/clock'",
+    ],
     ['a barrel file in the library', 'view/components/primitives/index.ts', 'export {}'],
     [
       'lucide-react outside the Icon primitive',

@@ -13,6 +13,13 @@ export default defineConfig({
    * page under the tests that import them.
    */
   optimizeDeps: {
-    include: ['@testing-library/react', '@testing-library/user-event'],
+    include: [
+      'react',
+      'react/jsx-dev-runtime',
+      'react-dom',
+      'react-dom/client',
+      '@testing-library/react',
+      '@testing-library/user-event',
+    ],
   },
 })

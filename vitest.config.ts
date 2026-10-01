@@ -103,6 +103,7 @@ export default defineConfig({
           name: 'ui',
           include: ['view/**/*.test.{ts,tsx}'],
           exclude: [...configDefaults.exclude],
+          setupFiles: ['./view/components/testing/setup.ts'],
           browser: { ...chromium(), commands: { builtView } },
         },
       },

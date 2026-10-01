@@ -1,0 +1,10 @@
+/* Copied from anachoic inertia/components/testing/view_frame.module.css at fd99e0d */
+.frame {
+  display: flex;
+  flex-direction: column;
+  width: 735px;
+}
+
+.narrow {
+  width: 600px;
+}
