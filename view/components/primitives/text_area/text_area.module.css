@@ -1,0 +1,6 @@
+/* Copied from anachoic inertia/components/primitives/text_area/text_area.module.css at fd99e0d */
+.area {
+  --field-font-size: 13px;
+
+  resize: vertical;
+}

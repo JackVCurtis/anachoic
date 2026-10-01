@@ -1,0 +1,31 @@
+/* Copied from anachoic inertia/components/primitives/status_square/status_square.module.css at fd99e0d */
+.square {
+  display: inline-block;
+  flex: none;
+  width: var(--size-status-square);
+  height: var(--size-status-square);
+}
+
+/* The keyframes are the global `blink` in base.css, not a local one of this module. */
+
+.attention {
+  background: var(--tone-fg);
+  animation: global(blink) var(--motion-blink-attention) infinite;
+}
+
+.busy {
+  background: var(--color-accent);
+  animation: global(blink) var(--motion-blink-busy) infinite;
+}
+
+.running {
+  background: var(--color-accent);
+}
+
+.waiting {
+  background: var(--color-accent-900);
+}
+
+.idle {
+  background: var(--color-neutral-400);
+}

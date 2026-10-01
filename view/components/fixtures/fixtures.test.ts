@@ -7,5 +7,6 @@ describe('long text', () => {
     expect(LONG_TEXT.title).toHaveLength(120)
     expect(LONG_TEXT.name).toHaveLength(40)
     expect(LONG_TEXT.message).toHaveLength(200)
+    expect(LONG_TEXT.answer).toHaveLength(4000)
   })
 })

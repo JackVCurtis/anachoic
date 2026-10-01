@@ -1,0 +1,39 @@
+/* Copied from anachoic inertia/components/primitives/tag/tag.module.css at fd99e0d */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 0;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.label {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.count {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.outline {
+  border: var(--border-hairline) solid var(--color-accent);
+  color: var(--color-text-accent);
+}
+
+.accent {
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+.neutral {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-800);
+}

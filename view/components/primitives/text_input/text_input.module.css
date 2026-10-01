@@ -1,0 +1,52 @@
+/* Copied from anachoic inertia/components/primitives/text_input/text_input.module.css at fd99e0d */
+/*
+ * The look of a text field, shared with TextArea. Every color is a tone token,
+ * so the same rules give the light field and the dark well of the inverted
+ * surface. A field that sets --field-font-size changes the size without a
+ * rule that competes with this one.
+ */
+.field {
+  display: block;
+  width: 100%;
+  min-height: var(--size-control);
+  margin: 0;
+  padding: 6px 10px;
+  font-family: var(--font-body);
+  font-size: var(--field-font-size, 14px);
+  font-weight: 400;
+  line-height: inherit;
+  color: var(--tone-field-fg);
+  caret-color: var(--tone-field-caret);
+  background-color: var(--tone-field-bg);
+  border: var(--border-hairline) solid var(--tone-field-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.field::placeholder {
+  color: var(--tone-field-placeholder);
+  opacity: 1;
+}
+
+.field:hover {
+  border-color: var(--tone-field-border-hover);
+}
+
+.field:focus-visible {
+  border-color: var(--tone-focus);
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 0;
+}
+
+.field:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.field:disabled:hover {
+  border-color: var(--tone-field-border);
+}
+
+.ground {
+  background-color: var(--color-bg);
+}

@@ -1,0 +1,76 @@
+/* Copied from anachoic inertia/components/primitives/action_card/action_card.module.css at fd99e0d */
+/*
+ * The frame is the containing block of the main action's hit area, and no
+ * text under that hit area can be selected with the mouse.
+ */
+.card {
+  position: relative;
+  user-select: none;
+}
+
+.action {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.action::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.action:focus-visible {
+  outline: none;
+}
+
+.card:has(.action:focus-visible) {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * The nested controls, one step above the hit area. Their text can be
+ * selected. `data-raised` raises anything else that must take its own presses.
+ */
+.card
+  :is(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    label,
+    summary,
+    code,
+    pre,
+    [tabindex],
+    [data-raised]
+  ):not(.action) {
+  position: relative;
+  z-index: 1;
+  user-select: text;
+}
+
+/* Hover and pressed follow the main action's hit area, never a nested control. */
+
+.light:has(.action:hover) {
+  background-color: var(--color-accent-100);
+}
+
+.light:has(.action:active) {
+  background-color: var(--color-accent-200);
+}
