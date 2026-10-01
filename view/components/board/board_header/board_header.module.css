@@ -1,0 +1,33 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  min-width: 0;
+}
+
+.counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.count {
+  white-space: nowrap;
+}
+
+.status {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.updated {
+  color: var(--color-text-subtle);
+}
+
+.unreachable {
+  color: var(--color-text);
+}

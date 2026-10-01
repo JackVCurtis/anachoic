@@ -23,6 +23,8 @@ export const boardHeader = {
   queue: 'Queue',
   toSignOff: 'To sign off',
   count: '{label} {n}',
+  countHeard: '{label}: {n tasks}',
+  counts: 'Counts',
   updated: 'Updated',
   updatedAt: 'Updated {time}',
   cantReach: "Can't reach the board",
@@ -116,7 +118,7 @@ export const backlog = {
 
 export const done = {
   title: 'Done',
-  nothingToSignOff: 'Nothing to sign off',
+  nothingToSignOff: 'Nothing waiting for sign-off',
   finished: 'Finished {when}',
   links: '{n links}',
   signOff: 'Sign off',
@@ -157,6 +159,14 @@ export const taskView = {
   openInFullScreen: 'Open in full screen',
   backToInline: 'Back to inline',
   backToBoard: 'Back to board',
+} as const
+
+/**
+ * The fold of a section with more cards than it shows at first.
+ */
+export const fold = {
+  showAll: 'Show all {n}',
+  showFewer: 'Show fewer',
 } as const
 
 /**
@@ -217,6 +227,7 @@ export const strings = {
   backlog,
   done,
   taskView,
+  fold,
   times,
   assistive,
 } as const

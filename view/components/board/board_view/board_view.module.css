@@ -1,0 +1,25 @@
+/* The view's height comes from its content alone: no viewport units, no inner scrolling */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+  padding: max(var(--space-4), var(--board-inset-top, 0px))
+    max(var(--space-6), var(--board-inset-right, 0px))
+    max(var(--space-4), var(--board-inset-bottom, 0px))
+    max(var(--space-6), var(--board-inset-left, 0px));
+  background: var(--color-bg);
+}
+
+/* Empty, they take no room in the column; the message region stays in the accessibility tree */
+.messages:empty {
+  display: contents;
+}
+
+.entry:empty {
+  display: none;
+}
+
+.line {
+  padding: var(--space-3) var(--space-4);
+}
