@@ -1,0 +1,38 @@
+id: MCP-02
+title: "View lifecycle spike - iframes per turn, polling, display modes, host context, visibility and waking"
+area: MCP
+phase: "spike"
+summary: >
+  Find out how long a view lives in desktop chat and what it can ask of the host, using the probe from
+  MCP-01. The probe view polls an app-only tool with its own instance id and reports every host event,
+  so the log shows when views are built, when they go quiet and when they are rebuilt. The results set
+  the shape of every view: fetch the board on connect, keep nothing in the iframe, poll between turns,
+  wake the dedicated session with sendMessage, and never let a dimensions-only context change move the
+  height. Done.
+requirements:
+  - "Give each probe view instance a random id and make it call the app-only tool probe_poll every 5 s with that id, its visibility state, focus and intersection state, so the log shows each instance's life"
+  - "Report every host event and every result of a host request back through the app-only tool probe_view_event, and declare both app-only tools with _meta.ui.visibility ['app']"
+  - "Give the view one button per host request: sendMessage, updateModelContext, requestDisplayMode for fullscreen, pip and inline, openLink, and a call to the model-visible tool probe_whoami"
+  - "Run desktop checklist steps B3 to B9 except B6: three views in one chat, updateModelContext followed by a question about the secret word, sendMessage, asking the model to list the tools by name, and a view scrolled off screen and a chat left for a minute. B6, the display modes, was skipped in desktop and exercised only in the reference host"
+  - "Run checklist step C2: quit and reopen Claude desktop, return to the first chat and see whether the views reappear and are live"
+  - "Record the host context sent on connect, the host capabilities, how often the ui:// resource is read, and whether onteardown fires"
+  - "In the reference host, exercise requestDisplayMode, sendMessage and updateModelContext, and record the resize loop that follows when the view grows on every onhostcontextchanged"
+acceptance_criteria:
+  - "notes.md 'Summary' rows 5, 6, 7, 8 and 16 are recorded with their results"
+  - "notes.md 'Claude desktop chat' holds the lifetime table: steady polling between turns even off screen and unfocused, quiet within about 15 s of a turn starting, every view rebuilt with its original result replayed when a turn ends, and live again after a restart"
+  - "notes.md records that sendMessage posts a user turn that Claude answers, and that updateModelContext returns success but does not reach the model in desktop chat"
+  - "notes.md records the host context on connect: theme, displayMode with availableDisplayModes inline and fullscreen, containerDimensions width 735 and maxHeight 5000, locale, timeZone and safeAreaInsets"
+  - "notes.md section 3 records the resize-loop hazard, and 06-tools-and-views.md 'Polling' and 07-ui-port.md 'Layout' carry the rule that follows from it"
+depends_on:
+  - "MCP-01"
+external_dependencies:
+  - "Claude desktop 2.16120.0 on macOS 26.6 (arm64), with the probe extension installed"
+  - "ext-apps examples/basic-host at commit 82221c0"
+docs:
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/desktop-checklist.md#b-in-that-chat-send-these-one-at-a-time"
+  - "../spikes/mcp-apps/desktop-checklist.md#c-a-second-chat"
+  - "06-tools-and-views.md#how-long-a-view-lives"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "10-open-questions.md#verified-by-the-spikes"

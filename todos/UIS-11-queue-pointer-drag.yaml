@@ -1,0 +1,37 @@
+id: UIS-11
+title: "Queue reordering with a pointer, and the held order after a drop"
+area: UIS
+phase: "2"
+summary: >
+  Add pointer dragging to Queue cards with plain pointer events and no drag package. A card lifts
+  after DRAG_START_PX, takes the place nearest the pointer without floating, and drops on release.
+  After a drop the section holds the order you made until the board it is given changes or the
+  reorder request ends. It copes with polled changes while a card is lifted.
+requirements:
+  - "A drag begins when the pointer moves DRAG_START_PX (4 px, from view/components/helpers/constants.ts) with the button held, on the card or on its handle alike. A shorter press is a click and raises onOpenTask as usual. The release that ends a drag never opens the task."
+  - "The card does not float: no shadow and no gap. It moves up one place when the pointer passes the middle of the card above, and down one place past the middle of the card below, using movedOrder, as the arrow keys do."
+  - "Escape, or the pointer leaving the view's document, cancels. The cursor is grab over the handle and grabbing while a card is lifted."
+  - "There is no edge auto-scroll. The view has no scrolling region of its own (07), so anachoic's 'region scrolls near its edge' rule has no target here."
+  - "A pointer move is announced on the drop only, in the same words as UIS-10."
+  - "After a drop the order shown is held until the queue it is given changes or the busy flag has been true and is false again, whichever comes first. A refused reorder leaves the given queue unchanged, so the card returns to where it was."
+  - "While busy every handle is disabled and no drag begins."
+  - "The queue changes under a lifted card (a poll, 06): tasks that arrive or leave update the list and the lifted card keeps its place among those that remain. If the lifted card's own task leaves, the move ends, nothing is raised, and the live region says '“{title}” left the queue. Move ended'."
+  - "Cards cannot be dragged out of the Queue, and Backlog cards cannot be dragged. No drag-and-drop package is imported."
+acceptance_criteria:
+  - "ui suite (required): a drag of more than 4 px lifts a card; a shorter press opens the task."
+  - "ui suite (required): the release that ends a drag does not open the task."
+  - "ui suite (required): the dropped order is shown until a new queue arrives or the request ends."
+  - "ui suite (required): the move ends when the lifted card's task leaves the queue, with no onReorder and the announcement."
+  - "e2e suite: in the reference host, dragging the third card to the front calls reorder_queue and the board shows the new order after the next poll."
+  - "Lint confirms no drag-and-drop package is imported under view/."
+depends_on:
+  - "UIS-10"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-built-here-from-anachoics-documents"
+  - "07-ui-port.md#layout"
+  - "06-tools-and-views.md#polling"
+  - "anachoic:ui/10-components-board.md#moving-a-card"
+  - "anachoic:ui/15-interaction-and-state.md#how-it-is-built"
+  - "anachoic:ui/15-interaction-and-state.md#realtime-updates"
+  - "anachoic:ui/19-organization-and-testing.md#interactions-that-must-have-a-test"

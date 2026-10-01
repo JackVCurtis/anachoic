@@ -1,0 +1,41 @@
+id: UIS-01
+title: "BoardView scaffold and BoardHeader that render with an empty board"
+area: UIS
+phase: "0"
+summary: >
+  Create BoardView, the one board view that replaces anachoic's BoardView, SignOffView and
+  CompletedView, with its final prop types and its nine regions in one column, able to render with
+  nothing in them. Add BoardHeader with the four counts, the quiet 'Updated' cue and the 'Can't reach
+  the board' line, all driven by props. Phase 0 ends with the board entry drawing this empty board;
+  each later todo fills a region rather than restructuring the view.
+requirements:
+  - "BoardView lives in view/components/board/board_view/ and is written new; anachoic inertia/components/board/board_view/board_view.tsx is the model for its shape (props in the board's own terms, a visually hidden h1 'Board', callbacks passed up), but it has no rail, no main area and no AgentsSection"
+  - "Its prop types live in view/components/board/board_data.ts, in the board's own terms, covering every region named in 06 board props (yourTurn, working, queue, backlog, toSignOff, signedOff, sessions, counts) plus the 'updated' and 'unreachable' header flags and the host's safe-area insets; the entry maps shared/props.ts to them, and components never import shared/ or view/bridge/"
+  - "One column in this order: BoardHeader, the message region (a section named 'Messages', empty until UIS-13), the TaskEntry slot (empty until UIS-08), then Your turn, Sessions, Working, Queue, Backlog and Done, each an h2 SectionHeader with a count"
+  - "With empty data each section renders its header with 0: Your turn shows the dashed EmptyState 'Nothing waiting on you' under a header on the inverse surface (data-tone='inverse'); Done shows 'Nothing waiting for sign-off'; Queue and Backlog show the header alone, as in anachoic; Sessions and Working use empty-state strings from strings.ts"
+  - "BoardHeader shows the counts Your turn, Working, Queue and To sign off from counts, worded with templates from strings.ts and plural from the copied words helper; it shows the 'Updated' cue only when told to and the line 'Can't reach the board' only when unreachable is true, neither of which moves focus"
+  - "BoardView owns one visually hidden polite live region for board announcements, which UIS-07 fills"
+  - "Padding is --space-6 on the sides and --space-4 top and bottom, or the safe-area inset when it is larger; the background is --color-bg; the light theme only"
+  - "No inner scroll regions, no viewport-height units and no minimum window or small-window message: the view's height comes from its content only (07 layout)"
+  - "A shared fold for sections: a list of more than 8 cards shows the first 8 and a Disclosure 'Show all 14'; the Queue never uses it"
+  - "view/entries/board/main.tsx connects through the bridge (UIF-05) and renders BoardView with an empty board until MCP-05 wires get_board"
+acceptance_criteria:
+  - "ui suite: BoardView renders with empty props without errors, and its empty story passes the axe check at 735 px and at 600 px in the view_frame host frame"
+  - "ui suite: the view has exactly one h1, hidden, and the h2 headings appear in the order Your turn, Sessions, Working, Queue, Backlog, Done"
+  - "ui suite: the document height is the same in a host frame 600 px tall and one 2000 px tall, and no element in the view scrolls on its own"
+  - "ui suite: a section given 14 cards shows 8 and a 'Show all 14' Disclosure; a Queue given 14 shows all 14"
+  - "ui suite: BoardHeader stories cover zero counts, mixed counts, the 'Updated' cue and the 'Can't reach the board' line, and pass the axe check"
+  - "pnpm build produces dist/views/board.html that renders the empty board in the reference host"
+depends_on:
+  - "UIF-05"
+  - "UIP-03"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "07-ui-port.md#layout"
+  - "07-ui-port.md#theme"
+  - "06-tools-and-views.md#board-props"
+  - "01-overview.md#the-seam-between-server-and-view"
+  - "anachoic:ui/10-components-board.md#boardview"
+  - "anachoic:ui/16-accessibility.md#headings"
+  - "anachoic:ui/17-content-rules.md#board-main-area"

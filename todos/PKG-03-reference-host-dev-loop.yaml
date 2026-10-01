@@ -1,0 +1,33 @@
+id: PKG-03
+title: "Development loop with the ext-apps reference host"
+area: PKG
+phase: "0"
+summary: >
+  Make it one command to see a view against a real server outside Claude desktop. The ext-apps
+  reference host, examples/basic-host, is built on its own against the published ext-apps package, as
+  the spike did, and pointed at the server's Streamable HTTP endpoint. Views and server rebuild on
+  change through pnpm dev. The same pinned host is what the e2e suite drives in MCP-14. The reference
+  host is more permissive than desktop, so it never replaces the manual desktop check.
+requirements:
+  - "scripts/reference_host.mjs, run by `pnpm host`, clones modelcontextprotocol/ext-apps at commit 82221c0 into .cache/ext-apps on first use, and builds examples/basic-host on its own against the published @modelcontextprotocol/ext-apps 2.0.3"
+  - "The commit and the ext-apps version are constants in one module, scripts/reference_host_version.mjs, which the e2e suite also imports"
+  - "`pnpm host` starts `node dist/server.js --http` on 127.0.0.1:3001 (PORT overrides it) with ANACHOIC_DATA_DIR set to .cache/dev-data, restarts it when dist/server.js changes, and starts the reference host pointed at http://127.0.0.1:3001/mcp"
+  - "It prints the reference host's URL and a reminder that the host allows more than desktop does"
+  - "Run alongside `pnpm dev`, a change to a component or to the server shows after a reload of the reference host, with no other step"
+  - ".cache/ is ignored by git, lint and the typecheck"
+acceptance_criteria:
+  - "On a clean clone, `pnpm build && pnpm host` builds the reference host, which connects to the server and lists its tools; once show_board exists (MCP-05), calling it there draws the board view"
+  - "A second `pnpm host` reuses the built reference host and starts in seconds"
+  - "With `pnpm dev` running, changing the text of the board entry shows in the reference host after a reload"
+  - "The server listens on 127.0.0.1 only: a request to the machine's other addresses on port 3001 is refused"
+depends_on:
+  - "MCP-04"
+external_dependencies:
+  - "Network access to github.com/modelcontextprotocol/ext-apps on first use"
+  - "ext-apps examples/basic-host at commit 82221c0"
+docs:
+  - "08-packaging-and-hosts.md#development-loop"
+  - "02-stack-and-structure.md#scripts"
+  - "09-testing-and-build-order.md#test-suites"
+  - "../spikes/mcp-apps/notes.md#where-and-with-what"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"

@@ -1,0 +1,36 @@
+id: UIP-05
+title: "Copy InlineConfirm, FlashMessage, BusyIndicator and CopyButton"
+area: UIP
+phase: "2"
+summary: >
+  Copy the patterns your actions need: InlineConfirm for Park and Archive, FlashMessage for a
+  refusal or connection trouble in the message region, BusyIndicator while a tool call runs, and
+  CopyButton. They behave as in anachoic, with stories rewritten for this app's actions and
+  refusals. Ends with every pattern phase 2's actions use.
+requirements:
+  - "Copy anachoic inertia/components/patterns/inline_confirm/, flash_message/ (including flash_messages.tsx), busy_indicator/ and copy_button/ to view/components/patterns/, with each folder's stories and tests and the provenance comment naming the source path and fd99e0d"
+  - "Components are unchanged except for import paths: InlineConfirm moves focus to its dismiss button and back to the opener and closes on Escape through useEscapeLayer; FlashMessage takes its word from flashWord and leaves after FLASH_MS for a success only; CopyButton confirms for COPIED_MS only when navigator.clipboard.writeText succeeds"
+  - "Copy anachoic fixtures/messages.ts to view/components/fixtures/ with this app's texts: refusal sentences from 03, such as 'Step 2 of T-012 is claimed by api-server' and 'The board is busy. Try again.', and a 200 character message"
+  - "InlineConfirm stories show this app's pairs: Park on a Your turn card, and Archive and Keep task on a Done card, in the row layout and the stack layout at 600 px"
+  - "FlashMessage stories show an error refusal, a success, both at once, and a 200 character message, inside the 735 px host frame"
+  - "BusyIndicator and CopyButton stories use this app's labels from the strings catalogue"
+  - "The anachoic test that Escape inside a modal dialog closes only the confirmation is dropped, because the views have no modal dialog"
+acceptance_criteria:
+  - "ui suite: the copied interaction tests pass, including FlashMessage's fake-timer test that a success leaves after 6 seconds and an error stays, and CopyButton's test that a rejected clipboard write leaves the label unchanged"
+  - "All stories pass the axe check on light and inverse"
+  - "ui suite: an error FlashMessage has role alert, a success has role status, and focus does not move when either appears"
+  - "ui suite: InlineConfirm puts focus on its dismiss button on mount, and Escape calls onCancel and returns focus to the opener"
+  - "Manual desktop check: whether CopyButton's clipboard write succeeds inside desktop chat's iframe is recorded in docs/desktop-check.md"
+depends_on:
+  - "UIP-02"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "06-tools-and-views.md#errors"
+  - "03-domain-model.md#refusals"
+  - "anachoic:ui/08-components-shared-patterns.md#inlineconfirm"
+  - "anachoic:ui/08-components-shared-patterns.md#flashmessage"
+  - "anachoic:ui/08-components-shared-patterns.md#busyindicator"
+  - "anachoic:ui/08-components-shared-patterns.md#copybutton"
+  - "anachoic:ui/15-interaction-and-state.md#copy"

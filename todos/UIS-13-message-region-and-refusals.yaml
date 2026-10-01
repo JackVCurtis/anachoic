@@ -1,0 +1,37 @@
+id: UIS-13
+title: "Message region for refusals and connection trouble"
+area: UIS
+phase: "2"
+summary: >
+  Fill the board's message region, second in its column under BoardHeader, with FlashMessages for
+  what goes wrong with your actions: a domain refusal, an unexpected server error, or a write that
+  never reached the server. Every write in the board entry reports through one handler, so each
+  action todo shows its refusal the same way. It ends with every refused action telling you why.
+requirements:
+  - "The board entry keeps the messages to show: none, or one per kind. Each message has an id minted when it arrives, a kind and a text. A new message of the same kind replaces the old one, and the same words with a new id count as a new message."
+  - "One refusal handler in view/entries/board/ takes every failed write. A tool result with isError: true becomes an error message whose text is the result's sentence, shown as given: the refusals of 03, including busy, and 'Something went wrong. Details are in the server log.' (06 errors)."
+  - "A write whose call rejects in the bridge, because the host or the server cannot be reached, becomes an error message with the strings catalogue's 'Can't reach the board', the same words as BoardHeader's connection line (UIS-07)."
+  - "A refusal returned by get_board while polling, such as the unreadable-database refusal of 04, is shown as an error message once per distinct sentence, and still counts as a poll error for the back-off."
+  - "BoardView renders the messages through the copied FlashMessage (UIP-05) in the message region: in the flow, full width, pushing the board down, with the error above any other. An error stays until 'Dismiss' or replacement. No success message is shown, because the board redraws and the chat message confirms the action."
+  - "Focus never moves to a strip when it appears. When a strip is dismissed from the keyboard, focus moves to BoardHeader's heading, standing in for anachoic's content region."
+  - "A dimensions-only host context change never changes the region's height (06 polling)."
+  - "Messages are kept in the view only and are lost when the host rebuilds it (06)."
+acceptance_criteria:
+  - "ui suite, board entry with a fake App: a refused write shows an error strip with the refusal's sentence and posts no sendMessage."
+  - "ui suite: a rejected call shows 'Can't reach the board'; a second refusal replaces the first; Dismiss removes the strip and moves focus to the board's heading."
+  - "ui suite: a get_board refusal is shown once while polls keep returning the same sentence."
+  - "Stories: BoardView with an error strip, with a long refusal that wraps at 600 px, and with none; every story passes the axe check."
+  - "integration suite: a busy refusal from a locked database returns isError with 'The board is busy. Try again.' as its text."
+depends_on:
+  - "UIP-05"
+  - "MCP-10"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#errors"
+  - "06-tools-and-views.md#polling"
+  - "03-domain-model.md#refusals"
+  - "07-ui-port.md#layout"
+  - "04-persistence.md#recovery"
+  - "anachoic:ui/08-components-shared-patterns.md#flashmessage"
+  - "anachoic:ui/15-interaction-and-state.md#a-message-from-the-server"
+  - "anachoic:ui/14-layout.md#the-message-region"

@@ -1,0 +1,43 @@
+id: DOM-04
+title: "SQLite store - open, pragmas, migrations behind user_version, tables and the write helper"
+area: DOM
+phase: "1"
+summary: >
+  Build the store every server process opens: one node:sqlite DatabaseSync per process with the
+  pragmas of 04, migrations applied once under the write lock, the tables of 04, and the helpers that
+  make every change one short BEGIN IMMEDIATE transaction that bumps the board revision. The rules
+  come from the spike's measurements, and the spike's eight-process test becomes a test of the store.
+requirements:
+  - "store/database.ts openDatabase(file) opens one DatabaseSync and sets journal_mode WAL, busy_timeout 5000, synchronous NORMAL and foreign_keys ON, as the probe's sqlite_probe.ts does; the caller passes the file path and the store never resolves the data directory itself"
+  - "Migrations are numbered SQL files in store/migrations/, starting with 001_initial.sql; they are bundled into dist/server.js as text, so the server build and the unit suite both load .sql files as strings"
+  - "On open, read PRAGMA user_version; if it is behind, take BEGIN IMMEDIATE, read it again, apply only the missing migrations, set user_version and commit, so two processes starting together never run a migration twice"
+  - "If user_version is ahead of the newest migration, openDatabase throws DatabaseTooNewError, whose message says a newer version of the server owns the database"
+  - "001_initial.sql creates board, tasks, steps, sessions and events with the columns of 04, and inserts the one board row with revision 0 and next_task_number 1"
+  - "Constraints restate what SQL can express: board id = 1; CHECKs on every status, owner, origin and kind; one step per (task_id, number); a unique index on tasks.queue_position where it is not null; steps and events reference tasks with ON DELETE CASCADE"
+  - "Because queue_position is unique, the store rewrites a renumbered queue by clearing the affected positions first and then setting the new ones, inside the same transaction"
+  - "store/write.ts write(db, change) runs BEGIN IMMEDIATE, then change synchronously, then adds one to board.revision and commits (an option keeps the revision for a write the board does not show, which only DOM-05's plain heartbeat uses); on any error it rolls back and rethrows; it returns the change's result and the new revision"
+  - "write refuses a change that returns a promise, rolling back, because no transaction may be held across an await or I/O"
+  - "SQLITE_BUSY and its extended codes at BEGIN or COMMIT become the busy Refusal ('The board is busy. Try again.') with nothing changed, not an exception"
+  - "write runs the hooks registered when the database was opened at the start of each transaction, before the change, so DOM-05 can release dead sessions' claims in every write"
+  - "store/read.ts read(db, query) runs a query inside a deferred BEGIN for one consistent snapshot; readers never take the write lock"
+acceptance_criteria:
+  - "Unit suite, temporary database: a fresh file is migrated to the latest user_version with every table and the board row present, and opening it again applies nothing"
+  - "Unit suite: a database whose user_version is ahead refuses to open with DatabaseTooNewError"
+  - "Unit suite: a change that throws leaves the revision and every row unchanged, and a change that returns a promise is refused"
+  - "Unit suite: a second connection holding BEGIN IMMEDIATE past a shortened busy_timeout makes write return the busy refusal"
+  - "Unit suite, several processes: eight forked processes each make 500 writes at once against one file; there is no busy refusal and the revisions run 1 to 4000 with no gap, as in the spike"
+  - "Unit suite: two processes opening a fresh file at the same moment both succeed and the migration runs once"
+  - "Integration check: dist/server.js runs migrations with no .sql file beside it"
+depends_on:
+  - "DOM-01"
+  - "MCP-03"
+external_dependencies: []
+docs:
+  - "04-persistence.md#opening-the-database"
+  - "04-persistence.md#migrations"
+  - "04-persistence.md#tables"
+  - "04-persistence.md#writing"
+  - "04-persistence.md#reading"
+  - "03-domain-model.md#refusals"
+  - "../spikes/mcp-apps/notes.md#10-sqlite-with-wal-across-processes"
+  - "09-testing-and-build-order.md#what-must-have-a-test"

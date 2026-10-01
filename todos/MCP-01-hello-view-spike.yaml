@@ -1,0 +1,41 @@
+id: MCP-01
+title: "Hello-view spike - render a ui:// view in Claude desktop chat from a .mcpb"
+area: MCP
+phase: "spike"
+summary: >
+  Build the smallest MCP server that returns a view, pack it as a desktop extension, install it in
+  Claude desktop and check by hand that the view draws inline in a chat. The same probe is driven by a
+  scripted client and by the ext-apps reference host, so the SDK, the single-file view build and the
+  bundled server are proven together. Every later todo rests on this result; if no view had rendered,
+  the stdio config entry in checklist step D was the fallback. Done: the view rendered from the .mcpb.
+requirements:
+  - "Write the probe server docs/spikes/mcp-apps/probes/server.ts on @modelcontextprotocol/server 2.2.0 and @modelcontextprotocol/ext-apps 2.0.3, with zod 4 schemas, on stdio by default and Streamable HTTP on 127.0.0.1:3001 with --http"
+  - "Register the view tool probe_view with registerAppTool and _meta.ui.resourceUri ui://anachoic-probe/default.html, and serve that resource with registerAppResource as text/html;profile=mcp-app with _meta.ui.prefersBorder true"
+  - "Build the view docs/spikes/mcp-apps/probes/view.html and src/view.ts with Vite 8 and vite-plugin-singlefile into one self-contained dist/view.html, with assetsInlineLimit at its maximum"
+  - "Bundle the server with esbuild's JavaScript API in build_server.mjs (ESM, platform node, a createRequire banner) into dist/server.js, and record that the esbuild CLI shim fails under pnpm 11 and that pnpm-workspace.yaml needs allowBuilds esbuild true"
+  - "Pack with pack.sh: build, copy dist/server.js and dist/view.html into mcpb/server/, run mcpb validate on mcpb/manifest.json (manifest_version 0.3, server.type node, entry_point server/server.js) and mcpb pack into anachoic-probe.mcpb"
+  - "Log every start, initialize, tool call, resource read and exit as JSON lines in probes/.data/calls.jsonl, with the data directory taken from PROBE_DATA_DIR in the manifest's env, and keep .data/ out of git"
+  - "Write docs/spikes/mcp-apps/desktop-checklist.md and run steps A and B1 in a new desktop chat: install the .mcpb, call probe_view, and note whether the view appears inline or only text"
+  - "Record the desktop server runtime, working directory and environment from the log, and which desktop processes start the server"
+  - "Run smoke.mjs, a scripted @modelcontextprotocol/client over stdio that lists the tools with their _meta, calls each one and reads the ui:// resource"
+  - "Build ext-apps examples/basic-host on its own against the published 2.0.3 package and load the probe over --http, to show the view connects and receives its host context there"
+acceptance_criteria:
+  - "notes.md 'Summary' rows 1, 2 and 3 are recorded: the view renders inline from the .mcpb and connects within about 1 s, the stdio config entry was not needed, and the pipeline works in the reference host and in desktop chat"
+  - "notes.md section 3 records the tool _meta (ui.resourceUri and the legacy ui/resourceUri key), the resource MIME type and _meta.ui, the view and server bundle sizes, and the esbuild and pnpm 11 findings"
+  - "notes.md 'Claude desktop chat' records the bundled runtime Claude Helper (Plugin) on Node 24.21.0, the empty environment, the working directory /, that the manifest env is applied, and the three desktop clients that start the server"
+  - "`pnpm install && ./pack.sh` in docs/spikes/mcp-apps/probes rebuilds anachoic-probe.mcpb without errors"
+  - "notes.md 'Where and with what' names the date, machine, Node, SDK, Claude desktop, Claude Code and reference host versions"
+depends_on: []
+external_dependencies:
+  - "Claude desktop 2.16120.0 on macOS 26.6 (arm64), with the extension installed by hand"
+  - "Claude Code 2.1.285"
+  - "ext-apps examples/basic-host at commit 82221c0, built against @modelcontextprotocol/ext-apps 2.0.3"
+  - "Node 24.21.0 through asdf on the developer's machine"
+docs:
+  - "../spikes/mcp-apps/notes.md#summary"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "../spikes/mcp-apps/notes.md#the-probes"
+  - "../spikes/mcp-apps/desktop-checklist.md#a-install"
+  - "09-testing-and-build-order.md#spike-done"
+  - "10-open-questions.md#verified-by-the-spikes"

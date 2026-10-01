@@ -1,0 +1,39 @@
+id: MCP-06
+title: "Resolve session identity per client and add join_board"
+area: MCP
+phase: "1"
+summary: >
+  Teach the server who it is talking to, from its client and its process, never from the model. A
+  Claude Code process is a worker named by CLAUDE_CODE_SESSION_ID, desktop chat is the dedicated
+  session, and any other client gets a minted id it passes back as session. Each tool call touches the
+  session's row and enrols it in the heartbeat. join_board sets a display name. The open question on
+  /clear and --resume is checked and recorded.
+requirements:
+  - "server/identity.ts resolveIdentity(clientInfo, env, sessionArg) is a pure function: clientInfo.name claude-code with CLAUDE_CODE_SESSION_ID set gives a worker with that id and CLAUDE_PROJECT_DIR as projectDir; claude-ai gives the dedicated session; anything else gives a worker with a minted id"
+  - "A minted id is created once per server instance on its first tool call, unless the call passes a session argument, which then names the session; ids passed as session are checked against the sessions table and refused not_found when unknown"
+  - "The server reads clientInfo once initialization completes, and reads only CLAUDE_CODE_SESSION_ID and CLAUDE_PROJECT_DIR from the environment"
+  - "Every tool call resolves the identity and calls DOM-05's touchSession before the tool runs, and the process's heartbeat serves that session from then on; desktop's capability-check and local-agent-mode clients are never recorded unless they call a tool"
+  - "Log lines carry the resolved session id once it is known"
+  - "join_board takes an optional name of 1 to 40 characters and an optional session, sets the name through setSessionName, and returns the session's id, kind and name as text; for a minted id the text tells the model to pass that id as session on every later call"
+  - "server/tools/session_input.ts exports the optional session field that MCP-07 and later add to every model tool's input schema"
+  - "Check by hand whether CLAUDE_CODE_SESSION_ID stays the same across /clear and claude --resume, and record the result in the spike notes and in 10's open questions"
+acceptance_criteria:
+  - "Unit suite: resolveIdentity for claude-code with and without CLAUDE_CODE_SESSION_ID, for claude-ai, and for an unknown client, using fake clientInfo and environment"
+  - "Integration suite: a server started with CLAUDE_CODE_SESSION_ID and CLAUDE_PROJECT_DIR=/tmp/api-server, driven by a client named claude-code, answers join_board with that id, kind worker and name api-server"
+  - "Integration suite: a client named claude-ai gets the dedicated session with the name This chat; an unknown client gets a minted id, and a second server process given that id as session acts as the same session"
+  - "Integration suite: two worker processes and a dedicated process against one data directory each appear once in the sessions table"
+  - "Manual, Claude Code 2.1.285 or later: the /clear and --resume result is written into docs/spikes/mcp-apps/notes.md and 10-open-questions.md"
+depends_on:
+  - "DOM-05"
+  - "MCP-05"
+external_dependencies:
+  - "Claude Code 2.1.285 or later, for the /clear and --resume check"
+  - "Claude desktop 2.16120.0 or later, to confirm the claude-ai client name"
+docs:
+  - "05-sessions.md#identity"
+  - "05-sessions.md#liveness"
+  - "06-tools-and-views.md#every-session"
+  - "10-open-questions.md#open-questions"
+  - "08-packaging-and-hosts.md#logs"
+  - "../spikes/mcp-apps/notes.md#11-and-14-what-claude-code-tells-the-server"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

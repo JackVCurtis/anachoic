@@ -1,0 +1,41 @@
+id: MCP-03
+title: "Multi-session spike - SQLite across processes, session identity per client and tool timeouts"
+area: MCP
+phase: "spike"
+summary: >
+  Show that one SQLite file can be shared by the desktop server process and many Claude Code server
+  processes, and find out what each client tells the server about who it is. Measure concurrent writes
+  with WAL, log what Claude Code and desktop chat pass in initialize, in each call and in the process
+  environment, and settle how long a tool call may block. The results fix the rules in 04 and 05: short
+  BEGIN IMMEDIATE writes, schema changes behind user_version, the session id from the environment, and
+  a waiting tool that sends progress and returns within 20 minutes. Done.
+requirements:
+  - "Write docs/spikes/mcp-apps/probes/sqlite_probe.ts on node:sqlite DatabaseSync with journal_mode WAL, busy_timeout 5000 and synchronous NORMAL, creating the schema once inside BEGIN IMMEDIATE behind a PRAGMA user_version check"
+  - "Make one write a BEGIN IMMEDIATE transaction that reads the board revision, bumps it, inserts a row and commits, with an optional hold inside the lock"
+  - "Write sqlite_stress.ts, which forks PROCS processes making WRITES writes each with HOLD_MS held, and reports failures and whether the revisions are contiguous; run it at 8 x 500 with no hold, 8 x 60 at 5 ms and 8 x 60 at 50 ms"
+  - "Add probe_sqlite to the probe server and call it from desktop chat, to show node:sqlite loads in desktop's bundled runtime"
+  - "Add probe_whoami, which returns the client info, client capabilities, request _meta and process facts, and run it from a headless claude -p with --mcp-config mcp-config.json and from desktop chat"
+  - "Run checklist step C1: call probe_whoami from a second desktop chat and compare the server pid with the first"
+  - "Add probe_block, which waits a given number of seconds with optional progress notifications through the request's progressToken; stop the blocking test in favour of the documented limits for Claude Code and for claude.ai and Desktop connectors"
+  - "Never commit the probe log: the environment Claude Code passes carries account and organisation identifiers"
+acceptance_criteria:
+  - "notes.md section 10 holds the three stress results, with 0 failures at 0 ms and 5 ms, 14 'database is locked' failures at 50 ms, and contiguous revisions in every run"
+  - "notes.md sections 11 and 14 record Claude Code's clientInfo (claude-code 2.1.285), its capabilities without the io.modelcontextprotocol/ui extension, the progressToken and claudecode/toolUseId in each call's _meta, and CLAUDE_CODE_SESSION_ID and CLAUDE_PROJECT_DIR in the server's environment"
+  - "notes.md sections 12 and 13 record the documented limits: about 28 h wall clock and a 30 min idle window for Claude Code stdio servers, 240 s per call for claude.ai and Desktop connectors, and what they mean for wait_for_answer"
+  - "notes.md 'Summary' rows 9 to 15 are recorded, including one desktop process serving two chats"
+  - "`PROCS=8 WRITES=500 node sqlite_stress.ts` in docs/spikes/mcp-apps/probes prints contiguous true and failed 0"
+  - "04-persistence.md 'Writing' and 05-sessions.md 'Identity' cite these results"
+depends_on:
+  - "MCP-01"
+external_dependencies:
+  - "Claude Code 2.1.285, run headless from the desktop app's Code tab"
+  - "Claude desktop 2.16120.0 on macOS 26.6 (arm64), with the probe extension installed"
+  - "Node 24.21.0, for node:sqlite"
+docs:
+  - "../spikes/mcp-apps/notes.md#10-sqlite-with-wal-across-processes"
+  - "../spikes/mcp-apps/notes.md#11-and-14-what-claude-code-tells-the-server"
+  - "../spikes/mcp-apps/notes.md#12-and-13-tool-call-timeouts-from-the-documentation"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "04-persistence.md#writing"
+  - "05-sessions.md#identity"
+  - "05-sessions.md#waiting-for-your-answer"

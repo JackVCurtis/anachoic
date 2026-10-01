@@ -1,0 +1,41 @@
+id: UIS-08
+title: "TaskEntry with a chain composer, Add and Add to queue"
+area: UIS
+phase: "2"
+summary: >
+  Build TaskEntry, adapted from anachoic's TaskEntryForm document (anachoic has not built it): a title
+  and a chain composer, an ordered list of steps each with a title, an owner and optional detail, with
+  Add and Add to queue. Repo, workflow and prompt go. It sits collapsed to an 'Add task' button below
+  the message region, and calls add_task_from_view, drawing the board from the result.
+requirements:
+  - "TaskEntry in view/components/board/task_entry/: collapsed, it is a single 'Add task' button; opened, focus moves to the title field, and Escape or 'Cancel' collapses it and returns focus to 'Add task'"
+  - "Opened anatomy: an h2 SectionHeader that names the title TextInput, then the chain composer, then a row with the primary 'Add to queue', the secondary 'Add' and the hint pushed right"
+  - "The chain composer is an ordered list of 1 to 20 steps; each step has a two-digit number (padStep), a title TextInput (1 to 200 characters), an owner chosen from 'Agent' and 'You' as a native radio group with one tab stop (SegmentedControl is not copied), and a 'Detail' TextArea of up to 4,000 characters shown on request; a step can be added and removed, and the first step starts with owner Agent"
+  - "The task title is 1 to 200 characters; both buttons are disabled until the title and every step title are non-empty after trimming, and the hint says what is missing, announced politely when it changes"
+  - "Keys as in anachoic: Enter in the task title adds to the backlog ('Add'), Shift+Enter adds to the queue ('Add to queue'), Enter in a detail adds a line, no key acts while invalid, Enter is ignored during IME composition, and the component prevents native submission"
+  - "The draft is controlled by the board entry and is not kept anywhere that survives a rebuild of the view"
+  - "The entry calls add_task_from_view through tools.ts with queue true or false; while it is in flight the pressed button is busy, the other disabled and the fields editable; on success it draws the board from the result through board_source, clears and collapses the form"
+  - "An invalid refusal is shown under the field it names in place of the hint; any other refusal goes to the message region (UIS-13)"
+  - "This todo also wires the Backlog card's 'Queue →' (UIS-05) to queue_task_from_view, drawing from its result"
+  - "Stories: collapsed, empty, typed, one step yours, 20 steps, detail open, invalid, submitting, field error, long title"
+acceptance_criteria:
+  - "ui suite: Enter in the title raises a submit to the backlog and Shift+Enter one to the queue"
+  - "ui suite: neither key nor button submits while the title or any step title is empty"
+  - "ui suite: Enter during composition (isComposing) does not submit"
+  - "ui suite: the owner group has one tab stop and the arrow keys switch between Agent and You"
+  - "ui suite with a fake App: Add to queue calls add_task_from_view with the title, the steps in order with owner 'agent' or 'you', and queue true, then draws the returned board and collapses"
+  - "ui suite: opening focuses the title field; Escape collapses and returns focus to 'Add task'"
+  - "All stories pass the axe check at 735 px and 600 px"
+depends_on:
+  - "UIS-05"
+  - "MCP-10"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "07-ui-port.md#layout"
+  - "06-tools-and-views.md#app-only-tools"
+  - "03-domain-model.md#the-task-state-machine"
+  - "anachoic:ui/10-components-board.md#taskentryform"
+  - "anachoic:ui/15-interaction-and-state.md#key-bindings-of-each-composer"
+  - "anachoic:ui/16-accessibility.md#radio-group"
+  - "anachoic:ui/15-interaction-and-state.md#waiting-for-the-server"

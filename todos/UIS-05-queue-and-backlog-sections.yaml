@@ -1,0 +1,42 @@
+id: UIS-05
+title: "Queue and Backlog sections and cards, adapted from anachoic"
+area: UIS
+phase: "1"
+summary: >
+  Copy anachoic's QueueSection, QueueCard, MoveHandle, BacklogSection and BacklogCard and adapt them
+  to this app's tasks, which have no repo, workflow or pickup state. The Queue shows each task's place
+  in line, pips and where it will start; the Backlog shows each task with 'Queue →'. Moving cards is
+  added by UIS-10 and UIS-11, and 'Queue →' is wired to its tool in phase 2.
+requirements:
+  - "Copy at fd99e0d from anachoic inertia/components/board/: queue_section/, queue_card/, move_handle/, backlog_section/ and backlog_card/ (tsx, module.css, stories, tests) into view/components/board/, each file with the provenance comment from 02 copied files"
+  - "QueueSection: h2 SectionHeader 'Queue' with the count; the pickup label and pickupLabel go, since there is no scheduler; an empty Queue shows the header with 0 and nothing else; an ordered list keyed by task id, cards --space-4 apart; the Queue never folds"
+  - "QueueCard keeps its anatomy: light ActionCard, padding --space-3, gap --space-2; first row the position '#1 in line' from the copied queuePosition; the title as main action (text-title-1, onOpenTask); StepPips; then a MetaLine"
+  - "QueueCard meta: the task id, then 'starts at step 1/3 · agent' or 'resumes at step 3/5 · agent', the step taken from the pips and the owner from nextOwner; the repo part and the expected agent's name go, and since board_rail's resumeLine and queueMeta are not copied the wording comes from strings.ts"
+  - "MoveHandle is copied unchanged but drawn only when the section is given onReorder, the queue holds more than one task and canAct.reorder is true; until UIS-10 the Queue is shown without handles"
+  - "BacklogSection: h2 SectionHeader 'Backlog' with the count, --space-8 above; cards keyed by task id, folding after 8"
+  - "BacklogCard: title as main action, then a row with a MetaLine 'T-007 · 3 steps · 1 for you' and the secondary sm button 'Queue →' (arrow hidden from assistive technology) raising onQueueTask, shown only when canAct.queue is true; the repo and workflow parts of backlogMeta go"
+  - "Hover and selected fill --color-accent-100; the selected card is the task open in the task panel; nested controls never fire onOpenTask"
+  - "Under 600 px a card's meta line wraps below its title"
+  - "Stories from the UIF-06 fixtures: empty Queue, one card, 20 cards, starts vs resumes, selected, long title, Backlog empty, Backlog of 14 (folded), a Backlog task that cannot be queued"
+acceptance_criteria:
+  - "ui suite (required by anachoic:ui/19): pressing 'Queue →' raises onQueueTask and does not raise onOpenTask"
+  - "ui suite: an empty Queue shows the header with 0 and nothing else; no 'No Tasks' or pickup label is rendered"
+  - "ui suite: without onReorder, or with one task, the Queue renders no Move handle"
+  - "ui suite: a Queue of 20 is not folded; a Backlog of 14 shows 8 and 'Show all 14'"
+  - "Every file copied from anachoic starts with its provenance comment naming fd99e0d"
+  - "All stories pass the axe check at 735 px and 600 px"
+depends_on:
+  - "UIS-01"
+  - "UIP-04"
+  - "UIF-06"
+external_dependencies:
+  - "The anachoic repository at commit fd99e0d, readable at /Users/jack/code/personal/anachoic"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "07-ui-port.md#layout"
+  - "06-tools-and-views.md#board-props"
+  - "02-stack-and-structure.md#copied-files"
+  - "anachoic:ui/10-components-board.md#queuesection"
+  - "anachoic:ui/10-components-board.md#queuecard"
+  - "anachoic:ui/10-components-board.md#backlogcard"
+  - "anachoic:ui/15-interaction-and-state.md#nested-controls-do-not-trigger-their-card"

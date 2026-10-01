@@ -1,0 +1,42 @@
+id: UIS-09
+title: "Your-turn actions - mark your step done, answer a question, park"
+area: UIS
+phase: "2"
+summary: >
+  Give YourTurnCard its actions. Your own waiting step gets Mark done with an optional note. An
+  agent's question gets a free-text answer field and Answer. Either kind can be parked, after an
+  InlineConfirm. The board entry turns each action into its app-only tool, draws from the fresh board
+  props the tool returns, and posts the action's fixed sentence to the dedicated session. It ends with
+  you finishing steps and answering workers from the board.
+requirements:
+  - "YourTurnCard (UIS-02) gains actions on its inverted surface, offered only where the card's canAct says so: Mark done when canAct.complete, Answer when canAct.answer, Park when canAct.park. An action that cannot act is not drawn, not drawn disabled."
+  - "Your step: a TextArea for an optional note and Button inverse-solid 'Mark done'. Pressing it raises onCompleteStep(taskId, note), with the note trimmed and left out when empty. There is no Approve, Deny or Unblock command (03)."
+  - "An agent's question: below the session name and question that UIS-02 shows, a TextArea for the answer, and Button inverse-solid 'Answer'. Answer is disabled while the answer is empty after trimming, and is limited to 4,000 characters. Pressing it raises onAnswer(taskId, answer), trimmed."
+  - "The answer field follows anachoic's DenyForm: it is a form whose submit button is Answer, Enter adds a line and no key sends, the field takes the inverted tone, and its note is tied to it as its description. The draft is kept in the card by step id, and may be lost when the host rebuilds the view (06)."
+  - "Park is Button inverse-outline 'Park'. It opens an InlineConfirm (UIP-05) in the stack layout in place of the action row, with the question from the strings catalogue, confirm 'Park' and dismiss 'Keep step'. Only the confirm raises onPark(taskId). Focus moves to the dismiss button on open and back to 'Park' on dismiss; Escape dismisses."
+  - "Busy: while an action is in flight the button that started it is busy, the card's other buttons are disabled, and the fields stay editable. The actions are nested controls: pressing one never fires the card's main action."
+  - "The board entry calls complete_my_step(task, note?), answer_question(task, answer) and move_to_backlog(task) through view/bridge/tools.ts, redraws from the returned board props and resets the poll timer (06 polling)."
+  - "After each success the entry calls wake.ts (MCP-12) with the exact sentence: 'I finished step 2 of T-012, “Review the PR”.' with ' Note: …' added when a note was written; 'I answered step 2 of T-012: “…”'; and for Park 'I moved T-012 to the backlog.' A refusal posts nothing and is passed to the board's refusal handler with its sentence."
+  - "When an action takes a card out of Your turn while it holds focus, focus moves to the Your turn section header, as UIS-07 does for polled changes."
+  - "Every visible string comes from view/components/helpers/strings.ts and follows anachoic's content rules: buttons are verbs, no full stop except in the confirmation question."
+acceptance_criteria:
+  - "ui suite, YourTurnCard: Mark done reports the trimmed note or none; Answer is disabled for an empty or spaces-only answer and reports the trimmed answer; Park reports only after its confirmation; Keep step reports nothing and returns focus to Park."
+  - "ui suite, YourTurnCard: an action absent from canAct has no button; pressing any action or the confirmation does not open the task; while busy the other buttons are disabled."
+  - "ui suite, board entry with a fake App: each action calls its app-only tool with the right input, redraws from the returned props without a poll, and sends its exact sendMessage sentence once; a refusal sends no sentence."
+  - "Stories: your step with and without a note typed, an agent's question with a 2,000-character question, Park confirming, and each card busy; every story passes the axe check."
+  - "integration suite: an answer_question call from a view client returns a waiting worker's wait_for_answer with the answer (with MCP-11)."
+  - "Manual desktop check: marking a step done, answering, and parking each post their sentence in desktop chat and the board redraws."
+depends_on:
+  - "UIS-02"
+  - "UIP-05"
+  - "MCP-12"
+external_dependencies: []
+docs:
+  - "03-domain-model.md#what-you-can-do-with-a-waiting-step"
+  - "06-tools-and-views.md#app-only-tools"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "07-ui-port.md#what-is-new"
+  - "anachoic:ui/08-components-shared-patterns.md#denyform"
+  - "anachoic:ui/08-components-shared-patterns.md#inlineconfirm"
+  - "anachoic:ui/15-interaction-and-state.md#realtime-updates"
+  - "anachoic:ui/15-interaction-and-state.md#waiting-for-the-server"

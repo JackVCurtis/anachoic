@@ -1,0 +1,37 @@
+id: DOM-05
+title: "Sessions - identity rows, heartbeat, liveness and release of dead sessions' claims"
+area: DOM
+phase: "1"
+summary: >
+  Give the store its sessions: the row each identity gets on its first tool call, the heartbeat each
+  server process keeps for the sessions it serves, and the check, run in every write, that ends a
+  dead session and releases the steps it claimed back to the front of the queue. Identity itself is
+  resolved by the server in MCP-06; this todo takes an id, a kind and a project directory as given.
+requirements:
+  - "store/sessions.ts touchSession(db, {id, kind, projectDir}, now, pid) creates the row on first sight with firstSeenAt and lastSeenAt set, or refreshes lastSeenAt and pid; it runs in a write"
+  - "The default name is 'This chat' for the dedicated session and the last segment of projectDir for a worker; a session with no project directory is named 'Session' until join_board sets a name"
+  - "setSessionName(db, id, name) sets the display name, within the 1 to 40 character limit in shared/limits.ts, and returns the id, kind and name"
+  - "A touch on a session whose endedAt is set clears endedAt; the claims released when it ended stay released"
+  - "store/heartbeat.ts: a heartbeat started once per process updates lastSeenAt and pid on every session the process has served, every 30 s, in one short write that keeps the board revision unless it ended a session; its timer is unref'd and stop() ends it"
+  - "A session is dead when lastSeenAt is more than 2 minutes old; the heartbeat interval and the dead window are options, so tests can shorten them"
+  - "A hook registered on the write helper runs in every write transaction: for each session not ended whose lastSeenAt is past the dead window it sets endedAt, applies DOM-02's release to every step the session claimed with DOM-03's joinFront for the queue, and appends a released event naming the session"
+  - "A clean exit, on SIGINT, SIGTERM or the end of stdin, stops the heartbeat and leaves the session's row as it is"
+  - "listSessions(db, now) returns the sessions not ended, and those ended in the last 10 minutes with the tasks released when they ended, for the board props"
+acceptance_criteria:
+  - "Unit suite, temporary database: a first touch creates the row with its default name, a second refreshes it, and a touch after endedAt clears it while the released step stays pending in the queue"
+  - "Unit suite: with the dead window shortened, a write after the window ends a silent session, releases its running step to queue position 1 with claimedBy and question cleared, records a released event, and passes DOM-02's checkBoard"
+  - "Unit suite: a session whose heartbeat keeps running is never ended, and a plain heartbeat does not change the board revision"
+  - "Unit suite, several processes: a forked process that serves a session and is killed with SIGKILL has its claim released by another process's write within the shortened dead window"
+  - "Unit suite: listSessions omits a session ended more than 10 minutes ago"
+depends_on:
+  - "DOM-02"
+  - "DOM-03"
+  - "DOM-04"
+external_dependencies: []
+docs:
+  - "05-sessions.md#identity"
+  - "05-sessions.md#liveness"
+  - "03-domain-model.md#session"
+  - "03-domain-model.md#the-task-state-machine"
+  - "04-persistence.md#writing"
+  - "09-testing-and-build-order.md#what-must-have-a-test"

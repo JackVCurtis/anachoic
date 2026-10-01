@@ -1,0 +1,37 @@
+id: PKG-01
+title: "Pack an installable .mcpb and write the manual desktop check"
+area: PKG
+phase: "0"
+summary: >
+  Package the built server and views as the desktop extension anachoic.mcpb, following the probe's
+  pack.sh and manifest, so the board can be installed in Claude desktop and tried in a chat. Write
+  docs/desktop-check.md, the manual check every phase must pass in desktop chat before it is called
+  done, because the reference host allows more than desktop does. Phase 0 ends here, with show_board
+  drawing an empty board in desktop chat from a fresh .mcpb.
+requirements:
+  - "Install @anthropic-ai/mcpb ^2.1.2 as a development dependency"
+  - "Write mcpb/manifest.json from the table in 08: manifest_version 0.3, name anachoic, display_name Anachoic, a version, description and author, server.type node, server.entry_point server/server.js, mcp_config command node with args ['${__dirname}/server/server.js'], and compatibility platforms ['darwin'] with runtimes.node '>=24.0.0' (the probe declared >=20.0.0)"
+  - "Until PKG-04 adds the data directory setting, mcp_config.env sets ANACHOIC_DATA_DIR to ${HOME}/Library/Application Support/Anachoic MCP, because desktop starts the server with an empty environment"
+  - "scripts/pack.mjs replaces the probe's pack.sh: run the build, empty mcpb/server/, copy dist/server.js to mcpb/server/server.js and dist/views/*.html to mcpb/server/views/, then run `mcpb validate mcpb/manifest.json` and `mcpb pack mcpb anachoic.mcpb`"
+  - "The package script is named pack and is run as `pnpm run pack`, because pnpm's own pack command takes `pnpm pack`"
+  - "The server finds its views in views/ beside its own file, so the same build runs from dist/ and from the extension"
+  - "Write docs/desktop-check.md in the style of docs/spikes/mcp-apps/desktop-checklist.md: install the fresh .mcpb, open a new chat, then numbered steps for each check in 09 (the view renders, fonts load, polling shows a worker's change within 5 s, each action posts its message, the board survives a turn and an app restart), each marked with the phase from which it applies"
+  - "Run the phase 0 steps in desktop chat and record the date, the Claude desktop version and the result at the end of docs/desktop-check.md"
+acceptance_criteria:
+  - "`pnpm run pack` on a clean clone writes anachoic.mcpb, and mcpb validate passes"
+  - "`unzip -l anachoic.mcpb` lists manifest.json, server/server.js, server/views/board.html and server/views/task.html, and no node_modules"
+  - "An integration test starts mcpb/server/server.js with only ANACHOIC_DATA_DIR in its environment and / as its working directory, calls show_board, and gets the board summary text with board props in structuredContent"
+  - "Manual desktop check, phase 0 steps: after installing anachoic.mcpb, show_board draws the empty board inline in Barlow, and the board is drawn again after a turn and after quitting and reopening Claude desktop"
+  - "docs/desktop-check.md exists, and its phase 0 result is recorded"
+depends_on:
+  - "MCP-05"
+external_dependencies:
+  - "Claude desktop on macOS, 2.16120.0 or later, for the manual check"
+docs:
+  - "08-packaging-and-hosts.md#the-desktop-extension"
+  - "09-testing-and-build-order.md#the-manual-desktop-check"
+  - "09-testing-and-build-order.md#phase-0-foundation"
+  - "02-stack-and-structure.md#the-two-builds"
+  - "04-persistence.md#the-data-directory"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "../spikes/mcp-apps/desktop-checklist.md#a-install"

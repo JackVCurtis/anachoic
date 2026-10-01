@@ -1,0 +1,40 @@
+id: UIF-05
+title: "Host bridge - connect, host context, auto-resize without the resize loop, and typed tool callers"
+area: UIF
+phase: "0"
+summary: >
+  Write view/bridge/, the only code that knows about MCP Apps. It connects the view to the host
+  with auto-resize, keeps one merged host context and hands the views only the parts they use,
+  and wraps app-only tool calls so each returns parsed props or a refusal. It must not repeat the
+  spike's resize loop, where every context change grew the page. Ends with a bridge the entries
+  can use, tested against a fake App and against the SDK's own host side.
+requirements:
+  - "view/bridge/connect.ts creates App from @modelcontextprotocol/ext-apps with { autoResize: true } passed explicitly as the third argument, sets ontoolresult and onhostcontextchanged before awaiting app.connect(), then reads app.getHostContext()"
+  - "connect.ts merges each partial onhostcontextchanged update into one host context; an update whose only key is containerDimensions is absorbed without notifying any subscriber, so it can never cause a redraw"
+  - "view/bridge/host_context.tsx provides HostContextProvider and useHostContext(), exposing only displayMode, availableDisplayModes, safeAreaInsets, locale and timeZone; it wraps its children in the components' TimeZoneProvider with the host's timeZone"
+  - "The replayed tool result is never used for drawing: ontoolresult keeps only the task id from structuredContent, for the task view, and drops the rest"
+  - "The bridge never calls applyHostStyleVariables, applyHostFonts or applyDocumentTheme, never calls updateModelContext, and sets no onteardown handler"
+  - "view/bridge/tools.ts has callAppTool(app, name, args), which calls app.callServerTool({ name, arguments }) and returns { ok: true, props } from structuredContent, { ok: false, refusal } with the text when isError is true, or { ok: false, unreachable: true } when the call throws"
+  - "tools.ts exports one typed function per app-only tool, typed with shared/props.ts; each function is added by the todo that adds its tool (get_board in MCP-05, the writes in MCP-10, get_task in MCP-13), so this todo ships the wrapper and its tests"
+  - "view/bridge/testing/fake_app.ts is a fake App with connect, getHostContext, callServerTool, sendMessage and requestDisplayMode, which records calls and can emit host context changes and tool results, for ui tests of the bridge and entries"
+  - "Only view/entries/ imports view/bridge/; nothing in view/components/ does, and the lint rule from FND-02 enforces it"
+acceptance_criteria:
+  - "ui suite with the fake App: a theme-only update and then a locale update both appear in useHostContext, merged over the context read at connect"
+  - "ui suite with the fake App: 20 containerDimensions-only updates cause no re-render under HostContextProvider and leave document.documentElement's height unchanged"
+  - "ui suite with the real App connected to AppBridge from @modelcontextprotocol/ext-apps/app-bridge over an in-memory transport: after 20 setHostContext calls that change only containerDimensions, onsizechange has fired at most once since the view settled"
+  - "ui suite: callAppTool returns props for a structuredContent result, the refusal sentence for an isError result, and unreachable for a thrown error"
+  - "ui suite: a child of HostContextProvider whose host timeZone is 'Asia/Kolkata' reads that zone through useTimeZone"
+  - "`pnpm lint` fails for a file in view/components/ that imports view/bridge/"
+depends_on:
+  - "MCP-02"
+  - "UIF-03"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#the-host-bridge"
+  - "07-ui-port.md#theme"
+  - "06-tools-and-views.md#how-a-view-connects"
+  - "06-tools-and-views.md#polling"
+  - "06-tools-and-views.md#how-long-a-view-lives"
+  - "06-tools-and-views.md#results"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

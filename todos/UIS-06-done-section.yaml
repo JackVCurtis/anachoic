@@ -1,0 +1,40 @@
+id: UIS-06
+title: "Done section with tasks to sign off and recently signed-off tasks"
+area: UIS
+phase: "1"
+summary: >
+  Build DoneSection and SignOffCard, adapted from anachoic's SignOffView and its SignOffCard document:
+  the tasks waiting for your sign-off, each with when it finished, its times and its link count, and
+  below them the 10 most recently signed-off tasks folded under a Disclosure. Sign off, Follow-up and
+  Archive are added by UIS-12; this todo leaves the actions row's place.
+requirements:
+  - "DoneSection in view/components/board/done_section/, adapted from anachoic inertia/components/sign_off/sign_off_view/sign_off_view.tsx (copied at fd99e0d with the provenance comment): the PageHeader becomes an h2 SectionHeader 'Done' with the count of tasks to sign off; the framed EmptyState 'Nothing waiting for sign-off'; the page padding, the grid and the 'All caught up' summary go"
+  - "SignOffCard in view/components/board/sign_off_card/, written from anachoic's document (anachoic has not built it): a Frame, not clickable as a whole, padding --space-4 by --space-6, gap --space-4, able to shrink"
+  - "Meta row: the task id (text-mono-xs, --color-text-subtle), then 'Finished today 09:14' from formatFinished and useNow at the minute tick, pushed right; it wraps when narrow; the repo and workflow Tag go"
+  - "The title is a button (text-title-5, hover --color-text-accent) raising onOpenTask; it is the card's heading at h3 under the section's h2, not h2 as on anachoic's Sign off screen"
+  - "Stats line, MetaLine detail: 'agent 14m · you 6m · 2 links' from agentSeconds, yourSeconds and linkCount, with formatDuration and plural; 'artifacts' becomes 'links'; anachoic's step count and pips go because the props carry neither"
+  - "AgentSessionList, FollowUpComposer, PlacementField and 'View chain' are not built here"
+  - "Signed off: below the cards, a Disclosure whose label names the count of recent sign-offs (strings.ts); open, it lists up to 10 rows, each the task id, the title as a button raising onOpenTask, and when it was signed off from formatFinished; the Disclosure starts closed"
+  - "Cards fold after 8; the signed-off list is never longer than 10"
+  - "Stories from the UIF-06 fixtures: two tasks to sign off, none to sign off with 10 signed off, none at all, 12 to sign off (folded), no links, long title"
+acceptance_criteria:
+  - "ui suite: an empty Done section shows 'Nothing waiting for sign-off'"
+  - "ui suite: the stats line reads 'agent 14m · you 6m · 2 links' and '1 link' for one"
+  - "ui suite: the signed-off Disclosure is closed at first and shows 10 rows when opened, each title raising onOpenTask"
+  - "ui suite: the card title raises onOpenTask with the task id"
+  - "All stories pass the axe check at 735 px and 600 px"
+depends_on:
+  - "UIS-01"
+  - "UIP-04"
+  - "UIF-06"
+external_dependencies:
+  - "The anachoic repository at commit fd99e0d, readable at /Users/jack/code/personal/anachoic"
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "03-domain-model.md#list-membership"
+  - "06-tools-and-views.md#board-props"
+  - "10-open-questions.md#choices-these-documents-make"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#signoffview"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#signoffcard"
+  - "anachoic:ui/16-accessibility.md#disclosure"
+  - "anachoic:ui/17-content-rules.md#sign-off"

@@ -1,0 +1,37 @@
+id: UIS-04
+title: "Working section with chain pips, session, note and elapsed time"
+area: UIS
+phase: "1"
+summary: >
+  Build WorkingSection and WorkingCard, new in this app: one card per active task whose current step
+  is running, with its pips, the step, the session that claimed it, the session's latest note and the
+  elapsed time ticking each second. The card takes its frame and type from the running form of
+  anachoic's AgentSlotCard, with the session's note in place of the activity line.
+requirements:
+  - "WorkingSection in view/components/board/working_section/: an h2 SectionHeader 'Working' with the count, an empty state worded from strings.ts, cards in one column in the server's order, keyed by task id, folding after 8"
+  - "WorkingCard in view/components/board/working_card/: a light ActionCard, padding --space-4, gap --space-3, hover fill --color-accent-100, taking its parts from the running form of anachoic inertia/components/board/agent_slot_card/agent_slot_card.tsx"
+  - "Header row: StatusSquare running, the session name (text-name), then the elapsed time pushed right, for example '6m 12s elapsed', from formatElapsed with runningSince and useNow at the one-second tick"
+  - "Body: the task title as main action (h3, text-title-3, raising onOpenTask), the task id in text-mono-xs, the step line 'Step 2 of 4 · Draft the migration' (heading 400, 11px, uppercase, --color-text-accent) with the step count taken from the pips, and the latest note in text-detail at --dim-2 when there is one"
+  - "StepPips from the props' pips, naming each step's session where anachoic named its agent (UIP-04)"
+  - "Dropped from anachoic's running form: the repo footer, 'Cancel step', earlier-attempt seconds, the 196 px minimum height, the spacer, the progress percentage and any summary paragraph"
+  - "The note can be 500 characters; it wraps in full and never widens the view; under 600 px the header row wraps"
+  - "Stories from the UIF-06 fixtures: one task, several sessions working at once, this chat working, no note, a 500-character note, 12 cards (folded), long title"
+acceptance_criteria:
+  - "ui suite: the elapsed time advances from '6m 12s elapsed' to '6m 13s elapsed' with the fixed clock"
+  - "ui suite: a card with no note renders no note element; a card with a note shows it in full"
+  - "ui suite: the step line reads 'Step 2 of 4 · …' for a four-step chain on step 2"
+  - "ui suite: pressing the title raises onOpenTask with the task id"
+  - "All stories pass the axe check at 735 px and 600 px"
+depends_on:
+  - "UIS-01"
+  - "UIP-04"
+  - "UIF-06"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "03-domain-model.md#list-membership"
+  - "03-domain-model.md#time-on-a-step"
+  - "06-tools-and-views.md#board-props"
+  - "anachoic:ui/10-components-board.md#running"
+  - "anachoic:ui/15-interaction-and-state.md#the-clock"
+  - "anachoic:ui/17-content-rules.md#step-numbers"

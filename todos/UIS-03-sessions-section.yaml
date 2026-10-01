@@ -1,0 +1,41 @@
+id: UIS-03
+title: "Sessions section adapted from AgentsSection and AgentSlotCard"
+area: UIS
+phase: "1"
+summary: >
+  Copy anachoic's AgentsSection and AgentSlotCard and adapt them into SessionsSection and
+  SessionCard: one card per live session with its name and kind and the step it holds, running or
+  waiting on you, or 'Idle', and below them the sessions that ended in the last 10 minutes with what
+  they released. Slots, the cap, the Capped tile, 'Cancel step' and idle reasons go.
+requirements:
+  - "Copy anachoic inertia/components/board/agents_section/ and inertia/components/board/agent_slot_card/ (tsx, module.css, stories, tests) at fd99e0d into view/components/board/sessions_section/ and view/components/board/session_card/, renamed, each file starting with the provenance comment from 02 copied files"
+  - "SessionsSection: an h2 SectionHeader 'Sessions' with the count of live sessions; anachoic's agentSummary, the slot grid and CappedTile are removed; cards in one column in the server's order, keyed by session id, folding after 8"
+  - "Holding a running step: kept from the running form, a light ActionCard with StatusSquare running, the session name (text-name), 'Running' pushed right, the task title as main action (h3, onOpenTask), and the step line 'Step 2 · Choose the cache key'; no activity line, no repo footer, no elapsed time and no minimum height (the Working card shows the time)"
+  - "Holding a waiting step: the same frame with StatusSquare waiting and 'Waiting on you', on the light surface, as anachoic's waiting form"
+  - "Holding nothing: a Frame that is not interactive, StatusSquare idle, the session name and 'Idle'; the hatched box and the idle reasons 'Starting in a moment', 'Waiting for queue' and 'Paused' go"
+  - "Each card shows the session's kind with a neutral Tag worded from strings.ts; the dedicated session's name is 'This chat'"
+  - "An ended session (live false, endedAt set) is a non-interactive Frame: its name, 'Ended 4m ago' worded from the copied time helper, and for each released task its id and title after the word 'Released'"
+  - "'Cancel step', its InlineConfirm, onCancelStep, onRequestCancel, onRaiseCap and the cap and pause props are removed"
+  - "Under 600 px the header row wraps; long session names wrap"
+  - "Stories from the UIF-06 fixtures: several workers running and waiting, this chat holding a step, idle sessions, an ended session that released two tasks, 12 sessions (folded), long names"
+acceptance_criteria:
+  - "ui suite: a session holding a waiting step reads 'Waiting on you' and is not inverted; one holding nothing reads 'Idle' and has no main action"
+  - "ui suite: an ended session lists each released task's id and has no main action"
+  - "ui suite: no story or test renders 'Cancel step', 'Capped' or a cap figure"
+  - "ui suite: pressing a holding card's title raises onOpenTask with the task id"
+  - "Every file copied from anachoic starts with its provenance comment naming fd99e0d"
+  - "All stories pass the axe check at 735 px and 600 px"
+depends_on:
+  - "UIS-01"
+  - "UIP-04"
+  - "UIF-06"
+external_dependencies:
+  - "The anachoic repository at commit fd99e0d, readable at /Users/jack/code/personal/anachoic"
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "03-domain-model.md#session"
+  - "05-sessions.md#liveness"
+  - "06-tools-and-views.md#board-props"
+  - "02-stack-and-structure.md#copied-files"
+  - "anachoic:ui/10-components-board.md#agentssection"
+  - "anachoic:ui/10-components-board.md#agentslotcard"

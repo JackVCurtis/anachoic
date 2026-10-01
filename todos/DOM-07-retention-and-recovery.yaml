@@ -1,0 +1,36 @@
+id: DOM-07
+title: "Retention and recovery - prune old rows, refuse an unreadable database, survive kills"
+area: DOM
+phase: "4"
+summary: >
+  Keep the board's database small and safe over months of daily use. Once a day the first process to
+  open the database deletes tasks signed off more than 30 days ago, with their steps and events, and
+  sessions that ended more than 7 days ago. A database that cannot be opened or fails its check is
+  never replaced: the server still starts and every tool refuses with a sentence that names the file.
+  Tests show that a process killed in the middle of a write leaves nothing partial behind.
+requirements:
+  - "store/retention.ts deletes tasks whose signed_off_at is more than 30 days old, with their steps and events, and sessions whose ended_at is more than 7 days old, in one short BEGIN IMMEDIATE transaction"
+  - "Retention runs on open, only when no process has run it yet that day; a new migration adds the date of the last run to the board row, and the check and the run share one transaction so two processes opening together run it once"
+  - "When retention deletes anything it bumps board.revision once, so open views redraw; when it deletes nothing it writes nothing"
+  - "Retention deletes only those rows: a task that was never signed off, archived or not, and a session that has not ended both stay"
+  - "On open, the store runs PRAGMA quick_check after the pragmas; if the file cannot be opened or the check fails, the server still starts, logs the reason, and skips migrations, the heartbeat and retention"
+  - "In that state every tool returns isError true with a sentence that names the board.sqlite path and says it can't be read, written by the content rules; the file and its -wal and -shm files are never replaced, moved or deleted"
+  - "A test-only hold inside a write transaction, enabled by an environment variable, lets the tests kill a process while it holds the write lock, as the spike's bump(holdMs) did"
+acceptance_criteria:
+  - "Unit test, store against a temporary database with a fake clock: a task signed off 31 days ago is deleted with its steps and events, one signed off 29 days ago stays, a session ended 8 days ago is deleted and one ended 6 days ago stays"
+  - "Unit test: retention runs once per day across two opens, and a run that deletes nothing leaves the revision unchanged"
+  - "Integration test: a server process killed with SIGKILL while holding a write leaves the revision and every table as they were before that write, and the next process opens the database and passes quick_check"
+  - "Integration test: with board.sqlite overwritten by junk bytes, the server starts, show_board and add_task return isError with the sentence naming the file, and the file's bytes are unchanged afterwards"
+  - "Integration test: eight processes writing while one runs retention finish with a contiguous revision and no busy refusal"
+depends_on:
+  - "DOM-04"
+external_dependencies: []
+docs:
+  - "04-persistence.md#retention"
+  - "04-persistence.md#recovery"
+  - "04-persistence.md#writing"
+  - "04-persistence.md#opening-the-database"
+  - "03-domain-model.md#refusals"
+  - "06-tools-and-views.md#errors"
+  - "09-testing-and-build-order.md#what-must-have-a-test"
+  - "09-testing-and-build-order.md#phase-4-hardening"

@@ -1,0 +1,40 @@
+id: MCP-14
+title: "End-to-end tests across processes and in the reference host"
+area: MCP
+phase: "4"
+summary: >
+  Complete the integration and e2e suites so the whole system is tested as it runs: several built
+  server processes against one data directory standing in for desktop and two workers, and the built
+  views in the ext-apps reference host against the server over --http. The tests cover every item in
+  09's list of what must have a test that crosses processes or views. The phase ends with a suite that
+  catches a regression in claiming, liveness, waiting or the live board before a release.
+requirements:
+  - "The integration suite starts dist/server.js over stdio through @modelcontextprotocol/client: one process with clientInfo claude-ai and two with claude-code and distinct CLAUDE_CODE_SESSION_ID values, all with ANACHOIC_DATA_DIR set to one temporary directory"
+  - "A full chain test: the dedicated process adds a task with agent, your and agent steps; worker A claims and completes step 1; answer and completion of your step go through the app-only tools; worker B cannot act on A's step; the task ends done and is signed off"
+  - "Concurrency tests from the spike: two processes claim the same step and exactly one wins; eight processes write at once and the revision stays contiguous with no busy refusal; a process killed mid-transaction leaves no partial write"
+  - "Liveness tests with the dead window shortened by its environment variable: a killed worker's claim is released to queue position 1 with a released event; a process restarted under the same session id keeps the session"
+  - "wait_for_answer tests with shortened intervals: it returns on an answer, sends progress at its interval, returns on its timeout, and returns at once when the task is parked or archived"
+  - "The e2e suite builds the views and the server, starts the server with --http on 127.0.0.1:3001 and the reference host from PKG-03, and drives them with Playwright"
+  - "E2e tests: the board draws from get_board rather than the replayed result; a worker's change made over stdio appears within 5 s; an action in the view updates the board from its result; the board's height is unchanged by a dimensions-only context change"
+  - "Each test uses its own temporary data directory and cleans up every process it starts"
+acceptance_criteria:
+  - "pnpm test:integration passes and covers every across-processes, liveness, wait_for_answer and identity item in 09's list"
+  - "pnpm test:e2e passes against the reference host built by PKG-03"
+  - "Breaking the claim transaction (for example by splitting its read and write) makes the two-claimers test fail"
+  - "CI runs the integration suite on every push, and the e2e suite where the reference host is available"
+depends_on:
+  - "MCP-13"
+  - "MCP-11"
+  - "PKG-03"
+external_dependencies:
+  - "The ext-apps reference host (examples/basic-host at 82221c0, or the commit PKG-03 pins), built against @modelcontextprotocol/ext-apps 2.0.3"
+  - "Playwright 1.63 with Chromium"
+docs:
+  - "09-testing-and-build-order.md#test-suites"
+  - "09-testing-and-build-order.md#what-must-have-a-test"
+  - "05-sessions.md#liveness"
+  - "05-sessions.md#waiting-for-your-answer"
+  - "04-persistence.md#writing"
+  - "08-packaging-and-hosts.md#development-loop"
+  - "06-tools-and-views.md#polling"
+  - "../spikes/mcp-apps/notes.md#10-sqlite-with-wal-across-processes"

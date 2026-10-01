@@ -1,0 +1,33 @@
+id: UIF-01
+title: "Fonts and CSP spike - Barlow inlined as data: fonts in desktop chat"
+area: UIF
+phase: "spike"
+summary: >
+  Find out whether a view in desktop chat can load Barlow from data inlined in its own HTML, or whether
+  the host's content security policy blocks it and another font has to be chosen. The probe view loads
+  Barlow three ways, once under the default policy and once with data: declared, and records any
+  policy violation. The result decides how the views carry anachoic's fonts. Done: all three loads
+  succeeded under the default policy, so Barlow is kept and inlined.
+requirements:
+  - "Import @fontsource/barlow's barlow-latin-400-normal.woff2 into the probe view, once from a CSS @font-face and once with Vite's ?inline, so the single-file build inlines both as data: URLs"
+  - "Load the font three ways in docs/spikes/mcp-apps/probes/src/view.ts: CSS @font-face with a data: URL (ProbeCssData), FontFace with a data: URL (ProbeFaceUrl) and FontFace with an ArrayBuffer (ProbeFaceBuffer), and record each result"
+  - "Listen for securitypolicyviolation and record the directive and blocked URI of each violation"
+  - "Serve the same view under two tools: probe_view with no CSP declared, and probe_view_csp with _meta.ui.csp resourceDomains ['data:']"
+  - "Draw a fourth sample in the host's own font, var(--font-sans), and record the fonts the host context offers"
+  - "Run desktop checklist step B1 and note which samples draw in Barlow and which in a fallback; step B2, the probe_view_csp view, was skipped once the default policy loaded all three"
+acceptance_criteria:
+  - "notes.md 'Summary' row 4 records that all three Barlow loads succeeded in desktop chat under the default CSP, with no violations"
+  - "notes.md 'Claude desktop chat' records the fonts result and that the host offers Anthropic Sans from assets.claude.ai through css.fonts"
+  - "07-ui-port.md 'Fonts' inlines Barlow and Barlow Condensed as data: woff2, and 10-open-questions.md 'Decisions' records that Barlow loads"
+  - "06-tools-and-views.md 'Views' declares no CSP domains for the resources"
+depends_on:
+  - "MCP-01"
+external_dependencies:
+  - "Claude desktop 2.16120.0 on macOS 26.6 (arm64), with the probe extension installed"
+docs:
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "../spikes/mcp-apps/notes.md#summary"
+  - "../spikes/mcp-apps/desktop-checklist.md#b-in-that-chat-send-these-one-at-a-time"
+  - "07-ui-port.md#fonts"
+  - "06-tools-and-views.md#views"
+  - "10-open-questions.md#decisions"

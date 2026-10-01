@@ -1,0 +1,41 @@
+id: MCP-09
+title: "Server instructions and tool descriptions for the dedicated session and for workers"
+area: MCP
+phase: "1"
+summary: >
+  Write the server's instructions and each model-visible tool's description in server/instructions.ts,
+  in two versions: one for the dedicated session in desktop chat and one for workers in Claude Code.
+  The kind of client, resolved by the same rule as session identity, decides which version a
+  connection receives. This todo fixes what each text must say; the prose itself is written here and
+  kept in that file. The phase ends with each kind of session behaving in its role without being told
+  by you.
+requirements:
+  - "Keep both versions of the instructions and every model-visible tool description in server/instructions.ts, as plain strings with no secrets or environment values"
+  - "Choose the version from the client by the rule in 05: clientInfo.name 'claude-ai' gets the dedicated text; 'claude-code', any other client, and Claude Code without CLAUDE_CODE_SESSION_ID get the worker text; the choice is made before the initialize result and tools/list are sent"
+  - "Dedicated text must say: call show_board when you ask about work; plan work as tasks with chains through add_task, giving each step an owner, you or an agent; tasks cannot be edited, and a chain changes only by add_follow_up on a done task that is not signed off"
+  - "Dedicated text must say: messages that begin 'I finished', 'I answered', 'I added', 'I moved', 'I signed off' and 'I archived' come from the board view; reply in one line when the action needs nothing from Claude, and carry on when it concerns work this chat holds or coordinates"
+  - "Dedicated text must say: never wait in a tool and never call wait_for_answer; this chat may claim an agent step like a worker, and an answer to its own question arrives as a message from the view"
+  - "Worker text must say: call join_board first with a short name that fits the project; when join_board returns a minted id, pass it as session on every later call"
+  - "Worker text must say: claim one step at a time with claim_step; report progress with update_step; ask you only through ask_you followed by wait_for_answer, never in its own chat; call wait_for_answer again when it says 'No answer yet'"
+  - "Worker text must say: complete the step with complete_step, a summary and links; when complete_step says to call claim_step with the task, do so to continue the chain; never insert a step, and ask instead when it cannot go on"
+  - "Worker text must say: stop work on a task when a call is refused with not_yours, archived or wrong_status, or when wait_for_answer says the task was parked or the claim ended"
+  - "Each tool description names its inputs' limits and its text result, as in 06's tables, and for worker tools states that it acts only on a step the caller claimed"
+acceptance_criteria:
+  - "Unit suite: each version of the instructions contains every required point above, checked by the tool names and quoted phrases it must mention"
+  - "Integration suite: initialize with clientInfo claude-ai returns the dedicated instructions, and with claude-code returns the worker instructions; tools/list descriptions differ accordingly"
+  - "Unit suite: the dedicated text does not mention calling wait_for_answer except to forbid it, and neither text mentions an app-only tool"
+  - "Manual check in Claude Code: a fresh worker with only the server added, asked to 'take work from the Anachoic board', joins, claims, notes progress and completes a step without further prompting"
+  - "Manual desktop check: after you mark a step done in the view, the dedicated session replies in one line"
+depends_on:
+  - "MCP-07"
+external_dependencies:
+  - "Claude desktop 2.16120.0 or later and Claude Code 2.1.285 or later, for the manual checks"
+docs:
+  - "06-tools-and-views.md#server-instructions"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "06-tools-and-views.md#worker-tools"
+  - "05-sessions.md#identity"
+  - "05-sessions.md#claiming"
+  - "05-sessions.md#waiting-for-your-answer"
+  - "03-domain-model.md#a-chain-is-fixed"
+  - "../spikes/mcp-apps/notes.md#11-and-14-what-claude-code-tells-the-server"

@@ -1,0 +1,36 @@
+id: MCP-12
+title: "Wake the dedicated session with sendMessage after each of your actions"
+area: MCP
+phase: "2"
+summary: >
+  After each successful action you take in the board view, the view posts one fixed sentence to the
+  dedicated session with sendMessage, which desktop chat shows as a user turn that Claude replies to.
+  This is how the dedicated session learns of your actions without waiting in a tool. The sentences
+  are built in view/bridge/wake.ts. Workers' events never post a message, and updateModelContext is not
+  used. The phase ends with Claude replying in desktop chat to each thing you do on the board.
+requirements:
+  - "view/bridge/wake.ts exports one builder per action and a send function that calls app.sendMessage with role 'user' and one text content block, as the probe view does"
+  - "Mark your step done sends 'I finished step 2 of T-012, “Review the PR”.' and appends ' Note: …' when you wrote a note"
+  - "Answer a question sends 'I answered step 2 of T-012: “…”' with your answer in the quotes"
+  - "Add a task sends 'I added T-015, “Add retries”, to the queue.' or the same sentence ending 'to the backlog.'"
+  - "Reorder sends 'I moved T-015 to position 1 in the queue.'; queue and move to backlog send sentences of the same form, which this todo adds to 06's table before they are built"
+  - "Sign off sends 'I signed off T-006.', follow-up sends 'I added 2 follow-up steps to T-006.' with the count agreeing, and archive sends 'I archived T-008.'"
+  - "A message is sent only after the tool's result succeeds, and never for a refusal, a poll, or any change made by a worker"
+  - "updateModelContext is never called; the sentences use the curly quotes and display ids shown in 06"
+acceptance_criteria:
+  - "UI suite: with a fake App, each action's builder produces its exact sentence from 06, including the note suffix, the backlog variant and plural agreement in the follow-up sentence"
+  - "UI suite: a refused action sends no message, and a poll that brings a worker's change sends none"
+  - "Lint or a unit check: no file under view/ calls updateModelContext"
+  - "Manual desktop check: each action in the board posts its sentence as a user turn and Claude replies, as listed in the desktop check"
+depends_on:
+  - "MCP-10"
+  - "MCP-02"
+external_dependencies:
+  - "Claude desktop 2.16120.0 or later, for the manual check"
+docs:
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "07-ui-port.md#the-host-bridge"
+  - "07-ui-port.md#content"
+  - "09-testing-and-build-order.md#the-manual-desktop-check"
+  - "10-open-questions.md#decisions"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

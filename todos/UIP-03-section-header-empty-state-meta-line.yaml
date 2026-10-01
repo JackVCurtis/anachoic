@@ -1,0 +1,36 @@
+id: UIP-03
+title: "Copy SectionHeader, PageHeader, EmptyState, MetaLine and Disclosure"
+area: UIP
+phase: "0"
+summary: >
+  Copy the patterns the board's single column is made of: SectionHeader with its count for each
+  section, PageHeader for the task view, EmptyState for empty sections, MetaLine for a card's
+  facts and Disclosure for folded sections. MetaLine loses its repo, because tasks here have
+  none. Ends with every pattern the empty board needs in UIS-01.
+requirements:
+  - "Copy anachoic inertia/components/patterns/section_header/, page_header/, empty_state/, meta_line/ and disclosure/ to view/components/patterns/, with each folder's stories and tests"
+  - "Each copied file starts with its provenance comment naming its anachoic source path and fd99e0d"
+  - "SectionHeader, PageHeader, EmptyState and Disclosure are unchanged except for import paths"
+  - "MetaLine drops its repo prop and its repoLabel import; it shows only the facts it is given, separated by U+00B7 with a space each side and hidden from assistive technology"
+  - "Stories are rewritten with this app's sections and facts in place of anachoic's screens: SectionHeader for Your turn (inverse tone, as 07's Theme says), Sessions, Working, Queue, Backlog and Done with counts; EmptyState for an empty section; MetaLine with facts such as 'Step 2/3' and a session name"
+  - "Disclosure stories replace the MonoBlock panel with a list of cards, and show the 'Show all 14' fold of a long section"
+  - "Stories take sample data only from view/components/fixtures/"
+acceptance_criteria:
+  - "ui suite: the copied interaction tests pass, edited only where MetaLine's repo was removed"
+  - "All stories pass the axe check, including the inverse SectionHeader"
+  - "ui suite: MetaLine's separators are hidden from the accessibility tree and its facts are read in order"
+  - "ui suite: Disclosure's toggle sets aria-expanded and aria-controls, and a closed panel is absent from the DOM"
+  - "`grep -r repoLabel view/components/patterns` returns nothing, and `pnpm lint` and `pnpm typecheck` pass"
+depends_on:
+  - "UIP-01"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "07-ui-port.md#layout"
+  - "07-ui-port.md#theme"
+  - "anachoic:ui/08-components-shared-patterns.md#sectionheader"
+  - "anachoic:ui/08-components-shared-patterns.md#pageheader"
+  - "anachoic:ui/08-components-shared-patterns.md#emptystate"
+  - "anachoic:ui/08-components-shared-patterns.md#metaline"
+  - "anachoic:ui/08-components-shared-patterns.md#disclosure"

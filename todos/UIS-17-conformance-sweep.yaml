@@ -1,0 +1,39 @@
+id: UIS-17
+title: "Conformance sweep - accessibility, content rules and token use across both views"
+area: UIS
+phase: "4"
+summary: >
+  Close out the board and task views against anachoic's definition of a done component and this
+  app's departures from it. Check accessibility, keyboard paths and target sizes, the content rules
+  in the strings catalogue, and that styling uses tokens only. Check the view rules of 07 at 600 and
+  735 px and in desktop chat, fix what falls short, and record what was settled in the docs.
+requirements:
+  - "Every component under view/components/board/ and view/components/task/ meets the points of anachoic's 'When a component is done', and every copied file still carries its provenance comment naming its anachoic source and fd99e0d."
+  - "Keyboard only: the board can be worked from top to bottom (Add task, each card's title and nested controls, Move, the composers, Dismiss), and so can the task view (the display buttons, Park, Archive, each step header, the links). The order matches what is seen."
+  - "Target size (WCAG 2.5.8) is measured for the small buttons: 'Move', 'Dismiss', 'Park', 'Archive', 'Back to board', 'Back to inline' and 'Open in full screen'. A shortfall is fixed with vertical padding, not type."
+  - "Characters that are not words (↗, →, ·, —, ×) are hidden or named as anachoic ui/16 says, everywhere in both views."
+  - "Content rules over view/components/helpers/strings.ts: sentence case, exact symbols, no full stops except in confirmations and announcements, plurals that agree, never 'user' or 'human' on screen, buttons that are verbs, 'Cancel' only for closing something. The refusal sentences in domain/ follow the same rules."
+  - "Token use: CSS modules use only tokens from view/css/tokens.css for colour, spacing, type and motion, as anachoic's rules for using tokens require. Terminal tokens are absent."
+  - "View rules of 07: no inner scroll regions; a section with more than 8 cards folds under 'Show all n' except the Queue; under 600 px a card's meta line wraps below its title; the view is light only and sets its own --color-bg; a dimensions-only context change never changes the height."
+  - "What was settled while building (the follow-up composer's steps, the Park questions, the task view's display buttons) is written back to 07-ui-port.md."
+acceptance_criteria:
+  - "The full ui suite, Storybook project included, passes with the axe check in error mode."
+  - "Lint passes with the component layer rules and the folder rules, and finds no raw colour or px value outside tokens in view/components/ CSS modules."
+  - "ui suite: a strings test fails on a full stop outside confirmations and announcements, and on the words 'user' or 'human' in the catalogue."
+  - "ui suite: both views render without horizontal overflow at 600 and 735 px wide."
+  - "A checklist in the pull request records each component against the done points and each small button's measured target."
+  - "Manual desktop check from a fresh .mcpb: both views render, fonts load, keyboard-only use works in desktop chat, and the board survives a turn and an app restart."
+depends_on:
+  - "UIS-16"
+  - "UIS-13"
+external_dependencies:
+  - "Claude desktop app, for the manual desktop check"
+docs:
+  - "07-ui-port.md#layout"
+  - "07-ui-port.md#content"
+  - "09-testing-and-build-order.md#the-manual-desktop-check"
+  - "anachoic:ui/19-organization-and-testing.md#when-a-component-is-done"
+  - "anachoic:ui/16-accessibility.md#target-size"
+  - "anachoic:ui/16-accessibility.md#characters-that-are-not-words"
+  - "anachoic:ui/17-content-rules.md#rules"
+  - "anachoic:ui/02-tokens.md#rules-for-using-tokens"

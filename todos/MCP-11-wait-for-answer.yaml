@@ -1,0 +1,37 @@
+id: MCP-11
+title: "wait_for_answer with progress notifications and a 20-minute return"
+area: MCP
+phase: "2"
+summary: >
+  Add the worker tool wait_for_answer, which a worker calls after ask_you and which waits inside the
+  call for your answer. It polls the database with reads only, sends a progress notification every
+  minute so Claude Code's 30-minute idle limit never trips, and returns after 20 minutes at most with
+  a sentence that tells the model to call again. It also returns at once when the claim ends. The
+  phase ends with a worker that asks you a question in Claude Code receiving your answer from the view.
+requirements:
+  - "Register wait_for_answer as a model tool in server/tools/ with input task (and the optional session from MCP-06); it acts only on a step the calling session claimed and otherwise returns the not_yours, archived or wrong_status refusal"
+  - "Poll every 2 s with a read only; never hold a transaction or the write lock across the wait"
+  - "Every 60 s, when the request's _meta carries a progressToken, call ctx.mcpReq.notify with method notifications/progress, that progressToken and an increasing progress value, as the probe server's probe_block does; with no progressToken, send nothing"
+  - "Return the answer as soon as it is set, and clear the stored answer in the same short write transaction, so collecting it clears it"
+  - "After 20 minutes with no answer, return 'No answer yet. Call wait_for_answer again to keep waiting.' as a normal result, not an error"
+  - "When the task is parked while the worker waits, return 'T-012 was parked. Stop work on it.'; on any other end to the claim (archived, released) return the matching sentence telling the model to stop"
+  - "Stop polling when the request's abort signal fires; the question stays, and a later wait_for_answer resumes the wait"
+  - "Read the poll interval, progress interval and return timeout from constants that environment variables can shorten for tests (ANACHOIC_WAIT_POLL_MS, ANACHOIC_WAIT_PROGRESS_MS, ANACHOIC_WAIT_TIMEOUT_MS), never set in the .mcpb manifest"
+  - "The process heartbeat (DOM-05) keeps running while a call waits, so a waiting worker stays live"
+acceptance_criteria:
+  - "Integration suite: a worker asks, calls wait_for_answer, and another process's answer_question makes the call return that answer within one poll interval; a second wait_for_answer does not return it again"
+  - "Integration suite: with shortened intervals, the client receives progress notifications carrying its progressToken at the progress interval, and the call returns 'No answer yet…' at the timeout"
+  - "Integration suite: move_to_backlog or archive_task during the wait makes the call return the parked or archived sentence within one poll interval"
+  - "Integration suite: cancelling the request stops the polling (no further reads are logged), the step stays waiting with its question, and a new call returns a later answer"
+  - "Manual check in Claude Code: a worker asks a question, you answer in the desktop board, and the worker continues with the answer"
+depends_on:
+  - "MCP-10"
+external_dependencies:
+  - "Claude Code 2.1.285 or later, whose 30-minute stdio idle limit and roughly 28-hour wall clock the timings are set against"
+docs:
+  - "05-sessions.md#waiting-for-your-answer"
+  - "06-tools-and-views.md#worker-tools"
+  - "04-persistence.md#writing"
+  - "09-testing-and-build-order.md#what-must-have-a-test"
+  - "../spikes/mcp-apps/notes.md#12-and-13-tool-call-timeouts-from-the-documentation"
+  - "../spikes/mcp-apps/notes.md#11-and-14-what-claude-code-tells-the-server"

@@ -1,0 +1,33 @@
+id: FND-03
+title: "Single-file view build per entry and the bundled server build"
+area: FND
+phase: "0"
+summary: >
+  Set up the two builds from 02, taken from the spike's probe. Vite with vite-plugin-singlefile builds
+  each view entry into one self-contained HTML file with every script, style and font inlined, because
+  desktop chat loads a view's HTML from a ui:// resource and nothing else. esbuild's JavaScript API
+  bundles the server into one ESM file for Node 24, because the esbuild CLI shim fails under pnpm 11.
+  It ends with placeholder board and task entries and a placeholder server that build, and a watch mode.
+requirements:
+  - "Install vite ^8.3.1, @vitejs/plugin-react ^6.1.1, vite-plugin-singlefile ^2.3.3 and esbuild ^0.28.2 as development dependencies"
+  - "scripts/build_views.mjs calls Vite's build() once per entry, view/entries/board/index.html and view/entries/task/index.html, with @vitejs/plugin-react, viteSingleFile() and assetsInlineLimit Number.MAX_SAFE_INTEGER, as the probe's vite.config.ts does, writing dist/views/board.html and dist/views/task.html"
+  - "scripts/build_server.mjs is the probe's build_server.mjs adapted: entry server/main.ts, bundle true, platform node, format esm, target node24 (the probe used node20), outfile dist/server.js, and the createRequire banner"
+  - "Each entry has an index.html with lang en, a charset and a viewport meta and a title, and a main.tsx that renders a placeholder heading with React 19; server/main.ts is a placeholder that MCP-04 replaces"
+  - "Scripts: build cleans dist/ and runs both builds; dev rebuilds both on change, using Vite's build watch for each entry and an esbuild context's watch for the server"
+  - "The built server runs under Node 24 with an empty environment and / as its working directory, as desktop starts it, so the build relies on no relative path, HOME or working directory"
+acceptance_criteria:
+  - "`pnpm build` writes exactly dist/server.js, dist/views/board.html and dist/views/task.html"
+  - "A unit test reads each built view and finds no script src, no stylesheet link and no url( that is not data:"
+  - "A woff2 file imported by a placeholder entry's CSS appears in the built HTML as a data: URL"
+  - "`cd / && env -i \"$(command -v node)\" <repo>/dist/server.js` exits 0 with the placeholder server"
+  - "Editing view/entries/board/main.tsx while `pnpm dev` runs rewrites dist/views/board.html, and editing server/main.ts rewrites dist/server.js"
+depends_on:
+  - "FND-01"
+external_dependencies: []
+docs:
+  - "02-stack-and-structure.md#the-two-builds"
+  - "02-stack-and-structure.md#versions"
+  - "02-stack-and-structure.md#scripts"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "06-tools-and-views.md#views"

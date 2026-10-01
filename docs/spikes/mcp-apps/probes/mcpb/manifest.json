@@ -1,0 +1,18 @@
+{
+  "manifest_version": "0.3",
+  "name": "anachoic-probe",
+  "display_name": "Anachoic probe",
+  "version": "0.0.1",
+  "description": "Spike probe for MCP App views in Claude desktop chat.",
+  "author": { "name": "Jack Curtis" },
+  "server": {
+    "type": "node",
+    "entry_point": "server/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/server.js"],
+      "env": { "PROBE_DATA_DIR": "/Users/jack/code/personal/anachoic-mcp-app/docs/spikes/mcp-apps/probes/.data" }
+    }
+  },
+  "compatibility": { "platforms": ["darwin"], "runtimes": { "node": ">=20.0.0" } }
+}

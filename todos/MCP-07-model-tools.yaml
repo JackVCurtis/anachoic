@@ -1,0 +1,44 @@
+id: MCP-07
+title: "Model tools - add_task, queue_task, add_follow_up, claim_step, update_step, ask_you and complete_step"
+area: MCP
+phase: "1"
+summary: >
+  Register the model tools that let any session change the board: add_task, queue_task and
+  add_follow_up for every session, and claim_step, update_step, ask_you and complete_step for the
+  session that claims an agent step. Each tool resolves the calling session (MCP-06), calls the board
+  services from DOM-06 and returns one compact text block, or the refusal's sentence with isError.
+  The phase ends with a worker in Claude Code able to add a task, claim its step, note progress and
+  complete it. wait_for_answer is not part of this todo (MCP-11).
+requirements:
+  - "Register each tool in server/tools/ with registerAppTool and no _meta.ui.resourceUri, or with server.registerTool, as the probe server registers probe_whoami; none of them carries visibility ['app'], so the model sees them"
+  - "Declare every input with zod: add_task takes title (1-200 characters), steps (1-20 of {title, owner: 'agent' or 'you', detail? up to 4,000 characters}) and queue (default true); queue_task takes task; add_follow_up takes task, steps as add_task, and placement 'first' or 'last'"
+  - "Declare claim_step with an optional task; update_step with task, note (1-500 characters) and optional links; ask_you with task and question (1-2,000 characters); complete_step with task, summary (1-2,000 characters) and optional links; links are up to 10 of {label, url}"
+  - "Accept task as a display id ('T-012') or a whole number (12), the same form open_task takes, and parse it with the copied task id helper in shared/"
+  - "Every tool also accepts the optional session argument that MCP-06 defines for minted ids, and resolves the caller through MCP-06 rather than from anything the model says otherwise"
+  - "add_task performs Add or Add to queue, with createdBy set to the calling session; when the first step is yours the task starts at once and becomes active; the text is the table's form, for example 'Added T-012 to the queue at position 4', or the backlog or active equivalent"
+  - "claim_step() claims the current agent step of the task at queue position 1, and claim_step(task) claims that queued task's current agent step; its text gives the task, the step's number, title and detail, the chain so far with each completed step's summary, and what to call next"
+  - "ask_you makes the step waiting with the question stored and returns 'Asked. Call wait_for_answer with task T-012 next.'; update_step records the note and links and returns 'Noted on T-012 step 2'"
+  - "complete_step reports what happened next: done, waiting on you, or back in the queue at position 1; when the next step is an agent's it adds 'Call claim_step with task T-012 to continue it.'"
+  - "Worker tools act only on a step the calling session claimed; a call on a step it no longer holds returns the not_yours, archived or wrong_status refusal, and complete_step on a waiting step returns unanswered"
+  - "Model tools return content with one text block and no structuredContent; a refusal returns isError true with the refusal's sentence as the text; an unexpected exception returns isError true with 'Something went wrong. Details are in the server log.' and logs the stack"
+  - "Text builders live in server/text/, one function per tool, so MCP-08 can share their formatting"
+acceptance_criteria:
+  - "Integration suite: a worker process (fake clientInfo claude-code with CLAUDE_CODE_SESSION_ID set) adds a two-step agent chain, claims step 1, notes, completes it, is told to call claim_step with the task, claims step 2 and completes it, and the task ends done"
+  - "Integration suite: two worker processes call claim_step at once on a one-task queue; exactly one succeeds and the other gets 'Nothing in the queue needs an agent'"
+  - "Integration suite: a second worker calling update_step, ask_you or complete_step on the first worker's step gets isError with the not_yours sentence, and nothing changes in the database"
+  - "Integration suite: complete_step on a step that waits on you returns the unanswered sentence; invalid input (an empty title, 21 steps, a 501-character note) is refused by schema validation naming the field"
+  - "Integration suite: tools/list from a claude-code client lists all seven tools without _meta.ui.visibility, and none of their results carries structuredContent"
+  - "Unit suite: each text builder in server/text/ produces the exact sentences in 06's tables for representative inputs"
+depends_on:
+  - "DOM-06"
+  - "MCP-06"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#every-session"
+  - "06-tools-and-views.md#worker-tools"
+  - "06-tools-and-views.md#results"
+  - "06-tools-and-views.md#errors"
+  - "05-sessions.md#claiming"
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#refusals"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"

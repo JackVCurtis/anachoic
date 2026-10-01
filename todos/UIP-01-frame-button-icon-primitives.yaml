@@ -1,0 +1,36 @@
+id: UIP-01
+title: "Copy Frame, Rule, VisuallyHidden, Icon, Button and IconButton"
+area: UIP
+phase: "0"
+summary: >
+  Copy the six primitives that every other component is built from, with their CSS modules,
+  stories and tests, into view/components/primitives/. They are copied unchanged apart from
+  import paths and story sample data. Ends with the frame, divider, hidden text, icon and both
+  button primitives drawing as they do in anachoic, inside the 735 px host frame.
+requirements:
+  - "Copy anachoic inertia/components/primitives/frame/, rule/, visually_hidden/, icon/, button/ and icon_button/ to view/components/primitives/, each folder's .tsx, .module.css, .stories.tsx and .test.tsx"
+  - "Each copied file starts with its provenance comment, for example '// Copied from anachoic inertia/components/primitives/button/button.tsx at fd99e0d', in the comment syntax of its file type"
+  - "Components are unchanged except for import paths; they import only helpers/join_classes, types.ts and other primitives"
+  - "Icon keeps its closed set of lucide-react names and sizes; its comment that points at anachoic's ui/05-icons.md is changed to point at this repo's 07-ui-port.md"
+  - "lucide-react is imported only inside the Icon primitive"
+  - "Stories take sample data only from view/components/fixtures/ (clock.ts and long_text.ts); a story that used anachoic-only data is rewritten with this app's words, such as 'Add task' or 'Mark done'"
+  - "Button and IconButton stories include an inverted story and the 600 px narrow width"
+acceptance_criteria:
+  - "ui suite: the copied interaction tests for all six primitives pass"
+  - "All stories pass the axe check on the light and inverse tones"
+  - "ui suite: Icon is hidden from the accessibility tree, and a Button with an icon is named by its label alone"
+  - "ui suite: a Button story drawn in ViewFrame at 600 px has no sideways overflow"
+  - "`pnpm lint` and `pnpm typecheck` pass, and `grep -rL 'Copied from anachoic' view/components/primitives/{frame,rule,visually_hidden,icon,button,icon_button}` returns nothing"
+depends_on:
+  - "UIF-03"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "02-stack-and-structure.md#copied-files"
+  - "anachoic:ui/07-components-primitives.md#frame"
+  - "anachoic:ui/07-components-primitives.md#button"
+  - "anachoic:ui/07-components-primitives.md#iconbutton"
+  - "anachoic:ui/07-components-primitives.md#icon"
+  - "anachoic:ui/05-icons.md#decision-one-icon-primitive-with-a-closed-set-of-names"
+  - "anachoic:ui/07-components-primitives.md#visuallyhidden"

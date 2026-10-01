@@ -1,0 +1,37 @@
+id: UIP-04
+title: "Copy OwnerChip, StatusBadge, StepPips and ChainPreview, with session names"
+area: UIP
+phase: "1"
+summary: >
+  Copy the four patterns that draw a chain and who holds it: the owner chip, the status badge,
+  the row of step pips and the chain preview. Where anachoic named an agent, these name the
+  session that claimed the step, and the human owner is 'you'. Ends with the patterns every
+  board card and the task view use to show a chain.
+requirements:
+  - "Copy anachoic inertia/components/patterns/owner_chip/, status_badge/, step_pips/ and chain_preview/ to view/components/patterns/, with each folder's stories and tests and the provenance comment naming the source path and fd99e0d"
+  - "OwnerChip takes owner 'agent' or 'you' and, in its named form, a session name; its label comes from ownerLabel in helpers/steps.ts, so an agent with no session reads 'agent'"
+  - "StepPips takes steps of { id, owner, status, title, sessionName }, the pips input in 06's board props; each bar's title comes from pipTitle with the session name, and the row's accessible name from pipSummary"
+  - "ChainPreviewRow gains an optional sessionName; a row that has one shows a named OwnerChip, and a row without one shows the generic chip as in anachoic"
+  - "Copy badgeFor, Badge, BadgeLook and TaskList from anachoic helpers/task_drawer.ts into view/components/helpers/task_view.ts, with the lists renamed to this app's: working (accent, 'running'), yourTurn, toSignOff and signedOff (accent), queue and backlog (neutral); labels come from the taskView strings"
+  - "Copy anachoic fixtures/pip_steps.ts to view/components/fixtures/, with agent renamed to sessionName and owner 'human' to 'you'"
+  - "Stories are rewritten with this app's data: a queued chain, a chain whose agent step asked you a question, a chain waiting on your step, a step held by 'This chat', loose spacing, one step and twelve steps, on light and inverse"
+acceptance_criteria:
+  - "ui suite: the copied interaction tests pass, edited only for the session name and the 'you' owner"
+  - "All stories pass the axe check on light and inverse"
+  - "ui suite: a StepPips row is exposed as one image named, for example, '5 steps: 2 done, 1 waiting on you, 2 not started', and each bar's tooltip reads 'api-server · Draft the migration'"
+  - "ui suite: StatusBadge shows each of the six lists with the label and look badgeFor gives"
+  - "`grep -rE 'agentName|human' view/components/patterns view/components/helpers/task_view.ts` returns nothing"
+depends_on:
+  - "UIP-02"
+  - "UIF-04"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "06-tools-and-views.md#board-props"
+  - "03-domain-model.md#list-membership"
+  - "anachoic:ui/08-components-shared-patterns.md#ownerchip"
+  - "anachoic:ui/08-components-shared-patterns.md#steppips"
+  - "anachoic:ui/08-components-shared-patterns.md#statusbadge"
+  - "anachoic:ui/08-components-shared-patterns.md#chainpreview"
+  - "anachoic:ui/18-presentation-helpers.md#steps-and-chains"

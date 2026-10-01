@@ -1,0 +1,36 @@
+id: MCP-10
+title: "App-only tools for your actions, each returning fresh board props"
+area: MCP
+phase: "2"
+summary: >
+  Register the app-only tools through which the view carries out your actions: add_task_from_view,
+  queue_task_from_view, reorder_queue, move_to_backlog, complete_my_step, answer_question, sign_off,
+  add_follow_up_from_view and archive_task. They carry visibility ['app'], so the model never sees
+  them. Each acts as you, and each returns the fresh board props so the view redraws from the result
+  without polling again. The phase ends with every action in the board backed by a tool.
+requirements:
+  - "Register each tool in server/tools/ with registerAppTool and _meta.ui.visibility ['app'], as the probe server registers probe_poll, with zod input and output schemas"
+  - "Inputs: add_task_from_view as add_task; queue_task_from_view, move_to_backlog, sign_off and archive_task take task; reorder_queue takes task and position; complete_my_step takes task and an optional note; answer_question takes task and answer (1-4,000 characters); add_follow_up_from_view as add_follow_up"
+  - "Each tool acts as you: tasks it creates have createdBy 'you', and the events it appends name 'you' as the session"
+  - "reorder_queue moves the task to the given position and the others close up or make room; move_to_backlog parks an active task (the claim is cleared) and moves a queued task back to the backlog"
+  - "complete_my_step marks your waiting step done with the note and moves the chain on; answer_question stores the answer, makes the agent's step running again and records an answered event"
+  - "sign_off sets signedOffAt on a done task; archive_task sets archivedAt on any task not signed off and clears a claim, so the worker is refused with archived on its next call"
+  - "Every successful call returns the fresh board props, built by MCP-08, in structuredContent and a one-line confirmation as its text"
+  - "A refusal returns isError true with the refusal's sentence and no props; the view shows it (UIS-13)"
+acceptance_criteria:
+  - "Integration suite: tools/list from a claude-ai client and from a claude-code client contains none of the nine tools as model-visible, and each carries _meta.ui.visibility ['app']"
+  - "Integration suite: each tool, called directly, performs its transition, returns structuredContent with a revision one higher than before, and appends its event with session 'you'"
+  - "Integration suite: answer_question on a step a worker is waiting on makes it running, and the worker's next read sees the answer; archive_task on a claimed task makes the worker's next update_step return the archived sentence"
+  - "Integration suite: complete_my_step on an agent's waiting step, reorder_queue on a backlog task and sign_off on an active task each return isError with the matching refusal and change nothing"
+  - "Manual desktop check: asked to list the Anachoic tools, Claude names none of the nine"
+depends_on:
+  - "MCP-08"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#app-only-tools"
+  - "06-tools-and-views.md#kinds-of-tool"
+  - "06-tools-and-views.md#results"
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#what-you-can-do-with-a-waiting-step"
+  - "03-domain-model.md#refusals"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

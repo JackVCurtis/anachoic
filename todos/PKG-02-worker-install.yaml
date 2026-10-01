@@ -1,0 +1,37 @@
+id: PKG-02
+title: "Install the server for worker sessions with claude mcp add"
+area: PKG
+phase: "1"
+summary: >
+  Let Claude Code sessions join the board as workers. A worker runs the server file the desktop
+  extension installed, against the same data directory, so the dedicated session and every worker
+  always run the same build on one database. Find where desktop keeps the installed extension, add a
+  script that prints the claude mcp add command with that path filled in, and check by hand that a
+  worker shows on the board in desktop chat. This answers the open question in 10 about the install path.
+requirements:
+  - "Find where Claude desktop installs the extension's files on macOS, under its application-support folder, and record the path in 08-packaging-and-hosts.md 'Worker sessions' and in 10-open-questions.md"
+  - "scripts/print_worker_command.mjs, run by `pnpm print-worker-command`, prints `claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR=\"$HOME/Library/Application Support/Anachoic MCP\" -- node \"<path>/server/server.js\"` with the installed path filled in and every path quoted"
+  - "The data directory in the command is the one the extension's manifest sets, so workers and the dedicated session open the same board.sqlite"
+  - "If the extension is not installed at the expected path, the script says so in one line and exits non-zero"
+  - "The script warns when `node -v` on the PATH is older than 24, since the worker's server needs node:sqlite"
+  - "With --dev, the script prints the command for dist/server.js with ANACHOIC_DATA_DIR set to a scratch directory, for the development loop in 08"
+  - "With --project, the script prints the --scope project form, which writes the server into one repository's .mcp.json; no per-server timeout is set"
+acceptance_criteria:
+  - "Unit test: the command builder quotes a path with spaces, and produces the user-scope, project-scope and --dev forms"
+  - "Unit test: a missing extension path gives the one-line message and a non-zero exit"
+  - "Manual check: after running the printed command, `claude mcp list` shows anachoic connected, and a Claude Code session's join_board appears in the Sessions section of show_board in desktop chat"
+  - "Manual check: two Claude Code sessions in different projects appear as two workers named after their project folders"
+  - "The extension's install path is recorded in 08 and the open question in 10 is closed"
+depends_on:
+  - "PKG-01"
+  - "MCP-06"
+external_dependencies:
+  - "Claude desktop with anachoic.mcpb installed"
+  - "Claude Code 2.1.285 or later, with node 24 or newer on its PATH"
+docs:
+  - "08-packaging-and-hosts.md#worker-sessions"
+  - "08-packaging-and-hosts.md#development-loop"
+  - "05-sessions.md#identity"
+  - "04-persistence.md#the-data-directory"
+  - "10-open-questions.md#open-questions"
+  - "../spikes/mcp-apps/notes.md#11-and-14-what-claude-code-tells-the-server"

@@ -1,0 +1,35 @@
+id: FND-01
+title: "Scaffold the repository, pin Node 24 and pnpm, and lay down the folder skeleton"
+area: FND
+phase: "0"
+summary: >
+  Turn the folder into a git repository with a package.json that pins the runtime and package manager
+  the spike used, install the runtime packages at the versions in 02, and create the folder skeleton
+  so every other area has a place for its code. Node is pinned to 24.21.0 because desktop's bundled
+  runtime reports that version and the server relies on node:sqlite. The spike's probes stay a
+  separate project under docs/ and are kept out of the root's tooling.
+requirements:
+  - "Initialise git; .gitignore lists node_modules/, dist/, coverage/, storybook-static/, test-results/, mcpb/server/ and *.mcpb"
+  - ".tool-versions contains `nodejs 24.21.0`; package.json engines.node is ^24.21.0 and packageManager is pnpm@11.13.1, as in anachoic's package.json"
+  - "pnpm-workspace.yaml has allowBuilds with esbuild true and no packages entry, so docs/spikes/mcp-apps/probes, which has its own pnpm-workspace.yaml and lockfile, is not part of the workspace"
+  - "package.json is private, type module, named anachoic-mcp-app, at version 0.0.0"
+  - "Install the runtime dependencies at the versions in 02: @modelcontextprotocol/server ^2.2.0, @modelcontextprotocol/ext-apps 2.0.3, zod ^4.6.5, react and react-dom ^19.3.0, lucide-react ^1.48.0, @fontsource/barlow and @fontsource/barlow-condensed ^5.3.0"
+  - "Install typescript ~6.0.3, @types/node ~26.6.2, @types/react and @types/react-dom ^19.3.0 as development dependencies. Do not install better-sqlite3 or any other native module"
+  - "Create the folders from 02: server/{tools,props,text}, domain/, store/migrations/, shared/, view/{components,css,entries/board,entries/task,bridge}, tests/{unit,integration,e2e}, todos/, each holding a placeholder file where git needs one"
+  - "tsconfig.json at the root covers server/, domain/, store/, shared/ and tests/ with strict on, module and moduleResolution NodeNext and target ES2024; view/tsconfig.json covers view/ and shared/ with the DOM lib and jsx react-jsx. Both exclude docs/"
+  - "Imports between top-level folders are relative paths with no aliases, so esbuild, Vite and Vitest need no alias configuration"
+acceptance_criteria:
+  - "`node -v` inside the repository with asdf reports v24.21.0, and `pnpm -v` reports 11.13.1"
+  - "`pnpm install --frozen-lockfile` succeeds on a clean clone and builds no native module"
+  - "`pnpm exec tsc --noEmit` and `pnpm exec tsc --noEmit -p view/tsconfig.json` pass on the skeleton"
+  - "`git status` after a build and a pack shows no files from dist/, mcpb/server/ or *.mcpb"
+  - "A file in docs/spikes/mcp-apps/probes is not type-checked by either tsconfig"
+depends_on: []
+external_dependencies:
+  - "asdf with nodejs 24.21.0, and pnpm 11.13.1 through corepack or asdf, on the developer's machine"
+docs:
+  - "02-stack-and-structure.md#versions"
+  - "02-stack-and-structure.md#folders"
+  - "04-persistence.md#the-data-directory"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/notes.md#where-and-with-what"

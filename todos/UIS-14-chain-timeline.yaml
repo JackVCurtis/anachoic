@@ -1,0 +1,39 @@
+id: UIS-14
+title: "ChainTimeline, TimelineStep and EventList"
+area: UIS
+phase: "3"
+summary: >
+  Build the task view's chain in view/components/task/ from anachoic's TaskDrawer documents, since
+  anachoic has not built these components. ChainTimeline is an ordered list of TimelineSteps on a
+  rail, one open at a time. Each step's panel shows what this app records: the claiming session,
+  the detail, the question and answer, the note, the summary and the links. EventList shows the
+  task's events in time order. The components are presentational and take fixture props.
+requirements:
+  - "ChainTimeline: a section-level SectionHeader, size sm, 'Handoff chain' as an h3 with a rule and the hint 'click a step to expand', then an ordered list of TimelineSteps keyed by step id. It is controlled: it takes openStepId and raises onToggleStep(stepId). Pressing a closed step opens it and closes the open one; pressing the open step closes it, leaving none open."
+  - "TimelineStep: a grid of --size-rail-column (20 px) then the rest, gap --space-4. A 13 px square marker 6 px from the top, and a 1 px line below every step, the last too, at least 12 px. The step column has --space-6 of padding below. The block is a Frame holding a Disclosure, padding --space-3 by --space-4, with no hover change."
+  - "The toggle is a button inside an h4, holding the header row (two-digit step number in text-mono-xs at --dim-3, OwnerChip md, the status label pushed right in text-status at --dim-1) over the title in text-title-2. It carries aria-expanded and aria-controls. The panel is its sibling, has no region role, and a click inside it does nothing to the step."
+  - "The look comes from the copied timelineAppearance(status, owner, isCurrent) in view/components/helpers/steps.ts: done; current agent running; current agent not yet claimed; current and waiting, of either owner, inverted with data-tone='inverse'; your current step not waiting; not started. An agent step's chip names its claiming session. A follow-up step looks like any other."
+  - "The status label comes from the copied stepStatusLabel: 'Done · 9m', 'Done', 'Running · 6m 12s' ticking each second from runningSince plus elapsedSeconds, 'Waiting on you · 14m' from waitingSince, 'Not started'. The clock is use_now with the host's time zone."
+  - "The panel shows, in this order and each only when present: 'Claimed by' and the session name, or 'Unclaimed' for a pending agent step; the step's detail; the question under 'Asks' and your answer; the latest note; the summary; the links. It has no session link, Unblock command, step actions, artifacts or transcript (01 what is dropped)."
+  - "Links follow anachoic's ArtifactList link row: the label is an anchor showing the url as its title, underlined with a 3 px offset, inheriting its colour, followed by an aria-hidden ↗ and hidden 'opens in a new tab'. A press raises onOpenLink(url) and prevents the default; the entry opens it through the host (MCP-13)."
+  - "EventList: an ordered list of the task's events, oldest first, under a section-level SectionHeader 'Events' as an h3. Each row is a grid of 62 px then the rest, gap --space-3, body 12 px, line height 1.45: the time from formatEventTime in text-mono-xs at --dim-4, right-aligned; then the kind's word from the strings catalogue at weight 500, the step number when the event names a step, who caused it (a session name or 'you'), and the detail at --dim-3."
+  - "Component props are declared in the components' own terms; the task view's entry maps from shared/props.ts. No component imports view/bridge/ or @modelcontextprotocol/*."
+acceptance_criteria:
+  - "ui suite (required, anachoic ui/19): opening one step closes the other; pressing the open step closes it, leaving none open."
+  - "ui suite: a running step's label ticks when the fixed clock advances by one second; a waiting step reads 'Waiting on you' with its waited time."
+  - "ui suite: pressing a link raises onOpenLink with its url and does not navigate; the arrow is hidden from the accessibility tree."
+  - "ui suite: a click in a step's panel does not toggle the step."
+  - "Stories: every appearance on one chain, a 12-step chain, a done chain with none open, a waiting agent step with a 2,000-character question and its answer, a step with 10 links, and an event list with a day word; every story passes the axe check on light and inverted blocks."
+depends_on:
+  - "UIP-04"
+  - "MCP-08"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-built-here-from-anachoics-documents"
+  - "03-domain-model.md#step"
+  - "06-tools-and-views.md#views"
+  - "anachoic:ui/13-components-task-drawer.md#chaintimeline"
+  - "anachoic:ui/13-components-task-drawer.md#timelinestep"
+  - "anachoic:ui/13-components-task-drawer.md#eventlist"
+  - "anachoic:ui/13-components-task-drawer.md#artifactlist"
+  - "anachoic:ui/16-accessibility.md#accordion"

@@ -1,0 +1,42 @@
+id: DOM-02
+title: "Task and step state machines, invariants and derived facts as pure functions"
+area: DOM
+phase: "1"
+summary: >
+  Implement the task and step state machines of 03 in domain/ as pure functions over one task and its
+  chain. They are built from 03 and anachoic app/04, not copied, because anachoic has not built its
+  state machine. Each transition returns the new task and steps, the queue effect for the store to
+  apply, and the events to record, or a Refusal. Add the invariant checker and the derived facts the
+  board props are built from.
+requirements:
+  - "currentStep: the first step that is not done, else the last"
+  - "Transitions in domain/transitions.ts, one function each: add, addToQueue, queue, reorder, claim, start (your step, automatic), note, ask, answer, completeStep (agent), completeMyStep (your step), park, release, signOff, followUp and archive, with who may call each as in 03's table; move_to_backlog on a queued task is the queue to backlog move that 06 describes"
+  - "Each transition returns the changed task and steps, a queue effect (join first, join last, move to a position, leave, or none) and the events to append; queue positions themselves are applied by the store with DOM-03's functions"
+  - "Complete the current step has the three outcomes of 03: no next step makes the task done with finishedAt; a next agent step sends the task to the queue at position 1 and leaves the step pending; your next step keeps the task active and sets that step waiting with waitingSince"
+  - "Add to queue, queue and follow-up start the task at once when the first or current step is yours (Start): the task becomes active and your step waiting, and it never passes through the queue"
+  - "ask sets running to waiting with the question; answer sets waiting to running, stores the answer and clears the question; an agent step that is waiting cannot be completed (unanswered) and is never marked done by you"
+  - "park and release return the current step to pending, clear claimedBy, question and answer, and close the open interval; park sends the task to the backlog, release to the queue at position 1"
+  - "archive leaves the status unchanged, sets archivedAt, clears any claim as park does, and leaves the queue; sign off and follow-up refuse a signed-off task with signed_off, and every transition refuses an archived task with archived"
+  - "Time: running time closes into elapsedSeconds for an agent step and waiting time into waitedSeconds; your step's waiting time closes into elapsedSeconds; runningSince and waitingSince mark the open interval"
+  - "Refusals carry the codes and sentences of 03 through builders in domain/refusal.ts, using formatTaskId for the task and the claiming session's name for not_yours"
+  - "domain/invariants.ts: checkTask asserts invariants 1 to 8 and 10 on one task, and checkBoard adds invariant 9 over every queued task; archived tasks are checked only for invariant 8"
+  - "domain/derived.ts: list membership, current step, claimed by (with the session's name and liveness passed in), canAct for each action the views offer, agent seconds and your seconds as anachoic sums them, the four counts and each live session's activity"
+acceptance_criteria:
+  - "Unit suite: every row of 03's task and step tables, allowed and refused, with the refusal code and sentence checked"
+  - "Unit suite, generated: for every chain of 1 to 3 steps with every mix of owners, every transition is applied from every reachable state, and checkTask passes after each one"
+  - "Unit suite: completing a step whose next step is yours leaves the task active and returns no queue effect; completing one whose next step is an agent's returns join first"
+  - "Unit suite: a park and later restart of your step does not count backlog time in elapsedSeconds, and an answered question counts its wait in waitedSeconds"
+  - "Unit suite: each list rule of 03, and every non-archived task is in exactly one list"
+  - "Unit suite: canAct is true exactly when the matching transition would succeed, checked by applying it"
+depends_on:
+  - "DOM-01"
+external_dependencies: []
+docs:
+  - "03-domain-model.md#the-current-step"
+  - "03-domain-model.md#invariants"
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#the-step-state-machine"
+  - "03-domain-model.md#what-you-can-do-with-a-waiting-step"
+  - "03-domain-model.md#derived-facts"
+  - "03-domain-model.md#refusals"
+  - "anachoic:app/04-domain-model.md#time-on-a-step"

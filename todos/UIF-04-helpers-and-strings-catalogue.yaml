@@ -1,0 +1,41 @@
+id: UIF-04
+title: "Copy the presentation helpers and write the strings catalogue for this app"
+area: UIF
+phase: "0"
+summary: >
+  Copy anachoic's small pure presentation helpers into view/components/helpers/ with their tests,
+  removing what this app has no use for: repos, tmux sessions, workflows, the cap and approval.
+  Write a new strings.ts for this app's screens, keeping anachoic's fillTemplate and its content
+  rules. Ends with every word the views show coming from one catalogue, and every plural,
+  duration, pip summary and queue move announcement coming from a tested helper.
+requirements:
+  - "Copy anachoic inertia/components/helpers/words.ts with plural, padStep, joinFacts and splitFacts; repoLabel and RepoLabelForm are removed"
+  - "Copy helpers/time.ts; formatDuration, formatElapsed and formatWaited are unchanged; formatFinished and formatEventTime take an optional timeZone and work out the calendar day and clock time in it (Intl.DateTimeFormat parts), using the browser's zone when it is absent"
+  - "Copy helpers/steps.ts with ownerLabel, stepCounter, pipAppearance, pipTitle, pipSummary, stepStatusLabel, timelineAppearance, chainNote and ChainPreviewRow; the agent name parameter becomes the session name and 'human' becomes 'you'; sessionLabel, SESSION_ARROW, WorkflowStep and followUpPreview are removed"
+  - "Copy helpers/announcement.ts with the facts your-turn (title) and sign-off (title); needsApproval and the paused and resumed facts are removed"
+  - "Copy helpers/messages.ts unchanged; copy helpers/constants.ts keeping COPIED_MS, FLASH_MS and DRAG_START_PX, removing CAP_MIN, CAP_MAX, CHAT_STICK_PX, PICKER_PER_ROW, DRAG_EDGE_PX and CUSTOM_WORKFLOW_ID, and adding FOLD_AFTER = 8 for sections that fold"
+  - "Copy movedOrder, QueueMove, moveAnnouncement, MoveMoment and queuePosition from helpers/board_rail.ts into view/components/helpers/queue.ts, with their tests from board_rail.test.ts; nothing else from board_rail.ts is copied"
+  - "Write view/components/helpers/strings.ts with groups boardHeader, taskEntry, yourTurn, sessions, working, queue, backlog, done, taskView, message, times and assistive; Placeholders and fillTemplate are copied unchanged, and times is copied unchanged"
+  - "The catalogue holds the new words from 07: 'Session', 'This chat', 'Claimed by', 'Unclaimed', 'Idle', 'Asks', 'Answer' and 'Released'; and the board header's counts (Your turn, Working, Queue, To sign off), 'Updated' and 'Can't reach the board'"
+  - "assistive keeps the pip summary strings, the move strings (moveDescription, moveLifted, moveMoved, moveDropped, moveCancelled, moveLeftQueue), waitingOnYou and waitingForSignOff; the strings for the cap, the chat composer, approval, the unblock command and pausing are removed"
+  - "Strings follow anachoic's content rules: sentence case, exact symbols, no full stops except in confirmations and announcements, plurals through plural, never 'user' or 'human', buttons that are verbs, and 'Cancel' only for closing something"
+  - "Helpers import only types.ts and each other, never React or a component; each copied file and test carries its provenance comment with fd99e0d"
+acceptance_criteria:
+  - "ui suite: the copied tests for words, time, steps, announcement, messages, constants and queue pass, edited only where a helper was removed or renamed"
+  - "ui suite: the time tests also run in the time-los-angeles and time-kolkata projects; with timeZone 'Asia/Kolkata' given, formatEventTime and formatFinished return the same text in every project"
+  - "ui suite: a strings test fails when any catalogue string contains three full stops, '!', 'please', 'user' or 'human', or is fully uppercase"
+  - "ui suite: a strings test finds every new word listed in 07's Content section in the catalogue, and the fillTemplate tests copied from strings.test.ts pass"
+  - "`grep -rE 'repoLabel|sessionLabel|followUpPreview|CAP_MAX|workflows' view/components/helpers` returns nothing"
+depends_on:
+  - "UIF-03"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#content"
+  - "07-ui-port.md#what-is-copied"
+  - "07-ui-port.md#layout"
+  - "anachoic:ui/17-content-rules.md#rules"
+  - "anachoic:ui/18-presentation-helpers.md#time"
+  - "anachoic:ui/18-presentation-helpers.md#steps-and-chains"
+  - "anachoic:ui/18-presentation-helpers.md#constants"
+  - "anachoic:ui/16-accessibility.md#a-list-that-can-be-reordered"

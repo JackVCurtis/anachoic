@@ -1,0 +1,32 @@
+id: DOM-03
+title: "Copy the queue order rules and adapt them to front-of-queue placement"
+area: DOM
+phase: "1"
+summary: >
+  Copy anachoic's pure queue order functions and their tests, then adapt the copy to this app's rule
+  that a task coming back to the queue goes to the front. The functions renumber the queue for every
+  way a task joins, moves within or leaves it, so positions are always 1 to n with no gap and no
+  repeat. The store applies their result in one transaction.
+requirements:
+  - "Copy anachoic app/domain/queue_order.ts to domain/queue_order.ts with the provenance line '// Copied from anachoic app/domain/queue_order.ts at fd99e0d'"
+  - "Keep QueueOrder, QueueOrderError, isContiguous, inLine, joinBack, joinFront, move and leave with their behaviour unchanged, including that a position beyond the end means the last place"
+  - "Add join(order, taskId, placement) where placement is 'first' or 'last', the two values add_follow_up accepts"
+  - "Rewrite the module's doc comment to state where a task joins here: added to the queue or queued from the backlog joins last; a completed step whose next step is an agent's joins first; a released task joins first; a follow-up joins first or last as asked"
+  - "Keep the functions pure, taking and returning plain data, so DOM-02's queue effects and DOM-06's services can apply them"
+  - "Port anachoic tests/unit/domain/queue_order.spec.ts from Japa to Vitest as tests/unit/domain/queue_order.test.ts, with the same provenance line"
+acceptance_criteria:
+  - "Unit suite: the ported tests pass: join at back, join at front, move up, move down, move to the same place, move beyond the end, and leave from the front, middle and back"
+  - "Unit suite: join with 'first' and 'last' matches joinFront and joinBack, and a task already queued is refused with QueueOrderError"
+  - "Unit suite, property: after any sequence of join, move and leave on random queues, isContiguous holds"
+  - "Both copied files start with the provenance line, and pnpm lint passes with domain/queue_order.ts importing nothing"
+depends_on:
+  - "DOM-01"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, for app/domain/queue_order.ts and tests/unit/domain/queue_order.spec.ts"
+docs:
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#invariants"
+  - "10-open-questions.md#choices-these-documents-make"
+  - "02-stack-and-structure.md#copied-files"
+  - "anachoic:app/05-persistence.md#the-queues-order-is-stored"
+  - "anachoic:app/09-scheduler.md#where-a-task-joins"

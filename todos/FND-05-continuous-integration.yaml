@@ -1,0 +1,33 @@
+id: FND-05
+title: "Add CI that typechecks, lints, tests and builds"
+area: FND
+phase: "0"
+summary: >
+  Add a GitHub Actions workflow, adapted from anachoic's .github/workflows/ci.yml, that installs with
+  the frozen lockfile, typechecks, lints, builds and runs every suite on Node 24.21.0. It drops
+  anachoic's tmux, git and AdonisJS steps, and keeps its Playwright caching. It runs on macOS, where
+  the extension runs, and on Linux, where the data directory falls back to XDG_DATA_HOME. Neither
+  Claude desktop nor Claude Code is installed in CI, so the manual desktop check stays manual.
+requirements:
+  - "Create .github/workflows/ci.yml, triggered on push to main and on pull requests, with a concurrency group per ref that cancels in progress, permissions contents read, and a 30-minute timeout"
+  - "Matrix of ubuntu-latest and macos-latest with fail-fast off"
+  - "Steps: actions/checkout@v5, pnpm/action-setup@v4, actions/setup-node@v5 with node-version-file .tool-versions and the pnpm cache keyed on pnpm-lock.yaml, then `pnpm install --frozen-lockfile`"
+  - "Restore Playwright's browsers from a cache keyed on the OS, architecture and lockfile, install Chromium on a miss, and install Chromium's system libraries on Linux, as anachoic's workflow does"
+  - "Then in order: `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test:unit`, `pnpm test:ui`, `pnpm test:integration`, `pnpm test:e2e`"
+  - "Fail if the claude command is installed on the runner, as anachoic's workflow does, so no test can reach a real Claude client"
+  - "Suites added by later todos run in CI without editing the workflow, because it calls only the package scripts"
+acceptance_criteria:
+  - "The workflow passes on both runners on the scaffolded repository"
+  - "A pull request with a lint error, a type error or a failing unit test fails CI"
+  - "A story with an axe violation fails CI in the test:ui step"
+  - "A second run with an unchanged lockfile restores Playwright's Chromium from the cache"
+depends_on:
+  - "FND-04"
+external_dependencies:
+  - "A GitHub repository with Actions enabled"
+docs:
+  - "09-testing-and-build-order.md#test-suites"
+  - "09-testing-and-build-order.md#the-manual-desktop-check"
+  - "02-stack-and-structure.md#scripts"
+  - "04-persistence.md#the-data-directory"
+  - "anachoic:app/16-testing-strategy.md#ci"

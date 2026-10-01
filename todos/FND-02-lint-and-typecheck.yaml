@@ -1,0 +1,37 @@
+id: FND-02
+title: "Lint and typecheck with the copied component layer rules and the folder dependency rules"
+area: FND
+phase: "0"
+summary: >
+  Set up ESLint and the typecheck script. The component layer rules are copied from anachoic and
+  pointed at view/components/, and the import bans that kept anachoic's components free of Inertia and
+  server code become bans on the MCP SDK, the host bridge and the view entries. New rules enforce the
+  folder dependency direction from 02, keep domain/ pure, and stop anything in server/ or store/ from
+  writing to stdout, which carries the protocol.
+requirements:
+  - "Install eslint ^10.11.0, eslint-plugin-react ^7.37.5, eslint-plugin-react-hooks ^7.1.1, @adonisjs/eslint-config ^3.1.0 and @adonisjs/prettier-config ^1.5.0, and build eslint.config.js on configApp and its react preset as anachoic's eslint.config.js does"
+  - "Copy anachoic eslint/component_rules.js to eslint/component_rules.js with the provenance comment `// Copied from anachoic eslint/component_rules.js at fd99e0d`; change only where it finds the library (view/components/ instead of inertia/components/) and SCREEN_FOLDERS to board and task. Its rules layers, no-barrel-files and callback-prop-names are errors"
+  - "Copy anachoic's COMPONENT_IMPORT_RESTRICTIONS, DRAG_AND_DROP_PACKAGES and LUCIDE_RESTRICTION into eslint.config.js with the same comment, replacing the Inertia, page, layout and server bans with: no @modelcontextprotocol/*, no view/bridge/, no view/entries/, and no shared/, server/, domain/ or store/ from view/components/"
+  - "lucide-react may be imported only by view/components/primitives/icon/icon.tsx"
+  - "Folder rules: view/ imports only view/ and shared/; server/ imports domain/, store/ and shared/ but never view/; store/ imports domain/ and shared/; domain/ imports only domain/ and shared/ and no node:* module; shared/ imports only shared/"
+  - "console.log, console.info and console.debug are errors in server/ and store/, because they write to stdout; logging goes through the logger"
+  - "docs/, dist/, mcpb/ and storybook-static/ are ignored by lint"
+  - "Scripts: lint runs `eslint .`; typecheck runs tsc --noEmit on the root tsconfig.json and on view/tsconfig.json, and fails if either fails"
+acceptance_criteria:
+  - "Each of these, fed to `pnpm exec eslint --stdin --stdin-filename <path>` at a path in the named folder, fails: @modelcontextprotocol/ext-apps imported in view/components/, view/bridge/ imported by a primitive, a pattern imported by a primitive, an index.ts barrel in view/components/, lucide-react outside the Icon primitive, store/ imported in domain/, node:fs imported in domain/, server/ imported in view/, and console.log in server/"
+  - "Fed the same way, view/entries/board/main.tsx importing view/bridge/ and shared/, and server/ importing domain/ and store/, pass"
+  - "A type error in view/ fails `pnpm typecheck` even when the root compiles, and the reverse"
+  - "`pnpm lint` and `pnpm typecheck` pass on the skeleton"
+  - "eslint/component_rules.js starts with the provenance comment naming anachoic commit fd99e0d"
+depends_on:
+  - "FND-01"
+external_dependencies:
+  - "The anachoic repository at commit fd99e0d, as the source of eslint/component_rules.js and eslint.config.js"
+docs:
+  - "09-testing-and-build-order.md#lint"
+  - "02-stack-and-structure.md#folders"
+  - "02-stack-and-structure.md#copied-files"
+  - "07-ui-port.md#what-is-copied"
+  - "08-packaging-and-hosts.md#logs"
+  - "anachoic:ui/19-organization-and-testing.md#dependency-rules"
+  - "anachoic:ui/19-organization-and-testing.md#no-barrel-files"

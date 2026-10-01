@@ -1,0 +1,13 @@
+@font-face {
+  font-family: ProbeCssData;
+  src: url('@fontsource/barlow/files/barlow-latin-400-normal.woff2') format('woff2');
+}
+body { margin: 0; font: 13px/1.4 system-ui, sans-serif; background: #f2f2f3; color: #1d1f20; }
+main { padding: 12px 16px; display: grid; gap: 12px; }
+h1 { font-size: 16px; margin: 0; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 6px; }
+.sample { font-size: 18px; margin: 2px 0; }
+#host-font-sample { font-family: var(--font-sans, monospace); }
+.buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; padding: 4px 10px; border: 1px solid #5980a6; background: #fff; color: #1d1f20; cursor: pointer; }
+pre { margin: 0; max-height: 220px; overflow: auto; background: #fff; padding: 8px; font-size: 11px; white-space: pre-wrap; word-break: break-all; }

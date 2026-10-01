@@ -1,0 +1,41 @@
+id: DOM-06
+title: "Board services with refusals and the event log"
+area: DOM
+phase: "1"
+summary: >
+  Write the services in store/ that every tool calls to change the board. Each is one write: it reads
+  the rows involved, applies DOM-02's transition and DOM-03's queue order, writes the rows, appends
+  the events and bumps the revision, or refuses and changes nothing. Add the reads the tools and props
+  need, and the generated test that runs the invariants after every operation on a real database.
+requirements:
+  - "store/services.ts has one function per action: addTask (Add, or Add to queue), queueTask, reorderQueue, claimStep (with or without a task), updateStep, askYou, answerQuestion, completeStep, completeMyStep, moveToBacklog (park an active task, or unqueue a queued one), signOff, addFollowUp and archiveTask"
+  - "Each service takes the actor (you, or a session id) and 'now', and returns either its result and the new revision, or a Refusal; a refusal rolls the transaction back"
+  - "Inputs are checked against shared/limits.ts before anything is read, refusing with invalid and a sentence that names the field and its limit; an unknown task or step is not_found"
+  - "addTask issues the task number from board.next_task_number and increments it, so a number is never reused; createdBy is the session id or 'you'"
+  - "claimStep with no task claims the current agent step of the task at queue position 1, or refuses nothing_to_claim; with a task it claims that queued task's current agent step wherever it sits, or refuses wrong_status; two claims can never take the same step"
+  - "Worker services (updateStep, askYou, completeStep) act only on the current step claimed by the calling session; any other caller is refused not_yours, and a step whose claim ended is refused archived or wrong_status with a sentence that says why"
+  - "collectAnswer(task, session) returns the stored answer and clears it, or reports that the claim ended because the task was parked or archived; readAnswerState is the read-only check wait_for_answer polls"
+  - "Every change appends the events its transition returns, with taskId, stepId, the session id or 'you', the kind, a short detail and the time; answered is recorded when you answer"
+  - "store/queries.ts reads the board in one snapshot for the props (tasks not archived, their steps, sessions, the 10 most recently signed-off tasks and the revision), one task with its events, and the revision alone"
+  - "No service holds the transaction across an await; each runs synchronously inside DOM-04's write helper"
+acceptance_criteria:
+  - "Unit suite, temporary database: each service's allowed path and each refusal in 03's table, with the rows and the revision unchanged after a refusal"
+  - "Unit suite: complete_step with a next agent step puts the task at queue position 1 ahead of older queued tasks, and the same session can claim it at once by naming the task"
+  - "Unit suite, generated in the style of anachoic DOM-08: several hundred random operations by you and three sessions from an empty board, across several seeds, with checkBoard run on the database after each and the seed and sequence printed on failure"
+  - "Unit suite, several processes: two forked processes call claimStep on the same queued task at once; exactly one wins and the other gets nothing_to_claim or wrong_status"
+  - "Unit suite: every service appends exactly the events of its transition, and the task's events read back in order"
+  - "Unit suite: collectAnswer returns the answer once, and reports the end of the claim after a park or an archive"
+depends_on:
+  - "DOM-02"
+  - "DOM-03"
+  - "DOM-05"
+external_dependencies: []
+docs:
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#event"
+  - "03-domain-model.md#refusals"
+  - "04-persistence.md#writing"
+  - "05-sessions.md#claiming"
+  - "05-sessions.md#waiting-for-your-answer"
+  - "06-tools-and-views.md#worker-tools"
+  - "09-testing-and-build-order.md#what-must-have-a-test"

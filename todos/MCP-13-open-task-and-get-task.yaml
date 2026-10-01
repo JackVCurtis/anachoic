@@ -1,0 +1,38 @@
+id: MCP-13
+title: "open_task and get_task, fullscreen and links"
+area: MCP
+phase: "3"
+summary: >
+  Add the view tool open_task, which shows one task in the task view at ui://anachoic/task.html, and
+  the app-only get_task that the task view and the board's task panel fetch from. Build the task props
+  and the task's full text result. Wire the task entry to fetch on connect, ask for fullscreen when the
+  host offers it with a way back inline, and open step links through the host. The phase ends with
+  Claude able to open any task in desktop chat, inline or in full screen.
+requirements:
+  - "Register the ui://anachoic/task.html resource with registerAppResource, served as text/html;profile=mcp-app with _meta.ui.prefersBorder true and no CSP domains, reading dist/views/task.html"
+  - "Register open_task with registerAppTool and _meta.ui.resourceUri ui://anachoic/task.html; input task as 'T-012' or 12; structuredContent is the task props"
+  - "open_task's text gives the task in full: every step with its status, session, question, answer, note, summary and links, and the last 10 events; it is capped at 8,000 tokens by dropping the oldest events first"
+  - "Register get_task(task, sinceRevision?) as an app-only tool with visibility ['app'], returning {changed: false, revision} when the board has not changed since sinceRevision, else the task props, or a refusal such as not_found or archived"
+  - "Define the task props in shared/props.ts and build them in server/props/: the task, every step in full, its events, its derived times (agent and your seconds, open interval starts) and canAct for each action the task view offers"
+  - "The task entry draws nothing from the replayed tool result except the task id, then fetches get_task, as the board entry does with get_board"
+  - "When availableDisplayModes in the host context includes fullscreen, the task view asks for it with requestDisplayMode and offers a control to return inline; when it does not, it stays inline"
+  - "Step links open through the host's openLink request, not through a plain anchor navigation"
+acceptance_criteria:
+  - "Unit suite: the task text for a task with many events stays under 8,000 tokens and drops the oldest events first, keeping every step"
+  - "Integration suite: open_task on 'T-012', on 'T-12' and on 12 returns the same result; on a missing task it returns isError with 'T-012 does not exist'; get_task is absent from the model's tools/list"
+  - "UI suite: with a fake App whose replayed result names an old revision, the task view draws from get_task; with fullscreen available it requests it, and its return control requests inline"
+  - "E2e suite in the reference host: open_task renders the task view, and a step link calls openLink with its url"
+  - "Manual desktop check: open_task in desktop chat shows the task, goes full screen and returns inline"
+depends_on:
+  - "MCP-08"
+  - "UIS-15"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#view-tools"
+  - "06-tools-and-views.md#task-props"
+  - "06-tools-and-views.md#views"
+  - "06-tools-and-views.md#how-a-view-connects"
+  - "06-tools-and-views.md#text-results"
+  - "07-ui-port.md#the-host-bridge"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"

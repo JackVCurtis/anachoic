@@ -1,0 +1,39 @@
+id: UIS-15
+title: "TaskView and the task panel inside the board"
+area: UIS
+phase: "3"
+summary: >
+  Build TaskView, one task in one column, and use it in two places: the task entry
+  (view/entries/task/), which open_task renders, and a task panel that the board swaps to inside the
+  same iframe when you open a task. TaskView adapts anachoic's DrawerHeader and the drawer's
+  open-step rule. It offers fullscreen when the host has it and a way back inline. It ends with
+  every card's title opening its task, drawn from fixture props and a fake App until MCP-13 adds
+  the real tools.
+requirements:
+  - "TaskView in view/components/task/: a header, then the message region, then ChainTimeline, then EventList (UIS-14), in one column with no inner scroll region, padded --space-6 at the sides and --space-4 top and bottom, respecting larger safeAreaInsets."
+  - "The header adapts DrawerHeader: a meta row of StatusBadge for the task's list, the display id in text-mono-xs and the step label ('Step 3 of 5', or 'All 3 steps done'), over the title as an h2 in text-title-panel, which is focusable by script (tabindex -1). Below it a MetaLine with the step counts and the agent and your times from formatDuration. The title cannot be edited."
+  - "Display controls, raised as events: 'Open in full screen' when availableDisplayModes includes fullscreen and the mode is inline; 'Back to inline' while in fullscreen. In the board's panel there is also 'Back to board'. Labels come from the strings catalogue."
+  - "The open step is kept in TaskView by step id: the current step when the task is not done, none when it is done. While you have not pressed a step it follows the chain to the new current step; once you press one, your choice stays until the view shows another task. The view opens scrolled to the top."
+  - "The board entry: pressing a card's title calls get_task through view/bridge/tools.ts and swaps BoardView for TaskView in the same iframe. While it loads, the header shows what the card knew and the body a BusyIndicator. 'Back to board' swaps back and fetches the board. Focus goes to the task title on open; on return, to the card that opened it, else its section header, else BoardHeader's heading."
+  - "The task entry: connects through the bridge, takes only the task id from the replayed tool result, and draws from get_task (06 how a view connects). Its display-control events are wired to the bridge's requestDisplayMode; asking for fullscreen on connect, and the real get_task and open_task, are MCP-13's."
+  - "Both places stay live: they poll get_task(task, sinceRevision) through board_source.ts, which answers changed: false until the board's revision moves (06 app-only tools). A task that has become archived shows the refusal's sentence in place of the chain."
+  - "A context change that carries only containerDimensions never changes the view's height, in either display mode."
+acceptance_criteria:
+  - "ui suite (required, anachoic ui/19): the view opens on the current step; when the props advance the chain the open step follows, until a step is pressed, after which it stays."
+  - "ui suite, board entry with a fake App: pressing a card title calls get_task and shows TaskView; 'Back to board' restores the board and returns focus to the card, or to its section header when the card is gone."
+  - "ui suite, task entry with a fake App: it draws from get_task and not from the replayed result; 'Open in full screen' raises a fullscreen request and is absent when fullscreen is not offered; a dimensions-only context change leaves the height unchanged."
+  - "Stories: TaskView inline at 735 px, in fullscreen, loading, done, archived, and at 600 px; every story passes the axe check."
+  - "e2e suite: in the reference host, opening a task from the board and returning shows the board again with the same revision."
+depends_on:
+  - "UIS-14"
+  - "UIF-05"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#views"
+  - "06-tools-and-views.md#how-a-view-connects"
+  - "07-ui-port.md#layout"
+  - "07-ui-port.md#the-host-bridge"
+  - "anachoic:ui/13-components-task-drawer.md#drawerheader"
+  - "anachoic:ui/15-interaction-and-state.md#the-drawer-opens-on-the-current-step"
+  - "anachoic:ui/16-accessibility.md#task-drawer"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

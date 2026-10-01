@@ -1,0 +1,43 @@
+id: UIS-07
+title: "Live board - fetch on connect, poll by revision, back off and show the updated cue"
+area: UIS
+phase: "1"
+summary: >
+  Make the board live between turns. view/bridge/board_source.ts fetches the board on connect, polls
+  get_board with the last revision every 3 s, redraws only when the revision changed, backs off after
+  errors with the 'Can't reach the board' line, and takes fresh props from a write's result. The board
+  stays steady while tasks move: items keyed by id, focus rescued when a focused card leaves, and a
+  polite announcement when something arrives in Your turn.
+requirements:
+  - "board_source.ts (view/bridge/) owns the board's props for the entry: on connect it calls get_board through tools.ts and draws the result, never the replayed tool result; the view then calls get_board(sinceRevision) every 3 s"
+  - "A result of {changed: false} changes nothing on screen; props with a newer revision replace the board; props with an older or equal revision than the one drawn are ignored, so a slow poll never undoes a write"
+  - "After an error the next poll waits 10 s, then 30 s, then 60 s, and stays at 60 s; BoardHeader shows 'Can't reach the board' from the first error until a poll succeeds, which restores the 3 s interval"
+  - "It exposes a way for a write's result to replace the props and reset the poll timer, which MCP-10's callers use"
+  - "The 'Updated' cue: when a poll brings a newer revision, BoardHeader shows 'Updated' with how long ago, worded by the copied time helpers and ticking each minute; it takes no focus and is not announced"
+  - "A context change carrying only containerDimensions never causes a redraw (bridge rule from UIF-05); a redraw from a poll that finds nothing changed leaves the DOM untouched"
+  - "When a poll brings a task into Your turn that was not there, BoardView's polite live region says so, using the copied announcement helper adapted for this app's two kinds of card"
+  - "Every list is keyed by task or session id; if the card holding keyboard focus leaves its list on an update, focus moves to that list's section header; an update never scrolls"
+  - "Timers keep running while the view is off screen; nothing is kept in the view that must survive a rebuild"
+acceptance_criteria:
+  - "ui suite, with a fake App: the board draws from get_board and not from the replayed result's props"
+  - "ui suite: a poll returning {changed: false} causes no render of BoardView; a poll with a newer revision does"
+  - "ui suite with fake timers: after a failed poll the next comes at 10 s, then 30 s; 'Can't reach the board' shows until a poll succeeds, then polling returns to 3 s"
+  - "ui suite: a stale poll result with a lower revision than a write's result is ignored"
+  - "ui suite: removing a focused Your turn card from the props moves focus to the 'Your turn' header"
+  - "ui suite: the view's height is unchanged after a dimensions-only host context change"
+  - "Manual desktop check: with the board open, a worker's claim_step in Claude Code shows on the board within 5 s"
+depends_on:
+  - "MCP-08"
+  - "UIF-05"
+external_dependencies:
+  - "Claude desktop 2.16120.0 or later, for the manual desktop check"
+  - "Claude Code 2.1.285 or later, as the worker in the manual desktop check"
+docs:
+  - "06-tools-and-views.md#polling"
+  - "06-tools-and-views.md#how-a-view-connects"
+  - "06-tools-and-views.md#how-long-a-view-lives"
+  - "07-ui-port.md#the-host-bridge"
+  - "09-testing-and-build-order.md#the-manual-desktop-check"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "anachoic:ui/15-interaction-and-state.md#realtime-updates"
+  - "anachoic:ui/16-accessibility.md#live-regions"

@@ -1,0 +1,40 @@
+id: MCP-04
+title: "Server skeleton - stdio and --http, view resources, data directory, logger and signals"
+area: MCP
+phase: "0"
+summary: >
+  Turn the probe server into the real server's entry: an McpServer on stdio by default, or Streamable
+  HTTP on 127.0.0.1:3001 with --http for the reference host, serving each view as a ui:// resource
+  from the HTML built beside it. It resolves the data directory without relying on HOME or the working
+  directory, logs JSON lines to stderr and a daily file without ever logging the environment, and
+  exits cleanly. It registers no tools yet.
+requirements:
+  - "server/main.ts creates the McpServer named anachoic with the package version and connects StdioServerTransport, as docs/spikes/mcp-apps/probes/server.ts does; stdout carries only the protocol"
+  - "With --http it serves POST /mcp through createMcpExpressApp and a stateless NodeStreamableHTTPServerTransport with cors, one server per request, listening on 127.0.0.1:3001, as the probe's --http branch does"
+  - "registerAppResource registers ui://anachoic/board.html and ui://anachoic/task.html with mimeType RESOURCE_MIME_TYPE (text/html;profile=mcp-app); each read returns the file from views/ beside server.js, with _meta.ui.prefersBorder true and no csp"
+  - "server/data_directory.ts uses ANACHOIC_DATA_DIR when set, else ~/Library/Application Support/Anachoic MCP on macOS or $XDG_DATA_HOME/anachoic-mcp elsewhere, finding the home directory from the user database rather than HOME; it creates the directory and logs/ with mode 0700"
+  - "If ANACHOIC_DATA_DIR is unset and the platform default cannot be resolved, the server writes the reason to stderr and exits with a non-zero code before connecting"
+  - "server/logger.ts writes JSON lines with the time, pid, session id when known, an event name and fields, to stderr and to logs/server-YYYY-MM-DD.log; it never logs the environment, and truncates question, answer and note fields to 80 characters"
+  - "The server logs start (Node version, pid, transport, data directory), initialized (the client's name and version) and exit"
+  - "SIGINT, SIGTERM and the end of stdin close the transport, stop every timer and exit with code 0"
+  - "server/results.ts holds the result helpers every tool uses: a text result with one text block, a refusal result with isError true and the refusal's sentence, and a wrapper that turns an unexpected exception into 'Something went wrong. Details are in the server log.' with the stack written to the log"
+acceptance_criteria:
+  - "Integration suite: the built server, driven by @modelcontextprotocol/client over stdio with an empty environment apart from ANACHOIC_DATA_DIR and cwd set to /, lists both ui:// resources and reads each as text/html;profile=mcp-app with prefersBorder true"
+  - "Integration suite: the server writes nothing but protocol messages to stdout, and its log file under the data directory holds start, initialized and exit lines with no environment variables in them"
+  - "Integration suite: the server exits with code 0 on SIGTERM and on the end of stdin"
+  - "Unit suite: the data directory resolves from ANACHOIC_DATA_DIR, from the platform default with HOME unset, and refuses when neither resolves; the directory is created with mode 0700"
+  - "Unit suite: an unexpected exception in a wrapped handler returns the fixed sentence with isError true and logs the stack"
+  - "Manual: pnpm build && node dist/server.js --http serves http://127.0.0.1:3001/mcp, which the reference host connects to"
+depends_on:
+  - "MCP-01"
+  - "FND-03"
+external_dependencies: []
+docs:
+  - "04-persistence.md#the-data-directory"
+  - "06-tools-and-views.md#views"
+  - "06-tools-and-views.md#errors"
+  - "08-packaging-and-hosts.md#logs"
+  - "08-packaging-and-hosts.md#development-loop"
+  - "05-sessions.md#liveness"
+  - "../spikes/mcp-apps/notes.md#3-sdk-view-and-build-pipeline"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"

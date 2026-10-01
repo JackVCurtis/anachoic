@@ -1,0 +1,45 @@
+id: UIS-12
+title: "Card actions - sign off, follow-up and archive from Done, and move to backlog and archive from Queue and Backlog"
+area: UIS
+phase: "2"
+summary: >
+  Give each SignOffCard in the Done section its three actions, adapted from anachoic's SignOffCard,
+  FollowUpComposer and PlacementField without workflows or repos. Sign off confirms a finished task.
+  Follow-up appends a short chain of steps and sends the task back to the queue, at the front or the
+  back. Archive abandons it after a confirmation. Each action calls its app-only tool and posts its
+  sentence to the dedicated session. The same todo wires the remaining card actions on the Queue and
+  Backlog cards: move a queued task back to the backlog, and archive a backlog task.
+requirements:
+  - "SignOffCard (UIS-06) gains an actions row: Button primary 'Sign off', Button secondary 'Follow up', and Button ghost 'Archive'. Each is drawn only when canAct.signOff, canAct.followUp or canAct.archive is true. Sign off reports onSignOff(taskId) at once."
+  - "Follow up opens a FollowUpComposer in place of the actions row: a Frame with fill tint and emphasis selected, a label-level SectionHeader 'Follow-up task', a list of 1 to 20 steps, each with a title (1 to 200 characters), an owner (you or an agent) and optional detail (up to 4,000 characters), numbered on after the existing chain, then a PlacementField, then 'Append & queue' and 'Cancel'."
+  - "The step list is the chain composer that TaskEntry uses (UIS-08), so steps are entered the same way in both places. 'Append & queue' is the form's submit button, disabled while any step has an empty title, with the note beside it saying why, as anachoic's followUpNote does."
+  - "PlacementField: a fieldset with the legend 'Place in queue' and two native radio inputs, 'Back' then 'Front'. SegmentedControl is not copied (07), so the radios are styled in the component. 'Back' is selected each time a composer opens. Back maps to placement last and Front to first."
+  - "Only one composer is open on the board. Opening another closes the first. Signing off a task closes its composer. On open, focus moves to the first step's title; on Cancel or Escape the composer closes and focus returns to 'Follow up'. The draft is kept in DoneSection and may be lost when the host rebuilds the view (06)."
+  - "Archive opens an InlineConfirm (UIP-05), stack layout, in place of the actions row, with the question from the strings catalogue, confirm 'Archive' and dismiss 'Keep task'. Only the confirm raises onArchive(taskId). Focus moves to 'Keep task' on open and returns to 'Archive' on dismiss."
+  - "QueueCard (UIS-05) gains a ghost 'Move to backlog' button, drawn when canAct.backlog is true. It reports onMoveToBacklog(taskId), and the board entry calls move_to_backlog(task) and sends 'I moved T-015 to the backlog.' through wake.ts (06 waking the dedicated session)."
+  - "BacklogCard (UIS-05) gains a ghost 'Archive' button, drawn when canAct.archive is true, behind the same InlineConfirm as the Done section's Archive. Only the confirm reports onArchive(taskId), and the entry calls archive_task(task) and sends 'I archived T-008.'"
+  - "Busy: the button that started an action is busy and the card's other buttons are disabled while it is in flight."
+  - "The board entry calls sign_off(task), add_follow_up_from_view(task, steps, placement) and archive_task(task) through view/bridge/tools.ts, redraws from the returned board props, and sends 'I signed off T-006.', 'I added 2 follow-up steps to T-006.' (plural agreeing with the count) or 'I archived T-008.' through wake.ts. A refusal posts nothing and goes to the board's refusal handler; the composer keeps its draft."
+acceptance_criteria:
+  - "ui suite: Sign off reports the task id; Archive reports only after its confirmation; Keep task reports nothing and returns focus to Archive."
+  - "ui suite: Follow up opens the composer with Back selected and focus in the first step title; Append & queue is disabled until every step has a title, then reports the steps and the placement; Cancel and Escape close it and return focus to Follow up."
+  - "ui suite: Move to backlog on a queue card and a confirmed Archive on a backlog card each call their tool once and send their exact sentence."
+  - "ui suite: opening a composer on a second card closes the first; signing off a card closes its composer."
+  - "ui suite, board entry with a fake App: each action calls its tool with the right input and sends its exact sendMessage sentence once; a refusal sends none and keeps the draft."
+  - "Stories: a card with all three actions, composing with three steps, Front chosen, archive confirming, and busy; every story passes the axe check."
+  - "Manual desktop check: sign off, a follow-up placed at the front, and an archive each post their sentence and redraw the board."
+depends_on:
+  - "UIS-06"
+  - "UIS-08"
+  - "UIP-05"
+  - "MCP-12"
+external_dependencies: []
+docs:
+  - "03-domain-model.md#the-task-state-machine"
+  - "06-tools-and-views.md#app-only-tools"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "07-ui-port.md#what-is-new"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#signoffcard"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#followupcomposer"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#placementfield"
+  - "anachoic:ui/15-interaction-and-state.md#follow-up-composer"

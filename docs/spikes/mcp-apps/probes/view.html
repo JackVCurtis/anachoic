@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anachoic probe</title>
+    <link rel="stylesheet" href="/src/view.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Anachoic probe <span id="view-id"></span></h1>
+      <section>
+        <h2>Fonts</h2>
+        <p class="sample" style="font-family: ProbeCssData, monospace">ProbeCssData: Barlow from a CSS @font-face data: URL</p>
+        <p class="sample" style="font-family: ProbeFaceUrl, monospace">ProbeFaceUrl: Barlow from new FontFace(data: URL)</p>
+        <p class="sample" style="font-family: ProbeFaceBuffer, monospace">ProbeFaceBuffer: Barlow from new FontFace(ArrayBuffer)</p>
+        <p class="sample" id="host-font-sample">Host font: var(--font-sans)</p>
+        <pre id="fonts"></pre>
+      </section>
+      <section>
+        <h2>Actions</h2>
+        <div class="buttons">
+          <button data-action="sendMessage">sendMessage</button>
+          <button data-action="updateModelContext">updateModelContext</button>
+          <button data-action="fullscreen">fullscreen</button>
+          <button data-action="pip">pip</button>
+          <button data-action="inline">inline</button>
+          <button data-action="openLink">openLink</button>
+          <button data-action="callWhoami">call probe_whoami</button>
+          <button data-action="togglePoll">pause polling</button>
+        </div>
+      </section>
+      <section>
+        <h2>State</h2>
+        <pre id="state"></pre>
+      </section>
+      <section>
+        <h2>Events</h2>
+        <pre id="events"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/view.ts"></script>
+  </body>
+</html>

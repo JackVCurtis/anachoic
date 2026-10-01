@@ -1,0 +1,38 @@
+id: UIS-02
+title: "Your turn section with your steps and agents' questions"
+area: UIS
+phase: "1"
+summary: >
+  Build YourTurnSection and YourTurnCard, adapted from anachoic's documents (anachoic has not built
+  them), with anachoic's three kinds of card reduced to two: your own step, and an agent's question
+  with the asking session's name. The cards show what waits and for how long. The actions (Mark done
+  with a note, Answer, Park under InlineConfirm) are added by UIS-09; this todo leaves their place at
+  the foot of the card.
+requirements:
+  - "YourTurnSection in view/components/board/your_turn_section/: an h2 SectionHeader 'Your turn' with the count, on the inverse surface (data-tone='inverse') as 07 theme says; the dashed EmptyState 'Nothing waiting on you' when empty; a single column of cards in the server's order, keyed by task id, folding after 8"
+  - "YourTurnCard in view/components/board/your_turn_card/ keeps anachoic's look: ActionCard tone inverse, padding --space-4, gap --space-3, fill and border --color-accent-900; no hover change; the focus ring around the card in --tone-focus"
+  - "Top row: StatusSquare attention (blinking, solid under reduced motion), the kind label, then the step and how long it has waited pushed right, for example 'Step 2 · 14m', from formatWaited and useNow at the 30-second tick"
+  - "Kind label: 'Your step' when the step is yours; for an agent's question the asking session's name with the new word 'Asks' from strings.ts. Anachoic's 'Approval needed' and 'Help needed' kinds go."
+  - "Body: the task title as the main action (h3, text-title-4, raising onOpenTask), the task id (T-012) in text-mono-xs, the step's title, and for a question the question text in full, wrapped, as plain text"
+  - "Dropped from anachoic's card: SessionLink, CommandBox, StepActions, 'Copy all commands', the deny form, 'Answer in the terminal' and the handoff line; the board props carry no next step"
+  - "Under 600 px the meta row wraps below the title; long titles, session names and questions wrap and never widen the view"
+  - "Stories from the UIF-06 fixtures: one of each kind, a question of 2,000 characters, 20 cards (folded), nothing waiting, long title"
+acceptance_criteria:
+  - "ui suite: a step owned by you reads 'Your step'; an agent's question shows the session's name and the question text"
+  - "ui suite: the waited time advances from '14m' with the fixed clock at the 30-second tick"
+  - "ui suite: with 20 cards the section shows 8 and 'Show all 20', and opening the Disclosure shows all 20"
+  - "ui suite: pressing the title raises onOpenTask with the task id"
+  - "All stories pass the axe check on the inverse surface at 735 px and 600 px"
+depends_on:
+  - "UIS-01"
+  - "UIP-04"
+  - "UIF-06"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-new"
+  - "07-ui-port.md#theme"
+  - "03-domain-model.md#what-you-can-do-with-a-waiting-step"
+  - "06-tools-and-views.md#board-props"
+  - "anachoic:ui/10-components-board.md#yourturnsection"
+  - "anachoic:ui/10-components-board.md#yourturncard"
+  - "anachoic:ui/17-content-rules.md#the-three-kinds-of-card-in-your-turn"

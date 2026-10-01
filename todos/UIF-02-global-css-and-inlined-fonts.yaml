@@ -1,0 +1,42 @@
+id: UIF-02
+title: "Copy the global CSS and inline Barlow and Barlow Condensed as data: fonts"
+area: UIF
+phase: "0"
+summary: >
+  Copy anachoic's global stylesheet into view/css/ so both views carry the same tokens, base rules
+  and named text styles. Rewrite fonts.css so the five Barlow weights are inlined into each view's
+  single HTML file as data: woff2, latin subset only, which the UIF-01 spike showed desktop chat
+  loads under its default CSP. Ends with both built views styled by anachoic's tokens and fonts,
+  with no network request for any font.
+requirements:
+  - "Copy anachoic inertia/css/app.css, tokens.css, base.css and typography.css to view/css/, each starting with the provenance comment, for example '/* Copied from anachoic inertia/css/tokens.css at fd99e0d */'"
+  - "app.css keeps '@layer tokens, base, type;' once at the top and imports fonts.css (no layer), tokens.css into layer tokens, base.css into layer base and typography.css into layer type, in that order"
+  - "tokens.css is unchanged except that the Terminal block is removed: --terminal-bg, --terminal-fg, --terminal-cursor, --terminal-selection, --terminal-font, --terminal-font-size and --terminal-line-height"
+  - "fonts.css is rewritten, not copied: five @font-face rules for Barlow 400, 500 and 700 and Barlow Condensed 400 and 600, normal style, each pointing at the latin woff2 file in @fontsource/barlow/files/ or @fontsource/barlow-condensed/files/ (for example barlow-latin-400-normal.woff2), with Fontsource's latin unicode-range; it imports no Fontsource CSS, because those files pull every subset"
+  - "The view build inlines each of the five woff2 files once as a data:font/woff2 URL, so each view grows by about 110 kB; the spike's duplicate inlining (once in CSS, once as ?inline) is not repeated"
+  - "Monospace stays the system ui-monospace stack and ships nothing; no italic weights and no other font files ship"
+  - "The views are light only: no prefers-color-scheme rule is added, and body keeps base.css's --color-bg background so the board reads as a light card in a dark chat"
+  - "Both entries, view/entries/board/main.tsx and view/entries/task/main.tsx, import view/css/app.css once and mount into a root with id app"
+  - "base.css drops the rule that gives html, body and #app height: 100%, so the document grows with its content and auto-resize reports the real height (07 what is copied); everything else in base.css is copied unchanged"
+  - "Copy anachoic inertia/css/base.test.ts and typography.test.ts beside the copies, changing only import paths"
+  - "Copy anachoic inertia/components/foundations/tokens.stories.tsx, base.stories.tsx and typography.stories.tsx to view/components/foundations/; the tokens story drops its Terminal group and the --terminal- part of its color pattern; viewports.stories.tsx is not copied, because the views have no minimum window"
+acceptance_criteria:
+  - "After `pnpm build`, a unit test reads dist/views/board.html and dist/views/task.html and finds exactly five data:font/woff2 URLs in each, and no http or https URL in any @font-face"
+  - "ui suite: the copied base.test.ts and typography.test.ts pass"
+  - "ui suite: document.fonts.check succeeds for each of the five faces with the network disabled, and a heading computes 'Barlow Condensed' while body text computes 'Barlow'"
+  - "The Foundations stories render and pass the axe check on the light and inverse tones"
+  - "`grep -r -- '--terminal-' view/` returns nothing, and every copied file's first line is its provenance comment"
+depends_on:
+  - "UIF-01"
+  - "FND-03"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#fonts"
+  - "07-ui-port.md#what-is-copied"
+  - "07-ui-port.md#theme"
+  - "02-stack-and-structure.md#copied-files"
+  - "../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat"
+  - "anachoic:ui/04-typography-and-fonts.md#decision"
+  - "anachoic:ui/02-tokens.md#terminal"
+  - "anachoic:ui/19-organization-and-testing.md#the-css-folder"

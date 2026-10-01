@@ -1,0 +1,38 @@
+id: DOM-01
+title: "Domain types, task display ids and step ids"
+area: DOM
+phase: "1"
+summary: >
+  Write the types every other part of the domain is built on: task, step, session, event, link and
+  refusal, with their status and kind unions, and the input limits from 03 and 06. Copy anachoic's
+  task display id module into shared/ so the server, the text results and the views name a task the
+  same way, and add the stable step id. Everything here is pure and has no I/O.
+requirements:
+  - "domain/types.ts declares Task, Step, Session, Event and Link with exactly the fields of 03 (Task, Step, Session, Event), and the unions TaskStatus (backlog, queue, active, done), StepStatus (pending, running, waiting, done), Owner (agent, you), StepOrigin (chain, follow_up) and SessionKind (dedicated, worker)"
+  - "EventKind is the union of the 14 kinds in 03: added, queued, reordered, claimed, started, noted, asked, answered, completed, parked, released, signed_off, followed_up and archived"
+  - "An Actor type names who acts: you, or a session by id; the constant DEDICATED_SESSION_ID is 'dedicated' and the creator or event actor for you is the literal 'you'"
+  - "Instants are ISO 8601 UTC strings throughout the domain; no domain function reads the clock, and every transition takes 'now' as an argument"
+  - "Copy anachoic shared/task_id.ts to shared/task_id.ts (formatTaskId, parseTaskId, InvalidTaskIdError) with the provenance line '// Copied from anachoic shared/task_id.ts at fd99e0d', unchanged apart from the doc comment that names tmux, URLs and the command line"
+  - "Add toTaskNumber(value: string | number) in shared/task_id.ts for tool input, which accepts a display id such as T-012, a positive whole number, or a string of digits, and refuses anything else with InvalidTaskIdError"
+  - "Step ids are stable text derived from the task number and the step number (stepId and parseStepId in shared/step_id.ts), which is safe because a task number is never reused and a step's number never changes"
+  - "domain/refusal.ts declares Refusal as a code and a sentence, with RefusalCode the union of the 10 codes in 03 (not_found, not_current, wrong_status, not_yours, nothing_to_claim, unanswered, signed_off, archived, invalid, busy)"
+  - "shared/limits.ts holds every input limit named in 03 and 06 as constants: titles 1 to 200, detail up to 4,000, links up to 10, steps 1 to 20, note 1 to 500, question and summary 1 to 2,000, answer 1 to 4,000, session name 1 to 40"
+  - "domain/ imports nothing outside itself and shared/, as lint enforces"
+acceptance_criteria:
+  - "Unit suite: the pure cases of anachoic tests/unit/shared/task_id.spec.ts, ported to Vitest with the same provenance line, pass (round trips, padding, refusals)"
+  - "Unit suite: toTaskNumber accepts 'T-012', 'T-12', '12' and 12, and refuses 0, -1, 1.5, 'T12', 't-12' and an empty string, each with InvalidTaskIdError"
+  - "Unit suite: stepId and parseStepId round trip for several task and step numbers, and parseStepId refuses malformed ids"
+  - "pnpm typecheck and pnpm lint pass, and lint fails if a file in domain/ imports node:sqlite or store/"
+depends_on:
+  - "FND-01"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, for shared/task_id.ts and its tests"
+docs:
+  - "03-domain-model.md#task"
+  - "03-domain-model.md#step"
+  - "03-domain-model.md#session"
+  - "03-domain-model.md#event"
+  - "03-domain-model.md#refusals"
+  - "06-tools-and-views.md#model-tools"
+  - "02-stack-and-structure.md#copied-files"
+  - "anachoic:app/05-persistence.md#how-t-nnn-ids-are-issued"

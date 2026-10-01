@@ -1,0 +1,40 @@
+id: UIS-10
+title: "Queue reordering with the keyboard, and its announcements"
+area: UIS
+phase: "2"
+summary: >
+  Build the lift-and-move state in QueueSection with the keyboard path, from anachoic's documents
+  rather than its code, since anachoic has not built it. The Move handle lifts its card; arrows, Home
+  and End move it; Enter or Space drops; Escape or losing focus cancels. The section raises onReorder
+  once on a real drop, announces each moment in an assertive live region, and the board entry sends
+  reorder_queue and posts the move to the dedicated session.
+requirements:
+  - "State in QueueSection (adapted in UIS-05): which card is lifted, one at a time, and the order shown while it is. The lifted card takes ActionCard's lifted look (fill --color-accent-100, border --color-accent-300) and its MoveHandle reads 'Drop'."
+  - "The copied MoveHandle gains onMove('up' | 'down' | 'first' | 'last') and onCancel. Keys while its card is lifted and it has focus: Up one place toward the front, Down toward the back, Home to the front, End to the back, Enter or Space drop, Escape cancel, Tab or any focus loss cancel. An arrow at the end of the list does nothing. A click lifts too, and the arrows work after it."
+  - "The order shown comes from movedOrder, and every position label from queuePosition ('#1 in line'), both in view/components/helpers/board_rail.ts (copied in UIF-04). The card takes its new place at once and the others make room at once. Nothing animates."
+  - "The handle keeps focus for the whole move, and the card is kept in view with scrollIntoView({block: 'nearest'}). The view has no inner scroll region (07), so this scrolls the document only."
+  - "onReorder(taskId, position counted from 1) is raised exactly once, on a drop in a new place. A drop where the card started, and a cancel, raise nothing. A cancel returns the card to where it was lifted."
+  - "One visually hidden, assertive live region per Queue. It speaks the sentences from moveAnnouncement for lifted, moved, dropped and cancelled. The instructions 'Press Enter to lift. Use the arrow keys to move. Press Enter to drop, or Escape to cancel.' are written once, and each handle is described by them and by its card's title. The handle carries no aria-pressed or aria-grabbed."
+  - "A card is movable only when its canAct.reorder is true. A Queue of one has no handle. The Queue never folds under a Disclosure (07 layout)."
+  - "While a reorder is in flight every handle is disabled and no card lifts."
+  - "The board entry calls reorder_queue(task, position) through view/bridge/tools.ts, redraws from the returned board props, and on success sends 'I moved T-015 to position 1 in the queue.' through wake.ts. A refusal is passed to the board's refusal handler and the card returns to the order the props give."
+acceptance_criteria:
+  - "ui suite (required, anachoic ui/19): the Move handle lifts; Up, Down, Home and End move; Enter drops; Escape cancels."
+  - "ui suite (required): onReorder is raised once on a drop with the new position, and not at all when the card is dropped where it started or the move is cancelled."
+  - "ui suite (required): each moment is announced with its exact sentence, for example '“Migrate billing webhooks” lifted. Position 3 of 5'."
+  - "ui suite: Tab away from a lifted handle cancels the move; a Queue of one has no handle; handles are disabled while a reorder is in flight."
+  - "ui suite, board entry with a fake App: a drop calls reorder_queue with the display id and position and sends the exact sentence once."
+  - "Stories: a Queue card lifted, lifted at the front, lifted at the back, and a 12-card queue; every story passes the axe check."
+depends_on:
+  - "UIS-05"
+  - "MCP-10"
+external_dependencies: []
+docs:
+  - "07-ui-port.md#what-is-built-here-from-anachoics-documents"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "09-testing-and-build-order.md#what-must-have-a-test"
+  - "anachoic:ui/10-components-board.md#moving-a-card"
+  - "anachoic:ui/10-components-board.md#movehandle"
+  - "anachoic:ui/15-interaction-and-state.md#moving-a-queue-card"
+  - "anachoic:ui/16-accessibility.md#a-list-that-can-be-reordered"
+  - "anachoic:ui/19-organization-and-testing.md#interactions-that-must-have-a-test"

@@ -1,0 +1,41 @@
+id: FND-04
+title: "Set up the unit, ui, integration and e2e suites and Storybook"
+area: FND
+phase: "0"
+summary: >
+  Configure the four suites from 09 and Storybook, so every later todo has a place for its tests and
+  stories. The ui suite and Storybook are copied from anachoic's vitest.config.ts and .storybook/, with
+  the library moved to view/components/ and no AdonisJS plugin to keep out. The unit and integration
+  suites run in Node, and the integration suite drives the built server through a real MCP client. The
+  e2e suite is Playwright, and starts with a smoke test until the reference host arrives in PKG-03.
+requirements:
+  - "Install vitest ~4.1.11, @vitest/browser-playwright ^4.1.11, playwright and @playwright/test 1.63.0, storybook, @storybook/react-vite, @storybook/addon-a11y and @storybook/addon-vitest at 10.6.0, @testing-library/react ^16.3.3, @testing-library/user-event ^14.6.7, @testing-library/dom ^10.4.2 and @modelcontextprotocol/client ^2.2.0, all as development dependencies; Vitest stays on 4.1.x because Storybook 10.6's add-on supports Vitest 3 and 4 only"
+  - "Copy anachoic vitest.config.ts with the provenance comment `// Copied from anachoic vitest.config.ts at fd99e0d`, keeping its chromium() helper, TIME_ZONE UTC, LOCALE en-GB and the ABROAD projects time-los-angeles and time-kolkata on view/components/helpers/time.test.ts"
+  - "Vitest projects: unit (Node, tests/unit/**/*.test.ts), integration (Node, tests/integration/**/*.test.ts, with a global setup that runs `pnpm build` once), ui (Chromium, view/**/*.test.{ts,tsx}), storybook (storybookTest on .storybook) and the two time- projects; projects with no files yet pass"
+  - "Copy anachoic .storybook/main.ts, vite.config.ts and tsconfig.json with the same comment: stories match ../view/components/**/*.stories.tsx, addons a11y and vitest, viteConfigPath .storybook/vite.config.ts so the single-file plugin is never merged, telemetry off, and the react plugin with optimizeDeps for the two testing-library packages"
+  - "Write .storybook/preview.tsx from anachoic's, with a11y test set to error and two viewports, inline (735 px wide) and narrow (600 px wide); the CSS import and the tone and clock decorators arrive with UIF-02 and UIF-03"
+  - "playwright.config.ts runs tests/e2e/ in Chromium only and writes to test-results/; a smoke test opens dist/views/board.html and finds its heading"
+  - "tests/unit/lint.test.ts turns FND-02's eslint --stdin checks into unit tests through ESLint's API"
+  - "Scripts: test:unit, test:ui (`vitest run --project ui --project 'time-*' --project storybook`), test:integration, test:e2e (`playwright test`), test (all four in that order) and storybook (`storybook dev --host 127.0.0.1 --port 6006`); typecheck also checks .storybook/tsconfig.json"
+acceptance_criteria:
+  - "`pnpm storybook` serves a placeholder story at 127.0.0.1:6006, and `pnpm test:ui` runs it as a test in Chromium"
+  - "A story with an axe violation, such as an unlabelled button, fails `pnpm test:ui`"
+  - "A placeholder integration test starts dist/server.js over stdio with @modelcontextprotocol/client's StdioClientTransport and an empty temporary data directory, and passes in `pnpm test:integration`"
+  - "`pnpm test:unit` runs in Node with no browser, and lint.test.ts passes"
+  - "`pnpm test:e2e` passes its smoke test after `pnpm build`"
+  - "vitest.config.ts and each copied file in .storybook/ start with the provenance comment naming anachoic commit fd99e0d"
+depends_on:
+  - "FND-02"
+  - "FND-03"
+external_dependencies:
+  - "The anachoic repository at commit fd99e0d, as the source of vitest.config.ts and .storybook/"
+  - "Playwright's Chromium, installed with `pnpm exec playwright install chromium`"
+docs:
+  - "09-testing-and-build-order.md#test-suites"
+  - "09-testing-and-build-order.md#what-must-have-a-test"
+  - "02-stack-and-structure.md#versions"
+  - "02-stack-and-structure.md#copied-files"
+  - "07-ui-port.md#what-is-copied"
+  - "anachoic:ui/19-organization-and-testing.md#decision"
+  - "anachoic:ui/19-organization-and-testing.md#configuration"
+  - "anachoic:ui/19-organization-and-testing.md#tests"

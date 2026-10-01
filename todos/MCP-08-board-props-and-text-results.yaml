@@ -1,0 +1,39 @@
+id: MCP-08
+title: "Board props builder, real get_board, and compact text results"
+area: MCP
+phase: "1"
+summary: >
+  Build the board props from the database in server/props/, typed by shared/props.ts, so the server
+  computes every fact the board shows: list membership, current steps, claims with session names and
+  liveness, canAct, counts and session activity. get_board and show_board, which returned an empty
+  board since MCP-05, now return the real board. The board summary text, which workers and desktop's
+  model read, is built in server/text/ and stays compact. The phase ends with the dedicated session's
+  board able to show every task and session.
+requirements:
+  - "Define the board prop types in shared/props.ts with exactly the fields of 06's board props: revision, now, yourTurn, working, queue, backlog, toSignOff, signedOff, sessions and counts; task is always {id, displayId, title}, and steps (pips) is {id, owner, status, title, sessionName}"
+  - "Build the props in server/props/ from one consistent snapshot, read inside a deferred BEGIN, using the list membership rules and derived facts from domain/ rather than restating them"
+  - "Compute canAct for every action the board offers (complete, answer and park on Your turn; reorder and backlog on the queue; queue and archive on the backlog; signOff, followUp and archive on To sign off) by asking the domain whether it would accept the action now"
+  - "Carry the instant each open interval began (waitingSince, runningSince) rather than a computed duration, so the view can show a ticking figure"
+  - "signedOff holds the 10 most recently signed-off tasks; sessions holds every live session with what it holds, plus sessions ended in the last 10 minutes with endedAt and the tasks released"
+  - "get_board(sinceRevision) returns {changed: false, revision} when board.revision equals sinceRevision, and otherwise the board props; it is a read only"
+  - "show_board returns the board props in structuredContent and the board summary as its text; a worker that calls it gets the same text"
+  - "The board summary follows 06's example: a revision line, then one line each for Your turn, Working, Queue, Backlog, To sign off and Sessions, with counts, display ids, quoted titles, questions and session names, and backlog listed by display id only"
+  - "The board summary stays under 2,000 tokens for a board of 100 tasks and 10 sessions, truncating lists with a count of what was left out if needed; the token estimate used by the test is written beside the budget constant"
+acceptance_criteria:
+  - "Unit suite: for fixture boards covering every list, the builder puts each non-archived task in exactly one list and omits archived tasks"
+  - "Unit suite: canAct matches the domain's acceptance for each action on each fixture task, and a released session appears in sessions with its released tasks for 10 minutes after endedAt and not after"
+  - "Unit suite: the board summary for the 06 example board matches it line for line, and for a generated board of 100 tasks and 10 sessions it stays under the 2,000-token budget"
+  - "Integration suite: get_board with the current revision returns {changed: false, revision}; after a worker's add_task in another process it returns props with a higher revision that include the task"
+  - "Manual desktop check: show_board in desktop chat draws the real board after a worker in Claude Code adds and claims a task"
+depends_on:
+  - "MCP-07"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#board-props"
+  - "06-tools-and-views.md#text-results"
+  - "06-tools-and-views.md#app-only-tools"
+  - "03-domain-model.md#derived-facts"
+  - "03-domain-model.md#list-membership"
+  - "04-persistence.md#reading"
+  - "05-sessions.md#liveness"
+  - "09-testing-and-build-order.md#what-must-have-a-test"

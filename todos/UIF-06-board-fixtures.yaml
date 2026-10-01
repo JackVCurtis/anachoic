@@ -1,0 +1,36 @@
+id: UIF-06
+title: "Board fixtures with several sessions for stories and tests"
+area: UIF
+phase: "1"
+summary: >
+  Write the sample boards every board story and view test draws from, in the shape of the board
+  props in 06, with tasks and chains in this app's terms and several sessions at once: this chat,
+  live workers, an idle worker and an ended one that released work. They are adapted from
+  anachoic's tasks, task_lists and slots fixtures, which are built around slots, repos and
+  workflows. Ends with fixtures that the domain's own rules accept.
+requirements:
+  - "Write view/components/fixtures/board.ts, adapted from anachoic inertia/components/fixtures/tasks.ts, task_lists.ts and slots.ts, with the provenance comment naming all three and fd99e0d; repos, workflows, slots, artifacts and transcripts are not carried over"
+  - "Fixtures are typed by the board props type in shared/props.ts, in the shape 06 lists (revision, now, yourTurn, working, queue, backlog, toSignOff, signedOff, sessions, counts); if MCP-05 left only the empty-board part of that type, this todo completes it as 06 lists it"
+  - "Sessions: 'This chat' (the dedicated session), 'api-server' and 'web-client' (live workers, one holding a running step and one idle), and 'docs' (ended 4 minutes before FIXED_NOW, having released T-013), matching the example in 06's text results"
+  - "Tasks use display ids T-001 upwards and chains of 1 to 12 steps with owners 'agent' and 'you'; pips are { id, owner, status, title, sessionName }"
+  - "Your turn holds one of your steps and one agent's question with the asking session's name; Working holds a running step with a note; the queue holds four tasks and the backlog six; toSignOff holds one task with agent and your seconds and a link count; signedOff holds the 10 most recent"
+  - "Every time is built from FIXED_NOW, INSTANTS and before() in fixtures/clock.ts, so labels read the same on every run"
+  - "Named boards for stories: EMPTY_BOARD, BUSY_BOARD (every section filled), MANY_BOARD (20 queue cards and a section of 14 cards that folds) and LONG_TEXT_BOARD (120 character titles and 40 character session names from fixtures/long_text.ts)"
+  - "canAct flags follow the domain rules: for example a waiting agent step offers answer and park but not complete"
+acceptance_criteria:
+  - "A unit test in tests/unit/ imports every named board and checks each task and step against the invariants and list membership rules from DOM-02"
+  - "A unit test checks that counts in each board equal the lengths of yourTurn, working, queue and toSignOff, and that every sessionName in a pip names a session in sessions"
+  - "ui suite: the fixtures test asserts every time in the fixtures is at or before FIXED_NOW and every display id is unique within a board"
+  - "`pnpm lint` passes, with no component importing view/components/fixtures/"
+depends_on:
+  - "UIF-04"
+  - "DOM-02"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the adapted fixtures"
+docs:
+  - "06-tools-and-views.md#board-props"
+  - "06-tools-and-views.md#text-results"
+  - "03-domain-model.md#list-membership"
+  - "03-domain-model.md#invariants"
+  - "03-domain-model.md#what-you-can-do-with-a-waiting-step"
+  - "anachoic:ui/19-organization-and-testing.md#fixtures"

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+storybook-static/
+test-results/
+mcpb/server/
+*.mcpb
+
+# Storybook and Vitest browser mode
+__screenshots__/
+debug-storybook.log
+.vitest-attachments/
+playwright-report/
+
+.DS_Store

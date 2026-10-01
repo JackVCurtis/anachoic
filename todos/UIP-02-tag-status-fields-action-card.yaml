@@ -1,0 +1,36 @@
+id: UIP-02
+title: "Copy Tag, StatusSquare, TextInput, TextArea and ActionCard"
+area: UIP
+phase: "0"
+summary: >
+  Copy the remaining primitives the views use: the labelled Tag, the 7 px StatusSquare with its
+  reduced-motion blink, the two text fields used by task entry and answers, and ActionCard, the
+  card every board card is built on. Select, RangeSlider, MonoBlock and DataTable are not copied.
+  Ends with every primitive the board needs, drawn and tested as in anachoic.
+requirements:
+  - "Copy anachoic inertia/components/primitives/tag/, status_square/, text_input/, text_area/ and action_card/ (including action_card_sample.module.css) to view/components/primitives/, with each folder's stories and tests"
+  - "Each copied file starts with its provenance comment naming its anachoic source path and fd99e0d"
+  - "Components are unchanged except for import paths; StatusSquare keeps its states attention, busy, running, waiting and idle, and its blink stops under prefers-reduced-motion"
+  - "Tag stories drop the workflow, Draft and artifact-count uses and show this app's: a status badge label and a 40 character session name from fixtures/long_text.ts"
+  - "text_input.test.tsx no longer reads anachoic's ui/16-accessibility.md through ?raw; the contrast ratios it checked are written into the test as constants, each with a comment naming the row of anachoic ui/16 'Measured ratios' it came from"
+  - "TextArea stories include the answer field of an agent's question at 4,000 characters, the longest answer answer_question accepts"
+  - "ActionCard stories show a card at 735 px and at the 600 px narrow width, on the light and inverse tones"
+  - "Select, RangeSlider, MonoBlock and DataTable are not copied"
+acceptance_criteria:
+  - "ui suite: the copied interaction tests for all five primitives pass, including StatusSquare's test that under emulated reduced motion the attention and busy squares have no running animation"
+  - "All stories pass the axe check on the light and inverse tones"
+  - "ui suite: StatusSquare is hidden from the accessibility tree, and TextInput and TextArea are named by their labels"
+  - "`grep -r '?raw' view/components/primitives` returns nothing, and `pnpm lint` and `pnpm typecheck` pass"
+depends_on:
+  - "UIP-01"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "anachoic:ui/07-components-primitives.md#tag"
+  - "anachoic:ui/07-components-primitives.md#statussquare"
+  - "anachoic:ui/07-components-primitives.md#textinput"
+  - "anachoic:ui/07-components-primitives.md#textarea"
+  - "anachoic:ui/07-components-primitives.md#actioncard"
+  - "anachoic:ui/16-accessibility.md#measured-ratios"
+  - "06-tools-and-views.md#app-only-tools"

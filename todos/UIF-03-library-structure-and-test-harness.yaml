@@ -1,0 +1,43 @@
+id: UIF-03
+title: "Copy the component library structure, types, hooks and test harness"
+area: UIF
+phase: "0"
+summary: >
+  Lay out view/components/ as anachoic's library and copy the pieces every component and story
+  leans on: the shared type unions, the class join helper, the clock and Escape hooks, the
+  testing folder, the clock fixtures and the Storybook preview decorators. The host frame replaces
+  anachoic's minimum window, and the clock learns a time zone so the bridge can pass the host's.
+  Ends with a library that the primitives can be copied into, with stories and tests running.
+requirements:
+  - "Create view/components/ with primitives/, patterns/, board/, task/, helpers/, hooks/, fixtures/, testing/ and foundations/; one snake_case folder per component holding name.tsx, name.module.css, name.stories.tsx and name.test.tsx; no barrel index.ts anywhere"
+  - "Copy anachoic inertia/components/types.ts, trimmed to Owner, StepStatus, TaskStatus and Tone; Owner becomes 'agent' | 'you' to match the step owner in 03; SlotState, IdleReason, PickupState, Placement and StepAction are removed"
+  - "Copy helpers/join_classes.ts and join_classes.test.ts unchanged, since every primitive imports joinClasses"
+  - "Copy hooks/use_now/ and hooks/use_escape_layer/ with their tests; use_now.tsx gains TimeZoneProvider and useTimeZone(), which return the IANA zone given or undefined for the browser's zone, so time labels can follow the host's timeZone"
+  - "Copy testing/render.tsx, render.test.tsx, setup.ts, tone_frame.tsx, tone_frame.module.css, view_frame.tsx, view_frame.module.css, clipboard.ts and resolved_color.ts; setup.ts imports view/css/app.css"
+  - "ViewFrame becomes the host frame: a 735 px column whose height comes from its content (no 100vh and no --layout-min-width), with a 600 px narrow variant; windowOverflow is kept to measure sideways overflow"
+  - "Copy fixtures/clock.ts and clock.test.ts unchanged; copy fixtures/long_text.ts trimmed to a 120 character title, a 40 character name and a 200 character message, with a fixtures.test.ts for the copied modules"
+  - "Copy .storybook/preview.tsx with paths pointed at view/: the tone decorator over ToneFrame, NowProvider at FIXED_NOW, and a11y test 'error'; the three anachoic viewports are replaced by the host frame (735 px) and the narrow width (600 px)"
+  - "Copy .storybook/story_conventions.md, dropping the Rows and No repo story kinds and the minimum-window section, and describing the host frame and narrow width instead"
+  - "Copy inertia/components/foundations/clock.stories.tsx to view/components/foundations/"
+  - "Every copied file starts with its provenance comment naming its anachoic source path and fd99e0d"
+acceptance_criteria:
+  - "ui suite: the copied tests for join_classes, use_now, use_escape_layer, render and fixtures/clock pass"
+  - "ui suite: a component under TimeZoneProvider with 'Asia/Kolkata' reads that zone from useTimeZone, and one without a provider reads undefined"
+  - "ui suite: a sample story drawn in ViewFrame at 735 px and at 600 px has no sideways overflow according to windowOverflow"
+  - "A deliberately inaccessible sample story (a button with no name) fails `pnpm test:ui`, then is removed"
+  - "`pnpm lint` fails for a primitive that imports from patterns, for a component that imports from fixtures, and for a component that imports @modelcontextprotocol/ext-apps or view/bridge"
+  - "`grep -rE 'SlotState|PickupState|StepAction|human' view/components/types.ts` returns nothing"
+depends_on:
+  - "FND-04"
+  - "UIF-02"
+external_dependencies:
+  - "The anachoic repo at commit fd99e0d, the source of the copied files"
+docs:
+  - "07-ui-port.md#what-is-copied"
+  - "07-ui-port.md#the-host-bridge"
+  - "02-stack-and-structure.md#folders"
+  - "02-stack-and-structure.md#copied-files"
+  - "03-domain-model.md#step"
+  - "anachoic:ui/19-organization-and-testing.md#the-components-folder"
+  - "anachoic:ui/19-organization-and-testing.md#configuration"
+  - "anachoic:ui/18-presentation-helpers.md#the-clock-hook"
