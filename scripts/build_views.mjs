@@ -28,8 +28,6 @@ function buildEntry(entry, { outDir, watch }) {
   return build({
     configFile: false,
     mode: 'production',
-    // Vitest sets NODE_ENV to test, which would otherwise ship React's development build.
-    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
     root: resolve(ROOT, 'view/entries', entry),
     publicDir: false,
     logLevel: 'warn',
@@ -47,6 +45,9 @@ function buildEntry(entry, { outDir, watch }) {
  * Builds each view entry into one self-contained HTML file in outDir.
  */
 export async function buildViews({ outDir = resolve(ROOT, 'dist/views'), watch = false } = {}) {
+  // Vite and the React plugin pick the development JSX runtime and React build
+  // from NODE_ENV, which Vitest sets to test.
+  process.env.NODE_ENV = 'production'
   return Promise.all(VIEW_ENTRIES.map((entry) => buildEntry(entry, { outDir, watch })))
 }
 
