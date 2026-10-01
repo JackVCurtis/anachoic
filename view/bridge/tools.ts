@@ -1,3 +1,4 @@
+import type { GetBoardResult } from '../../shared/props'
 import type { HostApp } from './connect'
 
 /**
@@ -36,4 +37,15 @@ export async function callAppTool<Props>(
     return { ok: false, unreachable: true }
   }
   return { ok: true, props: result.structuredContent as Props }
+}
+
+/**
+ * The board, or that it is still at sinceRevision.
+ */
+export function getBoard(app: Pick<HostApp, 'callServerTool'>, sinceRevision?: number) {
+  return callAppTool<GetBoardResult>(
+    app,
+    'get_board',
+    sinceRevision === undefined ? {} : { sinceRevision }
+  )
 }

@@ -9,6 +9,7 @@ import {
 } from './data_directory.js'
 import { createLifecycle } from './lifecycle.js'
 import { createLogger, describeError, type Logger } from './logger.js'
+import { registerBoardTools } from './tools/board.js'
 import { VERSION } from './version.js'
 import { registerViews } from './views.js'
 
@@ -19,6 +20,7 @@ const DEFAULT_HTTP_PORT = 3001
 function createServer(logger: Logger) {
   const server = new McpServer({ name: 'anachoic', version: VERSION })
   registerViews(server, VIEWS_DIRECTORY, logger)
+  registerBoardTools(server, logger)
   server.server.oninitialized = () => {
     const client = server.server.getClientVersion()
     logger.log('initialized', { client: { name: client?.name, version: client?.version } })

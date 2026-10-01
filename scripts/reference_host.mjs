@@ -86,6 +86,25 @@ function buildHost() {
   writeFileSync(BUILT_STAMP, STAMP)
 }
 
+const SANDBOX_SEND = 'res.sendFile(join(DIRECTORY, "sandbox.html"));'
+const SANDBOX_SEND_FROM_ROOT = 'res.sendFile("sandbox.html", { root: DIRECTORY });'
+
+/**
+ * Express refuses to send a file whose absolute path has a dot folder in it,
+ * as .cache/ is, so the sandbox page is sent relative to its folder instead.
+ */
+function patchSandboxSend() {
+  const servePath = join(HOST, 'serve.ts')
+  const serve = readFileSync(servePath, 'utf8')
+  if (serve.includes(SANDBOX_SEND_FROM_ROOT)) {
+    return
+  }
+  if (!serve.includes(SANDBOX_SEND)) {
+    throw new Error(`${servePath} no longer sends sandbox.html as expected`)
+  }
+  writeFileSync(servePath, serve.replace(SANDBOX_SEND, SANDBOX_SEND_FROM_ROOT))
+}
+
 const children = new Set()
 
 function start(command, args, options) {
@@ -137,6 +156,7 @@ if (!existsSync(SERVER)) {
 }
 
 buildHost()
+patchSandboxSend()
 mkdirSync(DATA_DIR, { recursive: true })
 watchServer()
 const host = start(join(HOST, 'node_modules', '.bin', 'tsx'), ['serve.ts'], {
