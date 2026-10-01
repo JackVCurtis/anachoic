@@ -9,6 +9,8 @@
   },
   "packageManager": "pnpm@11.13.1",
   "scripts": {
+    "build": "rm -rf dist && node scripts/build_views.mjs && node scripts/build_server.mjs",
+    "dev": "node scripts/dev.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit --project view/tsconfig.json"
   },
