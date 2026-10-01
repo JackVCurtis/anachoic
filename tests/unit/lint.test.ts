@@ -22,6 +22,11 @@ describe('lint refuses', () => {
       "import { app } from '../../../bridge/app.js'",
     ],
     [
+      'the host bridge in a board component',
+      'view/components/board/board_view/board_view.tsx',
+      "import { HostContextProvider } from '../../../bridge/host_context'",
+    ],
+    [
       'a pattern in a primitive',
       'view/components/primitives/example/example.tsx',
       "import { Other } from '../../patterns/other/other.js'",

@@ -21,6 +21,9 @@ export default defineConfig({
       'lucide-react',
       '@testing-library/react',
       '@testing-library/user-event',
+      '@modelcontextprotocol/ext-apps',
+      '@modelcontextprotocol/ext-apps/app-bridge',
+      '@modelcontextprotocol/client',
     ],
   },
 })
