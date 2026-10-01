@@ -1,0 +1,18 @@
+{
+  "manifest_version": "0.3",
+  "name": "anachoic",
+  "display_name": "Anachoic",
+  "version": "0.0.0",
+  "description": "A board for planning work as chains of steps shared between you and your Claude sessions.",
+  "author": { "name": "Jack Curtis" },
+  "server": {
+    "type": "node",
+    "entry_point": "server/server.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/server.js"],
+      "env": { "ANACHOIC_DATA_DIR": "${HOME}/Library/Application Support/Anachoic MCP" }
+    }
+  },
+  "compatibility": { "platforms": ["darwin"], "runtimes": { "node": ">=24.0.0" } }
+}
