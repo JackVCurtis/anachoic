@@ -72,7 +72,14 @@ const STDOUT_CONSOLE = ['log', 'info', 'debug'].map((property) => ({
 export default configApp(
   {
     name: 'Anachoic MCP ignored folders',
-    ignores: ['docs/**', 'dist/**', 'mcpb/**', 'storybook-static/**', 'test-results/**'],
+    ignores: [
+      '.cache/**',
+      'docs/**',
+      'dist/**',
+      'mcpb/**',
+      'storybook-static/**',
+      'test-results/**',
+    ],
   },
   ...react.map((config) => ({ ...config, files: VIEW_FILES })),
   {

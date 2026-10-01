@@ -11,6 +11,7 @@
   "scripts": {
     "build": "rm -rf dist && node scripts/build_views.mjs && node scripts/build_server.mjs",
     "dev": "node scripts/dev.mjs",
+    "host": "node scripts/reference_host.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit --project view/tsconfig.json && tsc --noEmit --project .storybook/tsconfig.json",
     "test": "pnpm test:unit && pnpm test:ui && pnpm test:integration && pnpm test:e2e",

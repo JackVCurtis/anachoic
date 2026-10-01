@@ -14,5 +14,5 @@
     "allowJs": true
   },
   "include": ["server", "domain", "store", "shared", "tests"],
-  "exclude": ["docs", "dist", "node_modules"]
+  "exclude": [".cache", "docs", "dist", "node_modules"]
 }
