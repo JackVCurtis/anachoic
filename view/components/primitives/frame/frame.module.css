@@ -1,0 +1,32 @@
+/* Copied from anachoic inertia/components/primitives/frame/frame.module.css at fd99e0d */
+.frame {
+  border: var(--border-hairline) solid var(--tone-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.inverse {
+  background-color: var(--tone-bg);
+  color: var(--tone-fg);
+}
+
+.dashed {
+  border-style: dashed;
+  border-color: var(--color-neutral-400);
+}
+
+.muted {
+  border-color: var(--color-neutral-300);
+}
+
+.selected {
+  border-color: var(--color-accent-300);
+}
+
+.tint {
+  background-color: var(--color-accent-100);
+}
+
+.hatch {
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, var(--tint-hatch) 6px 7px);
+}

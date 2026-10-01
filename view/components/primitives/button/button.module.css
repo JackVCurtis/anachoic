@@ -1,0 +1,143 @@
+/* Copied from anachoic inertia/components/primitives/button/button.module.css at fd99e0d */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border: var(--border-hairline) solid transparent;
+  border-radius: 0;
+  background-color: transparent;
+  color: inherit;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/*
+ * WCAG 2.5.8 asks for a 24px target. The small sizes fall short by their
+ * padding and type alone, so the box grows and the label stays centered.
+ */
+.small {
+  min-height: 24px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.stretch {
+  flex: 1;
+}
+
+/* Variants. Hover and pressed skip a button that is disabled or busy. */
+
+.primary {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-text-on-fill);
+}
+
+.primary:enabled:not([aria-disabled='true']):hover {
+  background-color: var(--color-accent-600);
+}
+
+.primary:enabled:not([aria-disabled='true']):active {
+  background-color: var(--color-accent-700);
+}
+
+.secondary {
+  border-color: var(--color-divider);
+  color: var(--color-text);
+}
+
+.secondary:enabled:not([aria-disabled='true']):hover {
+  background-color: var(--tint-hover);
+}
+
+.secondary:enabled:not([aria-disabled='true']):active {
+  background-color: var(--tint-pressed);
+}
+
+.ghost {
+  padding-inline: var(--space-1);
+  color: var(--color-text-accent);
+}
+
+.ghost:enabled:not([aria-disabled='true']):hover {
+  background-color: var(--tint-accent-hover);
+}
+
+.ghost:enabled:not([aria-disabled='true']):active {
+  background-color: var(--tint-accent-pressed);
+}
+
+.inverseSolid,
+.inverseOutline {
+  padding: 7px 14px;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inverseSolid {
+  border-color: var(--color-bg);
+  background-color: var(--color-bg);
+  color: var(--color-accent-900);
+}
+
+.inverseSolid:enabled:not([aria-disabled='true']):hover {
+  background-color: var(--color-accent-100);
+}
+
+.inverseSolid:enabled:not([aria-disabled='true']):active {
+  background-color: var(--color-accent-200);
+}
+
+.inverseOutline {
+  border-color: var(--inverse-border);
+}
+
+.utility {
+  padding: 5px 11px;
+  border-color: var(--tone-control-border-quiet);
+  font-weight: 400;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.utility.small {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+.inverseOutline:enabled:not([aria-disabled='true']):hover,
+.utility:enabled:not([aria-disabled='true']):hover {
+  background-color: var(--tone-tint-hover);
+}
+
+.inverseOutline:enabled:not([aria-disabled='true']):active,
+.utility:enabled:not([aria-disabled='true']):active {
+  background-color: var(--tone-tint-pressed);
+}

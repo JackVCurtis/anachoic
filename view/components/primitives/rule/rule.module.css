@@ -1,0 +1,12 @@
+/* Copied from anachoic inertia/components/primitives/rule/rule.module.css at fd99e0d */
+.rule {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--border-hairline);
+  background: var(--tone-rule);
+}
+
+.accent {
+  background: var(--color-accent-300);
+}

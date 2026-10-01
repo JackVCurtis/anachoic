@@ -18,6 +18,7 @@ export default defineConfig({
       'react/jsx-dev-runtime',
       'react-dom',
       'react-dom/client',
+      'lucide-react',
       '@testing-library/react',
       '@testing-library/user-event',
     ],

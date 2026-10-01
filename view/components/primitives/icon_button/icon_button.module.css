@@ -1,0 +1,40 @@
+/* Copied from anachoic inertia/components/primitives/icon_button/icon_button.module.css at fd99e0d */
+.iconButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-control);
+  height: var(--size-control);
+  margin: 0;
+  padding: 0;
+  border: var(--border-hairline) solid var(--color-divider);
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  appearance: none;
+}
+
+.iconButton:enabled:hover {
+  background-color: var(--tint-hover);
+}
+
+.iconButton:enabled:active {
+  background-color: var(--tint-pressed);
+}
+
+.iconButton:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+.iconButton:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.glyph {
+  font-size: 16px;
+  line-height: 1;
+}

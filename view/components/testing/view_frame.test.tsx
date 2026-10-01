@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 import { LONG_TEXT } from '../fixtures/long_text'
 import { renderComponent } from './render'
@@ -15,6 +15,10 @@ function Sample() {
 }
 
 describe('ViewFrame', () => {
+  afterEach(async () => {
+    await page.viewport(414, 896)
+  })
+
   test.each(Object.keys(VIEW_WIDTHS) as ViewWidth[])(
     'a sample drawn at the %s width has no sideways overflow',
     async (width) => {
