@@ -1,9 +1,0 @@
-@font-face {
-  font-family: Barlow;
-  font-weight: 400;
-  src: url('@fontsource/barlow/files/barlow-latin-400-normal.woff2') format('woff2');
-}
-
-body {
-  font-family: Barlow, sans-serif;
-}

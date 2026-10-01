@@ -1,0 +1,118 @@
+/* Copied from anachoic inertia/css/base.css at fd99e0d */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* Headings take their look from a text style class, never from the element */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font: inherit;
+}
+
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+blockquote,
+pre {
+  margin: 0;
+}
+
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
+
+a {
+  color: var(--color-text-accent);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--tint-selection);
+}
+
+/*
+ * The standard scrollbar properties cannot express a 9px width and, where both
+ * are supported, disable the ::-webkit-scrollbar rules. So each block applies
+ * only where the other cannot.
+ */
+@supports selector(::-webkit-scrollbar) {
+  ::-webkit-scrollbar {
+    width: var(--size-scrollbar);
+    height: var(--size-scrollbar);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-400);
+    border-radius: 0;
+  }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-400) transparent;
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: var(--opacity-blink-low);
+  }
+}
+
+/*
+ * Component rules sit outside every cascade layer and so beat any property set
+ * here. Reduced motion therefore acts on the tokens components read: the blink
+ * periods become zero, so a blink ends the moment it starts and leaves no
+ * running animation; its low step is full opacity; and the transition duration
+ * becomes zero.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-blink-attention: 0s;
+    --motion-blink-busy: 0s;
+    --opacity-blink-low: 1;
+    --motion-quick: 0s;
+  }
+}

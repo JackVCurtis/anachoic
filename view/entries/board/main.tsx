@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './placeholder.css'
+import '../../css/app.css'
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>

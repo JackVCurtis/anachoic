@@ -1,0 +1,7 @@
+/* Copied from anachoic inertia/css/app.css at fd99e0d */
+@layer tokens, base, type;
+
+@import './fonts.css';
+@import './tokens.css' layer(tokens);
+@import './base.css' layer(base);
+@import './typography.css' layer(type);

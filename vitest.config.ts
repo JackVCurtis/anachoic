@@ -1,4 +1,10 @@
 // Copied from anachoic vitest.config.ts at fd99e0d
+import { execFile } from 'node:child_process'
+import { mkdtemp, readFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+import type { BrowserCommand } from 'vitest/node'
 import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
@@ -23,6 +29,34 @@ const ABROAD = [
   { name: 'time-los-angeles', timeZone: 'America/Los_Angeles', locale: 'de-DE' },
   { name: 'time-kolkata', timeZone: 'Asia/Kolkata', locale: 'ar-EG' },
 ]
+
+/**
+ * The views built once per run, in a child process, because the view build
+ * sets NODE_ENV to production for the process it runs in.
+ */
+let builtViews: Promise<string> | undefined
+
+function buildViewsOnce() {
+  builtViews ??= mkdtemp(join(tmpdir(), 'anachoic-views-')).then(async (outDir) => {
+    const script =
+      "const { buildViews } = await import('./scripts/build_views.mjs');" +
+      'await buildViews({ outDir: process.argv[1] })'
+    await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script, outDir], {
+      cwd: import.meta.dirname,
+    })
+    return outDir
+  })
+  return builtViews
+}
+
+/**
+ * `builtView(entry)` gives a ui test the HTML the view build writes for that
+ * entry.
+ */
+const builtView: BrowserCommand<[entry: string]> = async (_context, entry) => {
+  const outDir = await buildViewsOnce()
+  return readFile(join(outDir, `${entry}.html`), 'utf8')
+}
 
 /**
  * A fresh object per project, because Vitest writes each project's name into
@@ -69,7 +103,7 @@ export default defineConfig({
           name: 'ui',
           include: ['view/**/*.test.{ts,tsx}'],
           exclude: [...configDefaults.exclude],
-          browser: chromium(),
+          browser: { ...chromium(), commands: { builtView } },
         },
       },
       {

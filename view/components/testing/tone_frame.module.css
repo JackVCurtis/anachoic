@@ -1,0 +1,6 @@
+/* Copied from anachoic inertia/components/testing/tone_frame.module.css at fd99e0d */
+.frame {
+  padding: var(--space-6);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+}

@@ -1,0 +1,175 @@
+/* Copied from anachoic inertia/css/typography.css at fd99e0d */
+/* Titles */
+
+.text-title-page,
+.text-title-panel,
+.text-title-5,
+.text-title-4,
+.text-title-3,
+.text-title-2,
+.text-title-1 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-wrap: pretty;
+}
+
+.text-title-page {
+  font-size: 25px;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.text-title-panel {
+  font-size: 20px;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.text-title-5 {
+  font-size: 19px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.text-title-4 {
+  font-size: 18px;
+  line-height: 1.16;
+  letter-spacing: 0;
+}
+
+.text-title-3 {
+  font-size: 17px;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+.text-title-2 {
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.text-title-1 {
+  font-size: 15px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+/* Labels */
+
+.text-section,
+.text-label,
+.text-note,
+.text-status,
+.text-name,
+.text-control {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+}
+
+.text-section {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.12;
+  letter-spacing: 0.14em;
+  color: var(--color-text);
+}
+
+.text-label {
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--color-text-subtle);
+}
+
+.text-note {
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-wrap: pretty;
+}
+
+.text-status {
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--color-text-subtle);
+}
+
+.text-name {
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+.text-control {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--color-text);
+}
+
+/* Plain text */
+
+.text-count {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.text-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.text-body-sm {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 13px;
+  text-wrap: pretty;
+}
+
+.text-detail {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 12px;
+  text-wrap: pretty;
+}
+
+.text-hint {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  text-wrap: pretty;
+}
+
+/* Monospace */
+
+.text-mono,
+.text-mono-sm,
+.text-mono-xs {
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+.text-mono {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.text-mono-sm {
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.text-mono-xs {
+  font-size: 11px;
+}
+
+/* Numbers that tick keep their width; both families carry tnum */
+
+.text-tabular {
+  font-variant-numeric: tabular-nums;
+}

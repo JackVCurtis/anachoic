@@ -38,3 +38,16 @@ test('a woff2 font imported by an entry is inlined as a data: URL', async () => 
 
   expect(html).toMatch(/url\(\s*["']?data:font\/woff2;base64,/)
 })
+
+describe.each(VIEW_ENTRIES)('the fonts of the built %s view', (entry) => {
+  test('are the five faces, each inlined once, and no face loads from the network', async () => {
+    const html = await readFile(join(outDir, `${entry}.html`), 'utf8')
+    const faces = html.match(/@font-face\s*\{[^}]*\}/g) ?? []
+
+    expect(html.match(/data:font\/woff2/g)).toHaveLength(5)
+    expect(faces).toHaveLength(5)
+    for (const face of faces) {
+      expect(face).not.toMatch(/https?:/)
+    }
+  })
+})
