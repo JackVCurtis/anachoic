@@ -1,0 +1,24 @@
+/* Copied from anachoic inertia/components/patterns/empty_state/empty_state.module.css at fd99e0d */
+.box {
+  text-align: center;
+}
+
+.dashed {
+  padding: var(--space-6);
+}
+
+.framed {
+  padding: var(--space-8);
+}
+
+.dashedText {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.message {
+  color: var(--color-text-subtle);
+}

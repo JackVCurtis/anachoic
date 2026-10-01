@@ -1,0 +1,14 @@
+/* Copied from anachoic inertia/components/patterns/meta_line/meta_line.module.css at fd99e0d */
+.line {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--color-text-meta);
+}
+
+.detail {
+  color: var(--color-text-muted);
+}

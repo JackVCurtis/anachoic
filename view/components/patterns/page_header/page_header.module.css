@@ -1,0 +1,16 @@
+/* Copied from anachoic inertia/components/patterns/page_header/page_header.module.css at fd99e0d */
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.header > h1 {
+  flex: none;
+}
+
+.summary {
+  min-width: 0;
+  color: var(--color-text-faint);
+}

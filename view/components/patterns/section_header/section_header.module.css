@@ -1,0 +1,47 @@
+/* Copied from anachoic inertia/components/patterns/section_header/section_header.module.css at fd99e0d */
+.header {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.centered {
+  align-items: center;
+}
+
+.baseline {
+  align-items: baseline;
+}
+
+.roomy {
+  gap: var(--space-3);
+}
+
+.legend {
+  width: 100%;
+  padding: 0;
+}
+
+.small {
+  font-size: 11px;
+}
+
+.accent {
+  color: var(--color-accent-800);
+}
+
+.subtle {
+  color: var(--color-text-subtle);
+}
+
+.noteAccent {
+  color: var(--color-text-accent);
+}
+
+/* Without a rule to fill the row, the auto margin pushes the trailing items to its end */
+.end {
+  display: flex;
+  align-items: inherit;
+  gap: inherit;
+  margin-inline-start: auto;
+}
