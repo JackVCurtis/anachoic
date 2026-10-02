@@ -8,7 +8,7 @@ Each copied file records its source and commit ([02](02-stack-and-structure.md#c
 
 | Layer | Copied unchanged | Notes |
 |---|---|---|
-| CSS (`view/css/`) | `app.css` (layer order), `tokens.css`, `base.css`, `typography.css` | `fonts.css` is rewritten to inline the woff2 files ([fonts](#fonts)). Terminal tokens are dropped. In `base.css` the rule giving `html`, `body` and `#app` `height: 100%` is removed, so the document grows with its content and auto-resize can report it ([layout](#layout)). The `--layout-min-*` tokens stay but nothing uses them. |
+| CSS (`view/css/`) | `app.css` (layer order), `tokens.css`, `base.css`, `typography.css` | `fonts.css` is rewritten to inline the woff2 files ([fonts](#fonts)). Terminal tokens are dropped. In `base.css` the rule giving `html`, `body` and `#app` `height: 100%` is removed, so the document grows with its content and auto-resize can report it ([layout](#layout)). The `--layout-min-*` tokens stay but nothing uses them. In `tokens.css` the owner-chip tokens `--tone-chip-human-*` are renamed `--tone-chip-you-*`, matching the `you` owner. |
 | Types | `types.ts`, trimmed to `Owner`, `StepStatus`, `TaskStatus`, `Tone` | `Owner` becomes `'agent' \| 'you'` to match [03](03-domain-model.md#step). Slot, pickup, placement and step-action types go. |
 | Helpers | `join_classes`, `words`, `time`, `steps`, `announcement`, `messages`, `constants`, the move logic from `board_rail` (`movedOrder`, `moveAnnouncement`, `queuePosition`), and `badgeFor` from `task_drawer` | With their tests. `strings.ts` is replaced ([content](#content)). `repoLabel` goes, because there are no repos. |
 | Hooks | `use_now`, `use_escape_layer` | |
@@ -17,7 +17,7 @@ Each copied file records its source and commit ([02](02-stack-and-structure.md#c
 | Patterns | SectionHeader, PageHeader, EmptyState, MetaLine (without its repo prop), Disclosure, OwnerChip, StatusBadge, StepPips, ChainPreview, InlineConfirm, FlashMessage, BusyIndicator, CopyButton | StepPips and ChainPreview take a session name where anachoic took an agent name. CommandBox, SessionLink, SegmentedControl, StepActions and WorkflowField are not needed. |
 | Board | QueueSection, QueueCard, MoveHandle, BacklogSection, BacklogCard, AgentsSection and AgentSlotCard | Adapted. See below. |
 
-The lint rules from anachoic `eslint/component_rules.js` and the relevant parts of `eslint.config.js` are copied ([09](09-testing-and-build-order.md#lint)).
+The lint rules from anachoic `eslint/component_rules.js` and the relevant parts of `eslint.config.js` are copied ([09](09-testing-and-build-order.md#lint)). One rule is added: an entry's `fixtures.ts` may import the library's fixtures, so the two layers of board fixtures describe the same states.
 
 ## What is built here from anachoic's documents
 
