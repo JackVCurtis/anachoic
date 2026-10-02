@@ -43,7 +43,6 @@ These choices are made in these documents, without a decision from the product o
 | What is desktop's `local-agent-mode` client? | It is ignored until it calls a tool |
 | Can a view render in a desktop Code-tab session? | Not relied on. The Code tab is treated as text only. |
 | Which client name and environment does a desktop Code-tab session give the server? | It is treated as any other client: a worker with a minted id, unless it reports `claude-code` with `CLAUDE_CODE_SESSION_ID`. The server logs each client's name and version, and the names (never the values) of the `CLAUDE`, `ANTHROPIC` and `MCP` variables it was given, on `initialized`, so the answer can be read from its log. |
-| Where does desktop install the extension's files, for a worker's `claude mcp add`? | Todo PKG-02 finds the path |
 
 ## Verified by the spikes
 
@@ -64,4 +63,7 @@ The full record is in [../spikes/mcp-apps/notes.md](../spikes/mcp-apps/notes.md)
 - **Claude Code:**
   - It shows text only.
   - It passes `CLAUDE_CODE_SESSION_ID` and `CLAUDE_PROJECT_DIR` to the server process.
+- **The installed extension:**
+  - Desktop unpacks it into `~/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/` ([08](08-packaging-and-hosts.md#worker-sessions)).
+  - A worker added with `claude mcp add` can run `server/server.js` from there, and Claude Code reports it connected.
 - **SQLite with WAL** is safe across processes, under the rules in [04](04-persistence.md#writing).

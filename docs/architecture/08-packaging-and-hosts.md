@@ -42,18 +42,33 @@ The manifest (version 0.3, which `mcpb validate` accepts):
 
 ## Worker sessions
 
-A worker is any Claude Code session with the server added. The worker runs the server file that the extension installed, so both always run the same build:
+A worker is any Claude Code session with the server added. The worker runs the server file that the extension installed, so both always run the same build on the same database.
 
-```bash
-claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" -- node "<path to the extension>/server/server.js"
+**Where desktop installs the extension.** On macOS, desktop unpacks each installed extension into its own folder under `~/Library/Application Support/Claude/Claude Extensions/`. The folder is named `local.mcpb.<author>.<name>`, where `<author>` is the manifest's author name in lower case with spaces as hyphens. For Anachoic that is:
+
+```text
+~/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/
+  manifest.json
+  server/
+    server.js
+    views/
 ```
 
-The README shows the exact path. Desktop keeps installed extensions under its application-support folder. Todo PKG-02 finds and records that path, and adds a `pnpm print-worker-command` script that prints the command filled in.
+**Adding the server.** `pnpm print-worker-command` prints the command, with the installed path filled in:
+
+```bash
+claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"
+```
+
+- **The data directory.** The script reads `ANACHOIC_DATA_DIR` from the installed `manifest.json`, so the worker opens the same `board.sqlite` as desktop.
+- **Not installed.** If the extension's folder is missing, the script says so in one line and exits non-zero.
+- **`--project`.** Prints the `--scope project` form, which writes the server into one repository's `.mcp.json` instead of adding it for every project.
+- **`--dev`.** Prints the command for `dist/server.js`, named `anachoic-dev`, with `.cache/dev-data` as its data directory. That is the board the reference host uses ([Development loop](#development-loop)).
 
 **Requirements:**
-- **Node.** The worker's `node` must be version 24 or newer, for `node:sqlite`.
-- **Per project.** `--scope user` adds the server for every project. `--scope project` writes it into one repo's `.mcp.json` instead.
+- **Node.** The worker's `node` must be version 24 or newer, for `node:sqlite`. The script warns when `node -v` on the `PATH` is older.
 - **Timeouts.** No per-server `timeout` is needed. `wait_for_answer` stays within Claude Code's limits ([05](05-sessions.md#waiting-for-your-answer)).
+- **After an update.** The folder name carries no version, so a newer `.mcpb` installs into the same folder and workers pick up the new build when their session next starts its server.
 
 ## Logs
 
@@ -71,6 +86,6 @@ The README shows the exact path. Desktop keeps installed extensions under its ap
 | Work on a component | `pnpm storybook` |
 | Work on a view against a real server | `pnpm dev`, then the reference host. The server's `--http` flag serves Streamable HTTP on 127.0.0.1:3001, which the reference host needs. Todo PKG-03 wraps the reference host's build. |
 | Try it in desktop chat | `pnpm run pack`, then install the `.mcpb` |
-| Try a worker | `claude mcp add` pointing at `dist/server.js`, with `ANACHOIC_DATA_DIR` set to a scratch directory |
+| Try a worker | `pnpm print-worker-command --dev` prints a `claude mcp add` command for `dist/server.js`, with `.cache/dev-data` as its data directory |
 
 **The reference host is permissive.** The ext-apps reference host (`examples/basic-host`) allows `data:` fonts and more than desktop does, so it does not prove a view will work in desktop. Rendering, fonts, display modes and waking are checked in desktop chat before a phase is called done ([09](09-testing-and-build-order.md#the-manual-desktop-check)).

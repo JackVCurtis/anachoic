@@ -13,6 +13,7 @@
     "dev": "node scripts/dev.mjs",
     "host": "node scripts/reference_host.mjs",
     "pack": "node scripts/pack.mjs",
+    "print-worker-command": "node scripts/print_worker_command.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && tsc --noEmit --project view/tsconfig.json && tsc --noEmit --project .storybook/tsconfig.json",
     "test": "pnpm test:unit && pnpm test:ui && pnpm test:integration && pnpm test:e2e",
