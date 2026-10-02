@@ -4,6 +4,7 @@ import type { BoardSource } from '../../bridge/board_source'
 import type { HostApp } from '../../bridge/connect'
 import { createTaskSource, type TaskSource } from '../../bridge/task_source'
 import { getBoard } from '../../bridge/tools'
+import { backlog, done } from '../../components/helpers/strings'
 import type { TaskSummary } from '../../components/task/task_data'
 import { toTaskSummary } from './to_task_data'
 
@@ -33,8 +34,13 @@ function taskRefs(board: BoardProps): TaskRef[] {
   ]
 }
 
-function focusable(element: HTMLElement | null): element is HTMLElement {
-  return element !== null && element.isConnected
+/** The board section a task returned to the board for, by its heading's title. */
+export type ReturnSection = 'backlog' | 'done'
+
+const SECTION_TITLES: Record<ReturnSection, string> = { backlog: backlog.title, done: done.title }
+
+function focusable(element: HTMLElement | null | undefined): element is HTMLElement {
+  return element !== null && element !== undefined && element.isConnected
 }
 
 /**
@@ -50,7 +56,7 @@ export function useTaskPanel(
   boardRoot: RefObject<HTMLElement | null>
 ) {
   const [panel, setPanel] = useState<OpenTaskPanel | null>(null)
-  const returning = useRef<OpenTaskPanel | null>(null)
+  const returning = useRef<{ panel: OpenTaskPanel; section: ReturnSection | null } | null>(null)
 
   const source = panel?.source
   useEffect(() => {
@@ -70,8 +76,16 @@ export function useTaskPanel(
       return
     }
     returning.current = null
-    const boardHeading = boardRoot.current?.querySelector<HTMLElement>('h1') ?? null
-    const target = [closed.opener, closed.sectionHeading, boardHeading].find(focusable)
+    const root = boardRoot.current
+    const sectionHeading = closed.section
+      ? [...(root?.querySelectorAll<HTMLElement>('h2') ?? [])].find(
+          (heading) => heading.textContent === SECTION_TITLES[closed.section!]
+        )
+      : undefined
+    const boardHeading = root?.querySelector<HTMLElement>('h1')
+    const target = closed.section
+      ? [sectionHeading, boardHeading].find(focusable)
+      : [closed.panel.opener, closed.panel.sectionHeading, boardHeading].find(focusable)
     target?.focus()
   }, [panel, boardRoot])
 
@@ -90,8 +104,15 @@ export function useTaskPanel(
     })
   }
 
-  async function backToBoard() {
-    returning.current = panel
+  /**
+   * Swaps back to the board. With a section, focus goes to that section's
+   * heading, as after the task was archived and its card is gone.
+   */
+  async function backToBoard(section: ReturnSection | null = null) {
+    if (panel === null) {
+      return
+    }
+    returning.current = { panel, section }
     setPanel(null)
     const outcome = await getBoard(app)
     if (outcome.ok && !('changed' in outcome.props)) {
@@ -99,5 +120,9 @@ export function useTaskPanel(
     }
   }
 
-  return { panel, openTask, backToBoard: () => void backToBoard() }
+  return {
+    panel,
+    openTask,
+    backToBoard: (section: ReturnSection | null = null) => void backToBoard(section),
+  }
 }

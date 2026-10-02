@@ -4,9 +4,13 @@ import { connectToHost, type ConnectOptions, type HostConnection } from '../../b
 import { HostContextProvider, useHostContext } from '../../bridge/host_context'
 import { openTaskSource, type TaskSource } from '../../bridge/task_source'
 import { openLink, requestDisplayMode } from '../../bridge/tools'
+import { createYourActions } from '../../bridge/wake'
+import { card } from '../../components/helpers/strings'
 import type { TaskSummary } from '../../components/task/task_data'
 import { TaskView } from '../../components/task/task_view/task_view'
 import { toTaskData } from '../board/to_task_data'
+import { useMessages } from '../board/use_board_messages'
+import { useTaskActions } from '../board/use_task_actions'
 
 export interface LoadedTask {
   connection: HostConnection
@@ -71,6 +75,17 @@ function Task({ app, taskId, source }: LiveTaskProps) {
   const { displayMode, availableDisplayModes, safeAreaInsets } = useHostContext()
   const snapshot = useSyncExternalStore(source.subscribe, source.getSnapshot)
   const data = useMemo(() => (snapshot.task ? toTaskData(snapshot.task) : null), [snapshot.task])
+  const task = data?.task ?? summaryOf(taskId)
+  const yourActions = useMemo(() => createYourActions(app), [app])
+  const { messages, dismiss, reportFailure } = useMessages()
+  const actions = useTaskActions(yourActions, task, source, { onFailure: reportFailure })
+
+  /** The host opens a step's link in the browser, since the view cannot navigate. */
+  async function open(url: string) {
+    if (!(await openLink(app, url))) {
+      reportFailure({ ok: false, refusal: card.linkNotOpened })
+    }
+  }
 
   useEffect(() => {
     source.start()
@@ -79,14 +94,19 @@ function Task({ app, taskId, source }: LiveTaskProps) {
 
   return (
     <TaskView
-      task={data?.task ?? summaryOf(taskId)}
+      task={task}
       data={data}
       archived={snapshot.refusal}
       displayMode={displayMode}
       fullscreenAvailable={availableDisplayModes?.includes('fullscreen') ?? false}
       onRequestDisplayMode={(mode) => void requestDisplayMode(app, mode)}
-      onOpenLink={(url) => void openLink(app, url)}
+      onOpenLink={(url) => void open(url)}
       safeAreaInsets={safeAreaInsets}
+      onPark={actions.onPark}
+      onArchive={actions.onArchive}
+      pending={actions.pending}
+      messages={messages}
+      onDismissMessage={dismiss}
     />
   )
 }
@@ -94,6 +114,8 @@ function Task({ app, taskId, source }: LiveTaskProps) {
 /**
  * The live task view that open_task renders: drawn from the task source,
  * which polls get_task while it is mounted. It posts nothing to the chat.
+ * Park and Archive call their tools and the view fetches the task again, so
+ * an archived task shows that it was archived; a refusal shows in the view.
  * Step links are opened by the host, and the view moves between inline and
  * full screen through the host.
  */

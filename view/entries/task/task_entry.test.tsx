@@ -104,3 +104,89 @@ describe('the task entry', () => {
     expect(app.calls.openLink).toEqual([{ url: 'https://ci.example.com/1' }])
   })
 })
+
+describe('Park and Archive in the task entry', () => {
+  /**
+   * A fake App with T-012 active and parkable until an action succeeds, and
+   * the given answer to the action's tool.
+   */
+  function actionApp(tool: 'move_to_backlog' | 'archive_task', answer: CallToolResult) {
+    const active = taskProps(5)
+    let current: CallToolResult = taskResult({
+      ...active,
+      task: { ...active.task, status: 'active', list: 'working' },
+      canAct: { park: true, archive: true },
+    })
+    let revision = 5
+    return new FakeApp({
+      hostContext: { displayMode: 'inline', timeZone: 'UTC' },
+      replayedResult: REPLAYED,
+      answer: (params) => {
+        const since = params.arguments?.sinceRevision as number | undefined
+        if (params.name === tool) {
+          if (!answer.isError) {
+            revision = 6
+            current =
+              tool === 'archive_task'
+                ? refusedResult('T-012 was archived')
+                : taskResult({ ...taskProps(6), canAct: { park: false, archive: true } })
+          }
+          return answer
+        }
+        return since === undefined || since < revision
+          ? current
+          : taskResult({ changed: false, revision: since })
+      },
+    })
+  }
+
+  const ACTED = {
+    content: [{ type: 'text' as const, text: 'Done' }],
+    structuredContent: {
+      revision: 6,
+      acted: { task: { id: '12', displayId: 'T-012', title: 'Add caching' } },
+    },
+  }
+
+  async function confirm(user: ReturnType<typeof userEvent.setup>, action: 'Park' | 'Archive') {
+    await user.click(screen.getByRole('button', { name: action }))
+    await user.click(screen.getAllByRole('button', { name: action }).at(-1)!)
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+  }
+
+  test('Park calls move_to_backlog once, posts nothing, and shows the task in the backlog', async () => {
+    const app = actionApp('move_to_backlog', ACTED)
+    const { user } = await renderTask(app)
+
+    await confirm(user, 'Park')
+
+    expect(app.callsTo('move_to_backlog')).toEqual([
+      { name: 'move_to_backlog', arguments: { task: 'T-012' } },
+    ])
+    expect(app.calls.sendMessage).toEqual([])
+    expect(screen.queryByRole('button', { name: 'Park' })).toBeNull()
+  })
+
+  test('Archive calls archive_task once, posts nothing, and shows that the task was archived', async () => {
+    const app = actionApp('archive_task', ACTED)
+    const { user } = await renderTask(app)
+
+    await confirm(user, 'Archive')
+
+    expect(app.callsTo('archive_task')).toEqual([
+      { name: 'archive_task', arguments: { task: 'T-012' } },
+    ])
+    expect(app.calls.sendMessage).toEqual([])
+    expect(screen.getByText('T-012 was archived')).toBeVisible()
+  })
+
+  test('a refusal shows an error strip and posts nothing', async () => {
+    const app = actionApp('archive_task', refusedResult('T-012 is not done'))
+    const { user } = await renderTask(app)
+
+    await confirm(user, 'Archive')
+
+    expect(screen.getByRole('alert')).toHaveTextContent('T-012 is not done')
+    expect(app.calls.sendMessage).toEqual([])
+  })
+})

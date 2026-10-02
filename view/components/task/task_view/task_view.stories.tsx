@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
-import { ASSIGNED, DONE, LONG_TITLE, RUNNING, TWELVE_STEPS } from '../../fixtures/task'
+import { useState } from 'react'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import { ASSIGNED, DONE, LONG_TITLE, RUNNING, SIGNED_OFF, TWELVE_STEPS } from '../../fixtures/task'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
-import { TaskView } from './task_view'
+import { TaskView, type TaskViewProps } from './task_view'
 
 async function expectNoSidewaysScroll() {
   const [sideways] = await windowOverflow()
@@ -95,4 +96,62 @@ export const Narrow: Story = {
 export const NoFullscreen: Story = {
   name: 'With no full screen offered',
   args: { task: RUNNING.task, data: RUNNING, fullscreenAvailable: false },
+}
+
+export const BothActions: Story = {
+  name: 'With Park and Archive',
+  args: { onPark: fn(), onArchive: fn() },
+}
+
+export const ParkConfirming: Story = {
+  name: 'With Park confirming',
+  args: { onPark: fn(), onArchive: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Park' }))
+    await expect(canvas.getByRole('button', { name: 'Keep step' })).toHaveFocus()
+    await expect(args.onPark).not.toHaveBeenCalled()
+  },
+}
+
+/** A confirmed action stays in flight, as while its tool call runs. */
+function InFlight(args: TaskViewProps) {
+  const [pending, setPending] = useState<TaskViewProps['pending']>(null)
+  return <TaskView {...args} pending={pending} onArchive={() => setPending('archive')} />
+}
+
+export const ArchiveConfirmingBusy: Story = {
+  name: 'With Archive confirming and busy',
+  args: { onPark: fn(), onArchive: fn() },
+  render: (args) => <InFlight {...args} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archive' }))
+    await userEvent.click(canvas.getAllByRole('button', { name: 'Archive' }).at(-1)!)
+    await expect(canvas.getAllByRole('button', { name: 'Archive' }).at(-1)).toHaveAttribute(
+      'aria-busy',
+      'true'
+    )
+    await expect(canvas.getByRole('button', { name: 'Keep task' })).toBeDisabled()
+  },
+}
+
+export const ErrorStrip: Story = {
+  name: 'With an error strip',
+  args: {
+    onPark: fn(),
+    onArchive: fn(),
+    messages: [{ id: 'm1', kind: 'error', text: 'T-031 is not active' }],
+    onDismissMessage: fn(),
+  },
+}
+
+export const NeitherAction: Story = {
+  name: 'With neither action',
+  args: { task: SIGNED_OFF.task, data: SIGNED_OFF, onPark: fn(), onArchive: fn() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('button', { name: 'Park' })).toBeNull()
+    await expect(canvas.queryByRole('button', { name: 'Archive' })).toBeNull()
+  },
 }

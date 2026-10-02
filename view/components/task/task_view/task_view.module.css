@@ -71,3 +71,13 @@
 .archived {
   margin: 0;
 }
+
+.confirm {
+  margin-top: var(--space-2);
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

@@ -162,9 +162,10 @@ function Board({ app, source }: LiveBoardProps) {
       {panel && (
         <TaskPanel
           app={app}
+          yourActions={yourActions}
           panel={panel}
+          onBoard={(props) => source.replace(props)}
           onBackToBoard={backToBoard}
-          onOpenLink={(url) => void openArtifact(url)}
         />
       )}
     </>
