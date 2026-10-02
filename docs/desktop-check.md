@@ -102,6 +102,13 @@ Use a task with a worker step that declared Output "Pull request", then a user s
 4. **From the board.** "Show all completed tasks" in the Done section opens History, and "Back to board" returns.
 5. **In Claude Code.** `/mcp__anachoic__board` shows the board summary as text.
 
+## I. Phase 4
+
+1. **Icon.** Settings → Extensions shows Anachoic with its icon, at version 0.5.0.
+2. **Installing over the older build keeps the board.** Every task, the history and the sessions are still there after reinstalling.
+3. **The new look.** Secondary text is a little darker, and the primary button and selected options use a deeper blue. Nothing is hard to read on the dark Waiting on user band or in the task view.
+4. **Screen readers,** if one is at hand. Arrows and dots are not read aloud, and a dash reads "none".
+
 ## Results
 
 | Date | Claude desktop | Phase | Result |
