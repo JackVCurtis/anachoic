@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type RefObject,
+} from 'react'
 import type { YourTurnItem } from '../../../shared/props'
 import {
   openBoardSource,
@@ -6,12 +14,14 @@ import {
   type BoardSourceOptions,
 } from '../../bridge/board_source'
 import { connectToHost, type ConnectOptions, type HostConnection } from '../../bridge/connect'
+import { createHistorySource, type HistorySource } from '../../bridge/history_source'
 import { HostContextProvider, useHostContext } from '../../bridge/host_context'
-import { openLink } from '../../bridge/tools'
+import { getBoard, openLink } from '../../bridge/tools'
 import { createYourActions } from '../../bridge/wake'
 import { card } from '../../components/helpers/strings'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement, type AnnouncementFact } from '../../components/helpers/announcement'
+import { HistoryPanel } from '../history/history_panel'
 import { TaskPanel } from './task_panel'
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
@@ -66,6 +76,53 @@ function arrivalAnnouncement(
   return sentences.length === 0 ? null : { key, text: sentences.join('. ') }
 }
 
+/**
+ * The board's History panel: "Show all completed tasks" swaps the board for
+ * the history, fetched with get_history and kept live by polling it. "Back
+ * to board" swaps back, fetches the board, and returns focus to the link,
+ * else the board's heading.
+ */
+function useHistoryPanel(
+  app: HostConnection['app'],
+  boardSource: Pick<BoardSource, 'replace'>,
+  boardRoot: RefObject<HTMLElement | null>
+) {
+  const [historySource, setHistorySource] = useState<HistorySource | null>(null)
+  const opener = useRef<HTMLElement | null>(null)
+  const returning = useRef(false)
+
+  /* Runs once the board is shown again, since a hidden element cannot take focus. */
+  useLayoutEffect(() => {
+    if (historySource !== null || !returning.current) {
+      return
+    }
+    returning.current = false
+    const target = opener.current?.isConnected
+      ? opener.current
+      : boardRoot.current?.querySelector<HTMLElement>('h1')
+    target?.focus()
+  }, [historySource, boardRoot])
+
+  function showHistory() {
+    const active = document.activeElement
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null
+    const history = createHistorySource(app)
+    setHistorySource(history)
+    void history.refresh()
+  }
+
+  async function backFromHistory() {
+    returning.current = true
+    setHistorySource(null)
+    const outcome = await getBoard(app)
+    if (outcome.ok && !('changed' in outcome.props)) {
+      boardSource.replace(outcome.props)
+    }
+  }
+
+  return { historySource, showHistory, backFromHistory: () => void backFromHistory() }
+}
+
 interface LiveBoardProps {
   app: HostConnection['app']
   source: BoardSource
@@ -94,6 +151,7 @@ function Board({ app, source }: LiveBoardProps) {
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
   const boardRoot = useRef<HTMLDivElement>(null)
   const { panel, openTask, backToBoard } = useTaskPanel(app, board, source, boardRoot)
+  const { historySource, showHistory, backFromHistory } = useHistoryPanel(app, source, boardRoot)
 
   async function reorder(taskId: string, position: number) {
     const item = board.queue.find((queued) => queued.task.id === taskId)
@@ -138,7 +196,7 @@ function Board({ app, source }: LiveBoardProps) {
    */
   return (
     <>
-      <div ref={boardRoot} hidden={panel !== null}>
+      <div ref={boardRoot} hidden={panel !== null || historySource !== null}>
         <BoardView
           {...lists}
           updatedAt={updatedAt}
@@ -157,8 +215,19 @@ function Board({ app, source }: LiveBoardProps) {
           onDismissMessage={dismiss}
           onOpenTask={openTask}
           selectedTaskId={panel?.summary.id ?? null}
+          onShowHistory={showHistory}
         />
       </div>
+      {historySource && (
+        <HistoryPanel
+          app={app}
+          yourActions={yourActions}
+          source={historySource}
+          onBackToBoard={backFromHistory}
+          focusOnShow
+          onBoard={(props) => source.replace(props)}
+        />
+      )}
       {panel && (
         <TaskPanel
           app={app}

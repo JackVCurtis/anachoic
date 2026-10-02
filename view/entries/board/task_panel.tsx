@@ -19,6 +19,8 @@ export interface TaskPanelProps {
   onBoard: (props: ActionResult) => void
   /** Swaps back to the board, with focus on a section's heading when one is given. */
   onBackToBoard: (section?: ReturnSection | null) => void
+  /** The way back's label, for a panel opened from somewhere else. "Back to board" unless given. */
+  backLabel?: string
 }
 
 /**
@@ -27,7 +29,14 @@ export interface TaskPanelProps {
  * focus on the task's title. Park keeps the panel on the task; Archive
  * returns to the board, with focus on the Backlog or Done heading.
  */
-export function TaskPanel({ app, yourActions, panel, onBoard, onBackToBoard }: TaskPanelProps) {
+export function TaskPanel({
+  app,
+  yourActions,
+  panel,
+  onBoard,
+  onBackToBoard,
+  backLabel,
+}: TaskPanelProps) {
   const { displayMode, availableDisplayModes, safeAreaInsets } = useHostContext()
   const snapshot = useSyncExternalStore(panel.source.subscribe, panel.source.getSnapshot)
   const data = useMemo(() => (snapshot.task ? toTaskData(snapshot.task) : null), [snapshot.task])
@@ -61,6 +70,7 @@ export function TaskPanel({ app, yourActions, panel, onBoard, onBackToBoard }: T
       fullscreenAvailable={availableDisplayModes?.includes('fullscreen') ?? false}
       onRequestDisplayMode={(mode) => void requestDisplayMode(app, mode)}
       onBackToBoard={() => onBackToBoard()}
+      backLabel={backLabel}
       onOpenLink={(url) => void open(url)}
       safeAreaInsets={safeAreaInsets}
       titleRef={title}
