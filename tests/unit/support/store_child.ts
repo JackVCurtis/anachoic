@@ -1,6 +1,7 @@
 import { claim } from '../../../domain/transitions.js'
 import { closeDatabase, openDatabase } from '../../../store/database.js'
 import { startHeartbeat } from '../../../store/heartbeat.js'
+import { claimStep } from '../../../store/services.js'
 import { touchSession } from '../../../store/sessions.js'
 import { isWritten, write } from '../../../store/write.js'
 import { addQueuedTask, transition } from './store.js'
@@ -37,6 +38,17 @@ if (role === 'open') {
     else busy++
   }
   await send({ revisions, busy })
+  closeDatabase(database)
+} else if (role === 'claim') {
+  const [sessionId, task] = rest
+  const database = openDatabase(file)
+  const result = claimStep(
+    database,
+    sessionId,
+    new Date().toISOString(),
+    task === '' ? undefined : task
+  )
+  await send({ code: 'code' in result ? result.code : 'claimed' })
   closeDatabase(database)
 } else if (role === 'serve') {
   // Serves one session that claims a step, then stays alive until killed.
