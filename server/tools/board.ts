@@ -7,6 +7,7 @@ import {
   type BoardProps,
   type GetBoardResult,
 } from '../../shared/props.js'
+import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { emptyBoard } from '../props/empty_board.js'
 import { guarded } from '../results.js'
 import { boardSummary } from '../text/board_summary.js'
@@ -30,8 +31,7 @@ export function registerBoardTools(
     'show_board',
     {
       title: 'Show the board',
-      description:
-        'Shows the Anachoic board: what waits on you, what is running, the queue, the backlog, what is ready to sign off, and the sessions. Hosts that render views draw it; the text result summarises it.',
+      description: TOOL_DESCRIPTIONS.show_board,
       inputSchema: z.object({ ...sessionInput }),
       outputSchema: boardPropsSchema,
       _meta: { ui: { resourceUri: VIEWS.board } },

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { emptyBoard } from '../../server/props/empty_board.js'
-import { boardSummary } from '../../server/text/board_summary.js'
-import { boardPropsSchema } from '../../shared/props.js'
+import { emptyBoard } from '../../../server/props/empty_board.js'
+import { boardSummary } from '../../../server/text/board_summary.js'
+import { boardPropsSchema } from '../../../shared/props.js'
 
 describe('the empty board', () => {
   test('is at revision 0 with every list empty and every count 0, and parses as board props', () => {

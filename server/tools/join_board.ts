@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isRefusal } from '../../domain/refusal.js'
 import { LIMITS } from '../../shared/limits.js'
 import { setSessionName } from '../../store/sessions.js'
+import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { refusalResult, textResult } from '../results.js'
 import { joinBoardText } from '../text/join_board.js'
 import { asCaller, type ToolContext } from './context.js'
@@ -13,8 +14,7 @@ export function registerJoinBoard(server: McpServer, context: ToolContext) {
     'join_board',
     {
       title: 'Join the board',
-      description:
-        'Joins the Anachoic board, optionally setting this session’s display name (1–40 characters). Returns the session’s id, kind and name.',
+      description: TOOL_DESCRIPTIONS.join_board,
       inputSchema: z.object({
         name: z.string().min(LIMITS.sessionName.min).max(LIMITS.sessionName.max).optional(),
         ...sessionInput,

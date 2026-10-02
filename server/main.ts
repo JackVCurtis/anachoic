@@ -16,6 +16,7 @@ import { createLogger, describeError } from './logger.js'
 import { registerBoardTools } from './tools/board.js'
 import type { ToolContext } from './tools/context.js'
 import { registerJoinBoard } from './tools/join_board.js'
+import { registerModelTools } from './tools/model.js'
 import { VERSION } from './version.js'
 import { registerViews } from './views.js'
 
@@ -35,6 +36,7 @@ function createServer(shared: Shared) {
   registerViews(server, VIEWS_DIRECTORY, logger)
   registerBoardTools(server, context)
   registerJoinBoard(server, context)
+  registerModelTools(server, context)
   server.server.oninitialized = () => {
     const client = context.client()
     // Names only, never values: they show what each host passes to the server.
