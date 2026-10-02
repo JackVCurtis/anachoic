@@ -155,6 +155,7 @@ Therefore:
 
 ### Polling
 
+- **The first fetch.** If the `get_board` a view makes on connect fails, the view tries again after the same waits as a failed poll (10 s, 30 s, then every 60 s), and draws nothing until it succeeds.
 - **While connected.** The view calls `get_board(sinceRevision)` every 3 s, which is a read only. It redraws only when the result has changed.
 - **Errors.** After an error it waits 10 s, then 30 s, and so on, and shows a quiet "Can't reach the board" line until a poll succeeds.
 - **After your actions.** After a write the view draws from the write's result and resets the poll timer.

@@ -164,16 +164,21 @@ export function createBoardSource(
 
 /**
  * Fetches the board, as a view does once it has connected, and keeps it in a
- * source that has not started polling. Null when get_board did not return the
- * board.
+ * source that has not started polling. A fetch that does not return the board
+ * is tried again after the same waits as a failed poll, until one does.
  */
 export async function openBoardSource(
   app: Pick<HostApp, 'callServerTool'>,
   options: BoardSourceOptions = {}
-): Promise<BoardSource | null> {
-  const outcome = await getBoard(app)
-  if (!outcome.ok || 'changed' in outcome.props) {
-    return null
+): Promise<BoardSource> {
+  for (let failures = 0; ; failures += 1) {
+    if (failures > 0) {
+      const wait = BACKOFF_MS[Math.min(failures, BACKOFF_MS.length) - 1]
+      await new Promise((resolve) => setTimeout(resolve, wait))
+    }
+    const outcome = await getBoard(app)
+    if (outcome.ok && !('changed' in outcome.props)) {
+      return createBoardSource(app, outcome.props, options)
+    }
   }
-  return createBoardSource(app, outcome.props, options)
 }

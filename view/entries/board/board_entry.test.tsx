@@ -129,14 +129,20 @@ describe('the board entry', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Board')
   })
 
-  test('has no board to draw when get_board refuses or cannot be reached', async () => {
-    const refused = await loadBoard({
-      app: queuedApp([{ content: [{ type: 'text', text: 'No.' }], isError: true }]),
+  test('when get_board refuses or cannot be reached at first, the entry tries again and then draws', async () => {
+    const app = queuedApp([
+      { content: [{ type: 'text', text: 'No.' }], isError: true },
+      new Error('Gone'),
+      boardResult(emptyBoardProps()),
+    ])
+    let loaded: Awaited<ReturnType<typeof loadBoard>> | null = null
+    void loadBoard({ app }).then((result) => {
+      loaded = result
     })
-    const unanswered = await loadBoard({ app: queuedApp([new Error('Gone')]) })
 
-    expect(refused.source).toBeNull()
-    expect(unanswered.source).toBeNull()
+    await act(() => vi.advanceTimersByTimeAsync(BACKOFF_MS[0] + BACKOFF_MS[1]))
+    expect(app.callsTo('get_board')).toHaveLength(3)
+    expect(loaded!.source.getSnapshot().board).toEqual(emptyBoardProps())
   })
 
   test('a poll that finds the board unchanged renders nothing; a newer revision redraws', async () => {

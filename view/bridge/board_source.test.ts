@@ -1,7 +1,13 @@
 import type { CallToolResult } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { BoardProps, YourTurnItem } from '../../shared/props'
-import { BACKOFF_MS, createBoardSource, openBoardSource, POLL_MS } from './board_source'
+import {
+  BACKOFF_MS,
+  createBoardSource,
+  openBoardSource,
+  POLL_MS,
+  type BoardSource,
+} from './board_source'
 import { boardResult, emptyBoardProps } from './testing/board_props'
 import { FakeApp, type ToolAnswer } from './testing/fake_app'
 
@@ -55,14 +61,33 @@ afterEach(() => {
 })
 
 describe('the board source', () => {
-  test('fetches the board without a revision, and is null when get_board does not return it', async () => {
+  test('fetches the board without a revision', async () => {
     const app = queuedApp(boardResult(board(4)))
     const source = await openBoardSource(app)
 
     expect(app.calls.callServerTool).toEqual([{ name: 'get_board', arguments: {} }])
-    expect(source?.getSnapshot().board.revision).toBe(4)
-    expect(await openBoardSource(queuedApp(new Error('Gone')))).toBeNull()
-    expect(await openBoardSource(queuedApp(unchanged(4)))).toBeNull()
+    expect(source.getSnapshot().board.revision).toBe(4)
+  })
+
+  test('tries the first fetch again after the backoff waits until get_board returns the board', async () => {
+    const app = queuedApp(new Error('Gone'), unchanged(4), new Error('Gone'), boardResult(board(5)))
+    let opened: BoardSource | null = null
+    void openBoardSource(app).then((source) => {
+      opened = source
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+    expect(app.calls.callServerTool).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[0])
+    expect(app.calls.callServerTool).toHaveLength(2)
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[1])
+    expect(app.calls.callServerTool).toHaveLength(3)
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[2] - 1)
+    expect(app.calls.callServerTool).toHaveLength(3)
+    expect(opened).toBeNull()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(app.calls.callServerTool).toHaveLength(4)
+    expect(opened!.getSnapshot().board.revision).toBe(5)
   })
 
   test('polls with the revision drawn every 3 s once started, and not after it stops', async () => {

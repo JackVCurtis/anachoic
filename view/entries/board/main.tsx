@@ -7,10 +7,6 @@ const root = createRoot(document.getElementById('app')!)
 
 loadBoard().then(
   ({ connection, source }) => {
-    if (source === null) {
-      console.error('The board could not be fetched.')
-      return
-    }
     root.render(
       <StrictMode>
         <BoardEntry connection={connection} source={source} />

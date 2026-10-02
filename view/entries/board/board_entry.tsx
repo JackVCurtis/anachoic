@@ -13,13 +13,13 @@ import { toBoardData } from './to_board_data'
 
 export interface LoadedBoard {
   connection: HostConnection
-  /** Nothing when the first get_board did not return the board. */
-  source: BoardSource | null
+  source: BoardSource
 }
 
 /**
- * Connects to the host and fetches the board once. The tool result the host
- * replays is never drawn, because it may be old.
+ * Connects to the host and fetches the board, trying again until get_board
+ * returns it. The tool result the host replays is never drawn, because it may
+ * be old.
  */
 export async function loadBoard(
   options: ConnectOptions & BoardSourceOptions = {}
