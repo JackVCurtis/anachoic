@@ -5,21 +5,27 @@ import {
   addFollowUp,
   addTask,
   askYou,
+  blockStep,
   claimStep,
   completeStep,
   queueTask,
+  unblockStep,
   updateStep,
   type ServiceResult,
 } from '../../store/services.js'
+import { readTask } from '../../store/queries.js'
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { refusalResult, textResult } from '../results.js'
 import {
   addFollowUpText,
   addTaskText,
   askYouText,
+  blockHistory,
+  blockStepText,
   claimStepText,
   completeStepText,
   queueTaskText,
+  unblockStepText,
   updateStepText,
 } from '../text/model_tools.js'
 import { asCaller, type ToolContext } from './context.js'
@@ -29,6 +35,7 @@ import {
   linksInput,
   noteInput,
   questionInput,
+  reasonInput,
   stepsInput,
   summaryInput,
   taskInput,
@@ -59,6 +66,8 @@ export const MODEL_TOOLS = [
   'update_step',
   'ask_you',
   'complete_step',
+  'block_step',
+  'unblock_step',
 ] as const
 
 export type ModelTool = (typeof MODEL_TOOLS)[number]
@@ -144,9 +153,10 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         inputSchema: z.object({ task: taskInput.optional(), ...sessionInput }),
       },
       asCaller(context, 'claim_step', ({ task }, caller) =>
-        answer(claimStep(database, caller.id, now(), task), ({ state }) =>
-          claimStepText(state, caller.id)
-        )
+        answer(claimStep(database, caller.id, now(), task), ({ state }) => {
+          const events = readTask(database, state.task.id)?.events ?? []
+          return claimStepText(state, caller.id, blockHistory(events, now()))
+        })
       )
     ),
 
@@ -201,6 +211,34 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         answer(
           completeStep(database, caller.id, now(), task, { summary, links }),
           ({ state, events }) => completeStepText(state, events, caller.kind)
+        )
+      )
+    ),
+
+    block_step: server.registerTool(
+      'block_step',
+      {
+        title: 'Block a step',
+        description: TOOL_DESCRIPTIONS.worker.block_step,
+        inputSchema: z.object({ task: taskInput, reason: reasonInput, ...sessionInput }),
+      },
+      asCaller(context, 'block_step', ({ task, reason }, caller) =>
+        answer(blockStep(database, caller.id, now(), task, reason), ({ state }) =>
+          blockStepText(state)
+        )
+      )
+    ),
+
+    unblock_step: server.registerTool(
+      'unblock_step',
+      {
+        title: 'Unblock a step',
+        description: TOOL_DESCRIPTIONS.worker.unblock_step,
+        inputSchema: z.object({ task: taskInput, note: noteInput.optional(), ...sessionInput }),
+      },
+      asCaller(context, 'unblock_step', ({ task, note }, caller) =>
+        answer(unblockStep(database, caller.id, now(), task, note), ({ state }) =>
+          unblockStepText(state)
         )
       )
     ),

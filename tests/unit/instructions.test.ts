@@ -34,6 +34,7 @@ describe('the dedicated session’s instructions', () => {
     'Tasks cannot be edited once added, and a chain changes only by add_follow_up on a done task that is not signed off',
     'Never call wait_for_answer, and never wait in a tool',
     'this chat may claim an agent step like a worker',
+    "It is unblocked in that worker's session, by the worker, not by this chat",
     "This chat learns of the person's board actions only by calling show_board",
     'asks the person questions directly in this chat, never with ask_you',
   ])('says %s', (phrase) => {
@@ -76,6 +77,8 @@ describe('a worker’s instructions', () => {
     'stop work on a task',
     'wait_for_answer says the task was parked or your claim ended',
     "when complete_step says the next step is the person's, call wait_for_work and keep calling it",
+    'call block_step with a clear reason, then end your turn',
+    'call unblock_step and carry on',
   ])('says %s', (phrase) => {
     expect(text).toContain(phrase)
   })
@@ -109,6 +112,8 @@ describe('both versions', () => {
         update_step: ['1–500 characters', 'up to 10'],
         ask_you: ['1–2,000 characters'],
         complete_step: ['1–2,000 characters', 'up to 10'],
+        block_step: ['1–2,000 characters'],
+        unblock_step: ['up to 500 characters'],
       }
       for (const [tool, phrases] of Object.entries(limits)) {
         for (const phrase of phrases) {
@@ -117,7 +122,13 @@ describe('both versions', () => {
       }
       for (const description of Object.values(descriptions))
         expect(description).toContain('Returns')
-      for (const tool of ['update_step', 'ask_you', 'complete_step'] as const) {
+      for (const tool of [
+        'update_step',
+        'ask_you',
+        'complete_step',
+        'block_step',
+        'unblock_step',
+      ] as const) {
         expect(descriptions[tool]).toContain('Acts only on a step this session claimed.')
       }
       expect(descriptions.claim_step).toContain('only it can note, ask about or complete it')

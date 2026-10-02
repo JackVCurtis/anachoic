@@ -109,6 +109,10 @@ function sessionText(session: SessionItem, now: string) {
     return `${session.name} (${ended}${released})`
   }
   if (session.kind === 'dedicated') return session.name
+  if (session.holding?.status === 'blocked') {
+    const { task, step } = session.holding
+    return `${session.name} (live, blocked on ${task.displayId} step ${step.number})`
+  }
   return session.holding ? `${session.name} (live)` : `${session.name} (live, idle)`
 }
 
@@ -122,9 +126,13 @@ export function boardSummary(board: BoardProps): string {
     `Board, revision ${board.revision}`,
     list(
       'Your turn',
-      board.yourTurn.map(({ task, step, session }) => {
+      board.yourTurn.map(({ task, step, session, blocked }) => {
         const head = `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)}`
         if (step.owner === 'you') return `${head} is yours`
+        if (blocked) {
+          const who = session ? ` (${session.name})` : ''
+          return `${head} is blocked${who}: ${cut(blocked.reason, QUESTION_CHARS)}`
+        }
         const asks = step.question ? ` asks: ${quoted(step.question, QUESTION_CHARS)}` : ' waits'
         return `${head}${asks}${session ? ` (${session.name})` : ''}`
       })

@@ -13,6 +13,7 @@ import {
   addTask,
   archiveTask,
   askYou,
+  blockStep,
   claimStep,
   completeStep,
   signOff,
@@ -261,5 +262,44 @@ describe('boardProps', () => {
     touch(A, '/w/api-server')
     clock = 3 * MINUTE
     expect(boardProps(readBoard(database, now()), now()).sessions).toEqual([])
+  })
+})
+
+describe('a blocked step in the props', () => {
+  test('is a Your turn item with its worker, the reason and the time it was blocked, and the worker holds it as blocked', () => {
+    touch(A, '/w/api-server')
+    const task = add('Deploy', ['agent'])
+    done(claimStep(database, A, now(), task))
+    clock = MINUTE
+    touch(A, '/w/api-server')
+    done(blockStep(database, A, now(), task, 'needs AWS credentials'))
+    clock = 2 * MINUTE
+
+    const props = boardPropsSchema.parse(readBoardProps(database, now()))
+    expect(props.yourTurn).toHaveLength(1)
+    expect(props.yourTurn[0]).toMatchObject({
+      step: { number: 1, title: 'Deploy 1', owner: 'agent', waitingSince: at(MINUTE) },
+      session: { id: A, name: 'api-server' },
+      blocked: { reason: 'needs AWS credentials', since: at(MINUTE) },
+      canAct: { complete: false, answer: false, park: true },
+    })
+    expect(props.yourTurn[0].step).not.toHaveProperty('question')
+    expect(props.working).toEqual([])
+    expect(props.counts.yourTurn).toBe(1)
+    expect(props.sessions.find((session) => session.id === A)?.holding).toMatchObject({
+      step: { number: 1 },
+      status: 'blocked',
+    })
+  })
+
+  test('items that are not blocked carry blocked: null', () => {
+    touch(A, '/w/api-server')
+    const task = add('Ask', ['agent'])
+    done(claimStep(database, A, now(), task))
+    done(askYou(database, A, now(), task, 'Which?'))
+    add('Mine', ['you'])
+
+    const props = readBoardProps(database, now())
+    expect(props.yourTurn.map((item) => item.blocked)).toEqual([null, null])
   })
 })

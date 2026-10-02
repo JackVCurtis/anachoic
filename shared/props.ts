@@ -70,6 +70,12 @@ export const yourTurnItemSchema = z.object({
     waitingSince: instant,
   }),
   session: z.object({ id: z.string(), name: z.string() }).optional(),
+  /**
+   * Set when the worker in `session` blocked its step: why, and since when.
+   * It is unblocked in that worker's session, never on the board. The server
+   * always sends it.
+   */
+  blocked: z.object({ reason: z.string(), since: instant }).nullable().optional(),
   steps: pips,
   canAct: z.object({
     complete: z.boolean().optional(),
@@ -132,7 +138,8 @@ export const sessionItemSchema = z.object({
     .object({
       task: taskRefSchema,
       step: z.object({ number: z.number().int().positive(), title: z.string() }),
-      status: z.enum(['running', 'waiting']),
+      /** waiting: on your answer; blocked: until you act with the session. */
+      status: z.enum(['running', 'waiting', 'blocked']),
     })
     .optional(),
   endedAt: instant.optional(),

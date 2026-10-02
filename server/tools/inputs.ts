@@ -67,4 +67,5 @@ export const assignToInput = z
 export const titleInput = text('title')
 export const noteInput = text('note')
 export const questionInput = text('question')
+export const reasonInput = text('reason')
 export const summaryInput = text('summary')

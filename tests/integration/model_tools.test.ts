@@ -222,7 +222,7 @@ test.each([
   }
 )
 
-test('a claude-code client sees all seven model tools, none of them for the view only', async () => {
+test('a claude-code client sees every model tool, none of them for the view only', async () => {
   const api = await worker('worker-a', 'api-server')
 
   const { tools } = await api.listTools()

@@ -99,6 +99,10 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             waitingSince: step.waitingSince ?? step.startedAt ?? now,
           },
           ...(session ? { session } : {}),
+          blocked:
+            step.blockedReason === null
+              ? null
+              : { reason: step.blockedReason, since: step.blockedAt ?? now },
           steps: pips(steps),
           canAct: { complete: can.complete, answer: can.answer, park: can.park },
         })
@@ -169,7 +173,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
           item.holding = {
             task: ref(held.task),
             step: { number: held.step.number, title: held.step.title },
-            status: held.status === 'blocked' ? 'waiting' : held.status,
+            status: held.status,
           }
         }
       } else {

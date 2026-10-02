@@ -22,7 +22,9 @@ The person's board actions: the board view posts nothing to this chat. This chat
 
 Asking the person: this chat asks the person questions directly in this chat, never with ask_you.
 
-Doing work: this chat may claim an agent step like a worker, with claim_step, then update_step and complete_step. Never call wait_for_answer, and never wait in a tool.`
+Doing work: this chat may claim an agent step like a worker, with claim_step, then update_step and complete_step. Never call wait_for_answer, and never wait in a tool.
+
+Blocked steps: a blocked card on the board is a worker that cannot go on without the person acting with it. It is unblocked in that worker's session, by the worker, not by this chat; tell the person which worker's session to go to.`
 
 const WORKER_INSTRUCTIONS = `You are a worker session on Anachoic, a board of tasks shared between the person and Claude sessions. You take agent steps from the board and report on them there.
 
@@ -38,7 +40,9 @@ Stopping: stop work on a task when a call about it is refused because the step i
 
 Waiting for work: when there is nothing for you to claim, call wait_for_work, and keep calling it until it returns work. It returns as soon as a task you may claim is queued, naming the task to claim, or after 20 minutes "No work yet. Call wait_for_work again to keep waiting."
 
-Handing a step to the person: when complete_step says the next step is the person's, call wait_for_work and keep calling it. When the person finishes their step, wait_for_work hands the task back to you first, with their note and link, so you can continue it.`
+Handing a step to the person: when complete_step says the next step is the person's, call wait_for_work and keep calling it. When the person finishes their step, wait_for_work hands the task back to you first, with their note and link, so you can continue it.
+
+Blocking: when you cannot complete a step and need the person to act with you rather than answer a question, call block_step with a clear reason, then end your turn. The person comes to this session to resolve it. When they have, and the cause is resolved, call unblock_step and carry on with the step.`
 
 export const INSTRUCTIONS: Record<SessionKind, string> = {
   dedicated: DEDICATED_INSTRUCTIONS,
@@ -64,6 +68,8 @@ const WORKER_DESCRIPTIONS: ToolDescriptions = {
   ask_you: `For worker sessions only. Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Call wait_for_answer with task T-012 next."; then call wait_for_answer to receive the answer.`,
   wait_for_answer: `Waits for the person’s answer to the question asked with ask_you on the current step of the task (T-012 or 12). Call it right after ask_you. ${CLAIMED_ONLY} It returns the answer as soon as the person gives it, or after 20 minutes "No answer yet. Call wait_for_answer again to keep waiting.", or, when the task was parked or archived or the claim ended, a sentence saying to stop work on it. Returns the answer only once.`,
   wait_for_work: `Waits until the queue holds a task this session may claim: one assigned to it, which comes first, then one it handed to the person, whose step is now done, then one that is unassigned. No input. Call it when there is nothing to claim, and call it again whenever it returns "No work yet. Call wait_for_work again to keep waiting.", which it does after 20 minutes. It claims nothing. Returns the task to claim, such as "T-012 is assigned to you. Call claim_step with task T-012.", "The person finished step 3 of T-012, “Review the PR”. Call claim_step with task T-012 to continue it." or "T-015 is in the queue. Call claim_step with task T-015."`,
+  block_step: `Blocks the current step of the task (T-012 or 12) with a reason (1–2,000 characters), when this session cannot complete it and needs the person to act with it in this session rather than answer a question. The step then waits on the person, on the board, until unblock_step. ${CLAIMED_ONLY} It is refused unless the step is running. Returns "Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-012."`,
+  unblock_step: `Unblocks the current step of the task (T-012 or 12) once the person has resolved the block in this session, with an optional note (up to 500 characters). The step runs again. ${CLAIMED_ONLY} It is refused unless the step is blocked. Returns "Unblocked. Carry on with step 2 of T-012."`,
   complete_step: `Completes the current step of the task (T-012 or 12), with a summary (1–2,000 characters) of what was done and optional links (up to 10 of {label, url}). ${CLAIMED_ONLY} It is refused while the step waits for the person’s answer. Returns what happens next: the task is done; the next step is the person's, with "Call wait_for_work to be told when this task needs an agent again."; or the task is back in the queue at position 1 with "Call claim_step with task T-012 to continue it."`,
 }
 

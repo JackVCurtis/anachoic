@@ -2,6 +2,7 @@ import { currentStep } from '../../domain/chain.js'
 import type { Event, SessionKind, Step, TaskState } from '../../domain/types.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import { formatTaskId } from '../../shared/task_id.js'
+import { since } from './board_summary.js'
 
 /**
  * The text result of each model tool that changes the board: one compact
@@ -52,9 +53,39 @@ export function addFollowUpText(state: TaskState, added: number): string {
     : `${id} is back in the queue at position ${state.task.queuePosition} with ${count}`
 }
 
-function chainLine(step: Step) {
+/**
+ * Each step's past blocks, by step id: "blocked 14m: needs AWS credentials".
+ * A block ends with the step's next unblocked, released, parked or archived
+ * event; one still open is counted to `now`.
+ */
+export function blockHistory(events: readonly Event[], now: string): Map<string, string[]> {
+  const ends = new Set(['unblocked', 'released', 'parked', 'archived', 'completed'])
+  const history = new Map<string, string[]>()
+  const open = new Map<string, Event>()
+  const close = (stepId: string, at: string) => {
+    const started = open.get(stepId)
+    if (!started) return
+    open.delete(stepId)
+    const lines = history.get(stepId) ?? []
+    lines.push(`blocked ${since(started.at, at)}: ${started.detail}`)
+    history.set(stepId, lines)
+  }
+  for (const event of events) {
+    if (event.kind === 'blocked' && event.stepId !== null) open.set(event.stepId, event)
+    else if (ends.has(event.kind)) {
+      if (event.stepId !== null) close(event.stepId, event.at)
+      else for (const stepId of [...open.keys()]) close(stepId, event.at)
+    }
+  }
+  for (const stepId of [...open.keys()]) close(stepId, now)
+  return history
+}
+
+function chainLine(step: Step, blocks?: ReadonlyMap<string, string[]>) {
   const head = `${step.number}. "${step.title}" (${step.owner === 'you' ? 'yours' : 'agent'})`
-  return step.summary ? `${head}: ${step.summary}` : head
+  const line = step.summary ? `${head}: ${step.summary}` : head
+  const past = blocks?.get(step.id)
+  return past ? `${line} (${past.join('; ')})` : line
 }
 
 /**
@@ -73,10 +104,14 @@ export function artifactLines(chain: readonly Step[], before: number): string[] 
 
 /**
  * The claimed step in full: what to do, whether the task is assigned to the
- * caller, the chain so far with each completed step's summary, the steps
- * after it, and what to call next.
+ * caller, the chain so far with each completed step's summary and past
+ * blocks, the steps after it, and what to call next.
  */
-export function claimStepText(state: TaskState, callerId?: string): string {
+export function claimStepText(
+  state: TaskState,
+  callerId?: string,
+  blocks?: ReadonlyMap<string, string[]>
+): string {
   const id = formatTaskId(state.task.id)
   const step = currentStep(state.steps)
   const done = state.steps.filter((each) => each.number < step.number)
@@ -89,15 +124,28 @@ export function claimStepText(state: TaskState, callerId?: string): string {
       ? [`${id} is assigned to you: no other session may claim its agent steps.`]
       : []),
     ...(step.detail ? [`Detail: ${step.detail}`] : []),
-    ...(done.length === 0 ? ['Done so far: none'] : ['Done so far:', ...done.map(chainLine)]),
+    ...(blocks?.get(step.id)
+      ? [`Before this claim, the step was ${blocks.get(step.id)!.join('; ')}`]
+      : []),
+    ...(done.length === 0
+      ? ['Done so far: none']
+      : ['Done so far:', ...done.map((each) => chainLine(each, blocks))]),
     ...(artifacts.length === 0 ? [] : ['Artifacts:', ...artifacts]),
-    ...(later.length === 0 ? [] : ['After this step:', ...later.map(chainLine)]),
+    ...(later.length === 0 ? [] : ['After this step:', ...later.map((each) => chainLine(each))]),
     `Next: do the step. Call update_step with task ${id} to note progress, ask_you if you need an answer from the person, and complete_step with task ${id}, a summary and links when it is done.`,
   ].join('\n')
 }
 
 export function updateStepText(state: TaskState): string {
   return `Noted on ${formatTaskId(state.task.id)} step ${currentStep(state.steps).number}`
+}
+
+export function blockStepText(state: TaskState): string {
+  return `Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task ${formatTaskId(state.task.id)}.`
+}
+
+export function unblockStepText(state: TaskState): string {
+  return `Unblocked. Carry on with step ${currentStep(state.steps).number} of ${formatTaskId(state.task.id)}.`
 }
 
 export function askYouText(state: TaskState): string {

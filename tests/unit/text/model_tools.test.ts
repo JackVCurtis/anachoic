@@ -2,11 +2,14 @@ import { describe, expect, test } from 'vitest'
 import {
   addToQueue,
   ask,
+  block,
   claim,
   completeStep,
   followUp,
   note,
   queue,
+  release,
+  unblock,
 } from '../../../domain/transitions.js'
 import type { Change } from '../../../domain/transitions.js'
 import type { TaskState } from '../../../domain/types.js'
@@ -14,9 +17,12 @@ import {
   addFollowUpText,
   addTaskText,
   askYouText,
+  blockHistory,
+  blockStepText,
   claimStepText,
   completeStepText,
   queueTaskText,
+  unblockStepText,
   updateStepText,
 } from '../../../server/text/model_tools.js'
 import { accepted, backlogTask, ctx, stateOf } from '../support/domain.js'
@@ -134,5 +140,41 @@ describe('the worker tools', () => {
     const only = stateOf(claim(at(newTask(['agent']), 1), ctx(A)))
     const done = accepted(completeStep(only, ctx(A), { summary: 'Done' }))
     expect(completeStepText(at(done), done.events)).toBe('Completed T-012 step 1. T-012 is done.')
+  })
+})
+
+describe('blocked steps', () => {
+  const claimed = () => stateOf(claim(stateOf(newTask(['agent', 'agent'])), ctx(A, 0)))
+
+  test('block_step and unblock_step say what to do next', () => {
+    const blocked = stateOf(block(claimed(), ctx(A, 60), 'needs AWS credentials'))
+    expect(blockStepText(blocked)).toBe(
+      'Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-012.'
+    )
+    expect(unblockStepText(stateOf(unblock(blocked, ctx(A, 120))))).toBe(
+      'Unblocked. Carry on with step 1 of T-012.'
+    )
+  })
+
+  test('claim_step names a past block of the claimed step and of the steps before it', () => {
+    const blocked = accepted(block(claimed(), ctx(A, 60), 'needs AWS credentials'))
+    const unblocked = accepted(unblock(stateOf(blocked), ctx(A, 60 + 14 * 60), 'Done'))
+    const reblocked = accepted(block(stateOf(unblocked), ctx(A, 1000), 'needs a VPN'))
+    const released = accepted(release(stateOf(reblocked), ctx(A, 1000 + 5 * 60)))
+    const events = [...blocked.events, ...unblocked.events, ...reblocked.events, ...released.events]
+    const history = blockHistory(events, ctx(A, 5000).now)
+    expect([...history.values()]).toEqual([
+      ['blocked 14m: needs AWS credentials', 'blocked 5m: needs a VPN'],
+    ])
+
+    const again = stateOf(claim(stateOf(released), ctx('session-b', 1400)))
+    expect(claimStepText(again, 'session-b', history)).toContain(
+      'Before this claim, the step was blocked 14m: needs AWS credentials; blocked 5m: needs a VPN'
+    )
+    const completed = stateOf(completeStep(again, ctx('session-b', 1500), { summary: 'Deployed' }))
+    const next = stateOf(claim(at(completed, 1), ctx('session-b', 1600)))
+    expect(claimStepText(next, 'session-b', history)).toContain(
+      '1. "Draft the plan" (agent): Deployed (blocked 14m: needs AWS credentials; blocked 5m: needs a VPN)'
+    )
   })
 })

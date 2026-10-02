@@ -218,3 +218,52 @@ describe('the board summary', () => {
     )
   })
 })
+
+describe('a blocked step in the summary', () => {
+  const blockedItem: BoardProps['yourTurn'][number] = {
+    task: ref(12),
+    step: { number: 2, title: 'Deploy', owner: 'agent', waitingSince: minutesAgo(14) },
+    session: API,
+    blocked: { reason: 'needs AWS credentials', since: minutesAgo(14) },
+    steps: [],
+    canAct: { complete: false, answer: false, park: true },
+  }
+
+  test('is named in the Your turn line with its worker and reason, and on its session', () => {
+    const board: BoardProps = {
+      ...EXAMPLE,
+      yourTurn: [blockedItem],
+      sessions: [
+        {
+          id: API.id,
+          kind: 'worker',
+          name: API.name,
+          live: true,
+          holding: { task: ref(12), step: { number: 2, title: 'Deploy' }, status: 'blocked' },
+        },
+      ],
+    }
+    const lines = boardSummary(boardPropsSchema.parse(board)).split('\n')
+    expect(lines[1]).toBe(
+      'Your turn (1): T-012 step 2 "Deploy" is blocked (api-server): needs AWS credentials'
+    )
+    expect(lines[6]).toBe('Sessions: api-server (live, blocked on T-012 step 2)')
+  })
+
+  test('stays under the token budget with 20 blocked items of the longest reason', () => {
+    const long = 'x'.repeat(200)
+    const board: BoardProps = {
+      ...EXAMPLE,
+      yourTurn: Array.from({ length: 20 }, (_, index) => ({
+        ...blockedItem,
+        task: ref(index + 1, long),
+        step: { ...blockedItem.step, title: long },
+        session: { id: 'session-0', name: 'n'.repeat(40) },
+        blocked: { reason: 'r'.repeat(2000), since: minutesAgo(5) },
+      })),
+    }
+    const summary = boardSummary(boardPropsSchema.parse(board))
+    expect(estimateTokens(summary)).toBeLessThan(SUMMARY_TOKEN_BUDGET)
+    expect(summary.split('\n')[1]).toMatch(/^Your turn \(20\): .* is blocked .* · and \d+ more$/)
+  })
+})
