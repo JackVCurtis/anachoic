@@ -43,7 +43,7 @@ Set up first:
    - If an earlier `claude mcp add` entry named `anachoic` exists, remove it with `claude mcp remove anachoic -s user`.
 3. Start two workers, `claude` in two different project folders. Tell each: "Join the Anachoic board and wait for work."
 
-Then check each item. **Nothing may be posted into the desktop chat** at any step: no user message, and no Claude reply caused by the board.
+Then check each item. Nothing on the board may address the user as "you": the section is "Waiting on user". **Nothing may be posted into the desktop chat** at any step: no user message, and no Claude reply caused by the board.
 
 1. **Adding and moving.**
    - Add a task to the backlog and another to the queue.
@@ -53,11 +53,10 @@ Then check each item. **Nothing may be posted into the desktop chat** at any ste
    - Add a task with one agent step, assigned to the first worker in the Worker field.
    - Its card says "Assigned to …". Only that worker picks it up, and the other keeps waiting.
 3. **An output, and the hand-back.**
-   - Add a task with three steps: an agent step, then your step with Output "Pull request", then another agent step.
-   - A worker takes step 1, completes it, and keeps waiting.
-   - On the board, Mark done stays disabled until a valid link is entered.
-   - Mark it done with a link and a note. **The same worker continues with step 3 without anything typed in its terminal.**
-   - The link shows on the task's card, opens in the browser, and the worker's text names it.
+   - Add a task with three steps: an agent step with Output "Pull request", then a user step, then another agent step.
+   - A worker takes step 1. It can't complete the step without an `artifact_url`, and completes it with one.
+   - The Waiting on user card for step 2 shows "Pull request from step 1 ↗", which opens in the browser.
+   - Mark step 2 done with a note. **The same worker continues with step 3 without anything typed in its terminal**, and its `claim_step` text names the input link.
 4. **A question.** Have a worker ask you something ("Claim the next step, then ask me which colour to use"). Answer on the board, and the worker continues with your answer.
 5. **Blocked.**
    - Have a worker block a step ("Claim the next step, then block it: you need AWS credentials").
