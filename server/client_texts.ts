@@ -8,7 +8,7 @@ import {
   type TransportSendOptions,
 } from '@modelcontextprotocol/server'
 import type { SessionKind } from '../domain/types.js'
-import { kindOfClient } from './identity.js'
+import { describeClient, kindOfClient } from './identity.js'
 import { TOOL_DESCRIPTIONS, type DescribedTool } from './instructions.js'
 
 /**
@@ -31,7 +31,9 @@ export function describeTools(
 export function kindOfOpening(body: unknown): SessionKind {
   const messages: unknown[] = Array.isArray(body) ? body : [body]
   const opening = messages.find((message) => isInitializeRequest(message))
-  return opening ? kindOfClient(opening.params.clientInfo) : 'worker'
+  return opening
+    ? kindOfClient(describeClient(opening.params.clientInfo, opening.params.capabilities))
+    : 'worker'
 }
 
 /**
@@ -95,7 +97,9 @@ export async function serveByClient(
     let target = current
     if (!initialized && isInitializeRequest(message)) {
       initialized = true
-      const kind = kindOfClient(message.params.clientInfo)
+      const kind = kindOfClient(
+        describeClient(message.params.clientInfo, message.params.capabilities)
+      )
       if (!target || kind !== 'worker') target = attach(kind)
     }
     target ??= attach('worker')

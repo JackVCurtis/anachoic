@@ -12,7 +12,7 @@ import {
 } from './data_directory.js'
 import { createCallers, type Callers } from './callers.js'
 import { describeTools, kindOfOpening, serveByClient } from './client_texts.js'
-import { hostVariableNames, kindOfClient } from './identity.js'
+import { describeClient, hostVariableNames, kindOfClient } from './identity.js'
 import { INSTRUCTIONS } from './instructions.js'
 import { createLifecycle } from './lifecycle.js'
 import { readInput, sessionEnded } from './session_ended.js'
@@ -48,7 +48,11 @@ function createServer(shared: Shared, kind: SessionKind) {
     { name: 'anachoic', version: VERSION },
     { instructions: INSTRUCTIONS[kind] }
   )
-  const context: ToolContext = { ...shared, client: () => server.server.getClientVersion() }
+  const context: ToolContext = {
+    ...shared,
+    client: () =>
+      describeClient(server.server.getClientVersion(), server.server.getClientCapabilities()),
+  }
   registerViews(server, shared.views, VIEWS_DIRECTORY, logger)
   describeTools(kind, {
     ...registerBoardTools(server, context),
@@ -63,7 +67,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     const client = context.client()
     // Names only, never values: they show what each host passes to the server.
     logger.log('initialized', {
-      client: { name: client?.name, version: client?.version },
+      client: { name: client?.name, version: client?.version, drawsViews: client?.drawsViews },
       kind: kindOfClient(client),
       environment: hostVariableNames(process.env),
     })

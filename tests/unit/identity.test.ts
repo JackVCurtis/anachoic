@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { hostVariableNames, kindOfClient, resolveIdentity } from '../../server/identity.js'
+import {
+  describeClient,
+  hostVariableNames,
+  kindOfClient,
+  resolveIdentity,
+} from '../../server/identity.js'
 
 const CLAUDE_CODE = { name: 'claude-code', version: '2.1.285' }
 const DESKTOP_CHAT = { name: 'claude-ai', version: '0.1.0' }
@@ -80,5 +85,34 @@ describe('hostVariableNames', () => {
         ANACHOIC_DATA_DIR: '/d',
       })
     ).toEqual(['ANTHROPIC_API_KEY', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_PROJECT_DIR', 'MCP_TIMEOUT'])
+  })
+})
+
+describe('the dedicated session is any client that draws views, except Claude Code', () => {
+  const ui = {
+    extensions: { 'io.modelcontextprotocol/ui': { mimeTypes: ['text/html;profile=mcp-app'] } },
+  }
+
+  test('desktop chat under its 2.19675 client name, which advertises the UI extension', () => {
+    const client = describeClient({ name: 'local-agent-mode-Anachoic', version: '1.0.0' }, ui)
+    expect(client?.drawsViews).toBe(true)
+    expect(kindOfClient(client)).toBe('dedicated')
+    expect(resolveIdentity(client, {})).toMatchObject({
+      source: 'client',
+      identity: { kind: 'dedicated' },
+    })
+  })
+
+  test('claude-ai is the dedicated session even without the extension', () => {
+    expect(kindOfClient(describeClient({ name: 'claude-ai' }, {}))).toBe('dedicated')
+  })
+
+  test('Claude Code is a worker even if it advertises the extension', () => {
+    expect(kindOfClient(describeClient({ name: 'claude-code' }, ui))).toBe('worker')
+  })
+
+  test('a client that draws no views is a worker', () => {
+    expect(kindOfClient(describeClient({ name: 'other' }, {}))).toBe('worker')
+    expect(kindOfClient(describeClient({ name: 'other' }, undefined))).toBe('worker')
   })
 })

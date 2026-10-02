@@ -7,6 +7,28 @@ import type { Identity } from '../store/sessions.js'
 export interface ClientInfo {
   name?: string
   version?: string
+  /** Whether its initialize capabilities include the MCP Apps extension. */
+  drawsViews?: boolean
+}
+
+export const UI_EXTENSION = 'io.modelcontextprotocol/ui'
+
+/**
+ * The client as initialize describes it: its name and version, and whether
+ * it advertised the MCP Apps extension among its capabilities.
+ */
+export function describeClient(
+  info: { name?: string; version?: string } | undefined,
+  capabilities: unknown
+): ClientInfo | undefined {
+  if (info === undefined && capabilities === undefined) return undefined
+  const extensions = (capabilities as { extensions?: Record<string, unknown> } | undefined)
+    ?.extensions
+  return {
+    name: info?.name,
+    version: info?.version,
+    drawsViews: extensions !== undefined && extensions[UI_EXTENSION] !== undefined,
+  }
 }
 
 /**
@@ -43,7 +65,7 @@ export function resolveIdentity(
   env: IdentityEnvironment,
   sessionArg?: string
 ): Resolution {
-  if (client?.name === DESKTOP_CHAT_CLIENT) {
+  if (kindOfClient(client) === 'dedicated') {
     return {
       source: 'client',
       identity: { id: DEDICATED_SESSION_ID, kind: 'dedicated', projectDir: null },
@@ -65,10 +87,14 @@ export function resolveIdentity(
 
 /**
  * The kind of session a client's calls belong to, which also decides which
- * instructions it is sent.
+ * instructions it is sent. Desktop chat is the dedicated session whatever
+ * name its client gives: claude-ai, or local-agent-mode-<extension> since
+ * desktop 2.19675.0. So any client that draws views is, except Claude Code.
  */
 export function kindOfClient(client: ClientInfo | undefined): SessionKind {
-  return client?.name === DESKTOP_CHAT_CLIENT ? 'dedicated' : 'worker'
+  if (client?.name === DESKTOP_CHAT_CLIENT) return 'dedicated'
+  if (client?.name === CLAUDE_CODE_CLIENT) return 'worker'
+  return client?.drawsViews ? 'dedicated' : 'worker'
 }
 
 /**

@@ -9,7 +9,7 @@ The server learns who it is talking to from its process and its client. It never
 | Client | What the server process sees | Session |
 |---|---|---|
 | Claude Code (`clientInfo.name` is `claude-code`) | One process per session. The environment carries `CLAUDE_CODE_SESSION_ID` and `CLAUDE_PROJECT_DIR`. | A **worker**, with that session id as its id. Its name defaults to the last segment of the project directory. |
-| Claude desktop chat (`clientInfo.name` is `claude-ai`, which advertises `io.modelcontextprotocol/ui`) | One process for every chat, with an empty environment and no conversation id | The **dedicated session**, with id `dedicated` |
+| Claude desktop chat: any client that advertises `io.modelcontextprotocol/ui`, except Claude Code. Its name was `claude-ai` until desktop 2.19675.0, and `local-agent-mode-<extension>` since. | One process for every chat, with an empty environment and no conversation id | The **dedicated session**, with id `dedicated` |
 | Any other client, or Claude Code without the variable | No usable id | A worker identified by a minted id. `join_board` returns it, and the model passes it as `session` on every later call. |
 
 **Consequences.**
