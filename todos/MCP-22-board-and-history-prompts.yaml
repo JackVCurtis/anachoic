@@ -1,0 +1,28 @@
+id: MCP-22
+title: "The board and history prompts, declared in the .mcpb manifest"
+area: MCP
+phase: "3"
+summary: >
+  Offer two MCP prompts, board and history, whose text asks Claude to show the board or the history,
+  and declare them with the same text in the .mcpb manifest so Claude desktop offers them. Check by
+  hand how desktop chat presents them and record it.
+requirements:
+  - "Register prompts board ('Show the board', text 'Show the Anachoic board.') and history ('Show the history', text 'Show the Anachoic history.') with no arguments; prompts/get returns one user message with that text"
+  - "The prompt texts live in one module that both the server and scripts/pack.mjs read, so the manifest's prompts array is generated with exactly the served text"
+  - "The dedicated instructions say: for 'Show the Anachoic board.' call show_board, and for 'Show the Anachoic history.' call show_history"
+  - "mcpb validate passes with the prompts declared"
+  - "Record in docs/architecture/14-commands-and-history.md how desktop chat offered the prompts (slash menu, '+' menu, or not at all) once checked"
+acceptance_criteria:
+  - "Integration suite: prompts/list lists both prompts; prompts/get returns their exact text"
+  - "Unit suite: the packed manifest's prompts equal the served prompts"
+  - "Manual desktop check: the board prompt calls up the board in a new desktop chat"
+  - "Manual check in Claude Code: /mcp__anachoic__board shows the board summary"
+depends_on:
+  - "PKG-01"
+  - "MCP-09"
+external_dependencies:
+  - "Claude desktop, for the manual check"
+docs:
+  - "14-commands-and-history.md#slash-commands-are-mcp-prompts"
+  - "08-packaging-and-hosts.md#the-desktop-extension"
+  - "06-tools-and-views.md#server-instructions"

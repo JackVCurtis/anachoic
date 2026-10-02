@@ -1,0 +1,28 @@
+id: UIS-23
+title: "The History view: a table of completed tasks, its pages and filter, and the link from the board"
+area: UIS
+phase: "3"
+summary: >
+  Build the History view from anachoic's CompletedTable and Pagination: a filterable, paginated table
+  of signed-off tasks whose titles open the task panel and whose artifact links open in the browser.
+  The board's Done section links to it with "Show all completed tasks".
+requirements:
+  - "Copy anachoic inertia/components/completed/completed_table and pagination (provenance at fd99e0d), adapted to the columns in 14: Task, Steps with pips, Agent / User times, Workers, Artifacts, Signed off; no repo or workflow column"
+  - "HistoryView: a page header 'History', '38 completed tasks', a labelled filter field (applies after typing stops for 300 ms), the table, Pagination, and an EmptyState 'No completed tasks yet' or 'No completed tasks match'"
+  - "view/entries/history: connects, takes nothing from the replayed result but the filter, fetches get_history, polls with sinceRevision, moves pages and filters through get_history, and opens a task in the task panel with 'Back to history'"
+  - "The board's Done section gains 'Show all completed tasks' when any task is signed off; it swaps the board for the History panel, with 'Back to board'"
+  - "Artifact links open through onOpenLink; no second person; nothing is posted to the chat"
+acceptance_criteria:
+  - "ui suite: pages move and announce 'Page 2 of 3'; the filter refetches; a title opens the task panel and Back returns focus to the row"
+  - "ui suite: the Done section's link opens the History panel and Back returns to the board"
+  - "Stories: empty, one page, many pages, long titles, filtered with no match; every story passes the axe check at 735 and 600 px"
+  - "Manual desktop check: the history prompt shows the History view with completed tasks"
+depends_on:
+  - "UIS-15"
+  - "MCP-23"
+external_dependencies: []
+docs:
+  - "14-commands-and-history.md#the-history-view"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#completedtable"
+  - "anachoic:ui/11-components-sign-off-and-completed.md#pagination"
+  - "11-assignment-and-outputs.md#words-on-screen-and-for-claude"

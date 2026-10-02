@@ -70,7 +70,10 @@ order,id,title,area,phase,depends_on,file
 69,UIS-15,TaskView and the task panel inside the board,UIS,3,UIS-14;UIF-05,UIS-15-task-view.yaml
 70,MCP-13,"open_task and get_task, fullscreen and links",MCP,3,MCP-08;UIS-15,MCP-13-open-task-and-get-task.yaml
 71,UIS-16,Archive and park from the task view,UIS,3,UIS-15;UIP-05;MCP-10,UIS-16-task-view-actions.yaml
-72,DOM-07,"Retention and recovery - prune old rows, refuse an unreadable database, survive kills",DOM,4,DOM-04,DOM-07-retention-and-recovery.yaml
-73,PKG-04,"Release-quality package - icon, data directory setting, versioning and README",PKG,4,PKG-02;MCP-13,PKG-04-release-package.yaml
-74,MCP-14,End-to-end tests across processes and in the reference host,MCP,4,MCP-13;MCP-11;PKG-03,MCP-14-end-to-end-tests.yaml
-75,UIS-17,"Conformance sweep - accessibility, content rules and token use across both views",UIS,4,UIS-16;UIS-13,UIS-17-conformance-sweep.yaml
+72,MCP-22,"The board and history prompts, declared in the .mcpb manifest",MCP,3,PKG-01;MCP-09,MCP-22-board-and-history-prompts.yaml
+73,MCP-23,"show_history and get_history, with the history query and props",MCP,3,MCP-13;DOM-06,MCP-23-history-tools.yaml
+74,UIS-23,"The History view: a table of completed tasks, its pages and filter, and the link from the board",UIS,3,UIS-15;MCP-23,UIS-23-history-view.yaml
+75,DOM-07,"Retention and recovery - prune old rows, refuse an unreadable database, survive kills",DOM,4,DOM-04,DOM-07-retention-and-recovery.yaml
+76,PKG-04,"Release-quality package - icon, data directory setting, versioning and README",PKG,4,PKG-02;MCP-13,PKG-04-release-package.yaml
+77,MCP-14,End-to-end tests across processes and in the reference host,MCP,4,MCP-13;MCP-11;PKG-03,MCP-14-end-to-end-tests.yaml
+78,UIS-17,"Conformance sweep - accessibility, content rules and token use across both views",UIS,4,UIS-16;UIS-13,UIS-17-conformance-sweep.yaml

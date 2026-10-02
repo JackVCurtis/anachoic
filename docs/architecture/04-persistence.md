@@ -72,7 +72,7 @@ A read runs without an explicit transaction, or inside a deferred `BEGIN` when i
 
 Nothing is deleted automatically in phases 0 to 3. Phase 4 adds retention ([09](09-testing-and-build-order.md#phases)):
 
-- **Tasks** signed off more than 30 days ago are deleted, with their steps and events.
+- **Tasks are never deleted.** Signed-off tasks make up the History view ([14](14-commands-and-history.md#retention)).
 - **Sessions** that ended more than 7 days ago are deleted.
 - **When it runs.** A process runs retention once a day, in a short transaction, when it is the first to open the database that day.
 

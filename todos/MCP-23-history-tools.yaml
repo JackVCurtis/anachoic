@@ -1,0 +1,26 @@
+id: MCP-23
+title: "show_history and get_history, with the history query and props"
+area: MCP
+phase: "3"
+summary: >
+  Serve the History view: a paginated, filterable query over signed-off tasks, the history props, the
+  show_history view tool with its hashed ui:// resource and text result, and the app-only get_history
+  that the view polls.
+requirements:
+  - "store/ gains a history query: signed-off tasks, newest signed_off_at first, 20 per page, optional filter matching the title (case-insensitive) or the display id; it returns the rows and the total"
+  - "shared/props.ts gains historyPropsSchema as 14 describes (revision, now, page, pageCount, total, filter, rows with task, signedOffAt, finishedAt, pips, agentSeconds, userSeconds, workers, artifacts)"
+  - "server/views.ts serves history.html at its hashed address, and the build produces dist/views/history.html from a new view/entries/history entry"
+  - "show_history(filter?) returns the text from 14 and the props for page 1; get_history(page, filter?, sinceRevision?) is app-only and returns {changed:false, revision} when nothing changed; a page past the end returns the last page"
+  - "The text and descriptions follow the wording rules (no second person); the board summary's Done line mentions the history when more than 10 tasks are signed off"
+acceptance_criteria:
+  - "Integration suite: 45 signed-off tasks give 3 pages, newest first; the filter matches a title and a display id; get_history answers unchanged at the same revision"
+  - "Unit suite: the history text stays under its token budget with 20 long rows"
+  - "Integration suite: get_history is app-only; show_history carries the hashed history resource address"
+depends_on:
+  - "MCP-13"
+  - "DOM-06"
+external_dependencies: []
+docs:
+  - "14-commands-and-history.md#tools-and-props"
+  - "14-commands-and-history.md#what-it-shows"
+  - "06-tools-and-views.md#views"

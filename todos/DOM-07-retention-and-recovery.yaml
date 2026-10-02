@@ -4,12 +4,12 @@ area: DOM
 phase: "4"
 summary: >
   Keep the board's database small and safe over months of daily use. Once a day the first process to
-  open the database deletes tasks signed off more than 30 days ago, with their steps and events, and
+  open the database deletes sessions that ended long ago (never tasks, which the History view keeps), and
   sessions that ended more than 7 days ago. A database that cannot be opened or fails its check is
   never replaced: the server still starts and every tool refuses with a sentence that names the file.
   Tests show that a process killed in the middle of a write leaves nothing partial behind.
 requirements:
-  - "store/retention.ts deletes tasks whose signed_off_at is more than 30 days old, with their steps and events, and sessions whose ended_at is more than 7 days old, in one short BEGIN IMMEDIATE transaction"
+  - "store/retention.ts deletes sessions whose ended_at is more than 7 days old (signed-off tasks are kept for the History view, 14-commands-and-history.md), in one short BEGIN IMMEDIATE transaction"
   - "Retention runs on open, only when no process has run it yet that day; a new migration adds the date of the last run to the board row, and the check and the run share one transaction so two processes opening together run it once"
   - "When retention deletes anything it bumps board.revision once, so open views redraw; when it deletes nothing it writes nothing"
   - "Retention deletes only those rows: a task that was never signed off, archived or not, and a session that has not ended both stay"
