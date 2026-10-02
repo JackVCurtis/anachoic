@@ -2,6 +2,7 @@ import {
   agentAsks,
   BUSY_BOARD,
   DOCS,
+  finished,
   LONG_TEXT_BOARD,
   MANY_BOARD,
   parked,
@@ -11,10 +12,11 @@ import {
   WEB_CLIENT,
   yourStep,
   type SessionSample,
+  type SignOffSample,
   type WorkingSample,
   type YourTurnSample,
 } from './board.js'
-import { before } from './clock.js'
+import { before, INSTANTS } from './clock.js'
 import { LONG_TEXT } from './long_text.js'
 
 /*
@@ -275,4 +277,51 @@ export const BACKLOG = {
     ]),
     canAct: { queue: false, archive: true },
   },
+} as const
+
+const [FLAKY_LOGIN_TEST] = BUSY_BOARD.toSignOff
+
+const ADD_A_RETRY = finished(
+  36,
+  'Add a retry to the export job',
+  [
+    ['agent', 'done', 'Add the retry'],
+    ['you', 'done', 'Review the PR'],
+  ],
+  { finishedAt: before({ minutes: 20 }), agentSeconds: 840, yourSeconds: 360, linkCount: 1 }
+)
+
+/**
+ * Done: tasks to sign off, with and without links, twelve that fold, a long
+ * title, and the ten most recently signed off.
+ */
+export const DONE = {
+  flaky: FLAKY_LOGIN_TEST,
+  two: [FLAKY_LOGIN_TEST, ADD_A_RETRY],
+  oneLink: ADD_A_RETRY,
+  twoLinks: finished(
+    37,
+    'Tidy the error messages in the importer',
+    [
+      ['agent', 'done', 'Tidy the messages'],
+      ['you', 'done', 'Read them through'],
+    ],
+    { finishedAt: INSTANTS.earlierToday, agentSeconds: 840, yourSeconds: 360, linkCount: 2 }
+  ),
+  noLinks: finished(38, 'Remove the unused env vars', [['agent', 'done', 'Remove them']], {
+    finishedAt: INSTANTS.yesterday,
+    agentSeconds: 300,
+    yourSeconds: 0,
+    linkCount: 0,
+  }),
+  twelve: Array.from({ length: 12 }, (_, index): SignOffSample =>
+    finished(80 + index, `Finished task ${index + 1}`, [['agent', 'done', 'Do the work']], {
+      finishedAt: before({ hours: index }),
+      agentSeconds: 600 + index * 60,
+      yourSeconds: 120,
+      linkCount: index % 3,
+    })
+  ),
+  longTitle: LONG_TEXT_BOARD.toSignOff[0],
+  signedOff: BUSY_BOARD.signedOff,
 } as const

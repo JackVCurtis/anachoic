@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
+import { BUSY_BOARD, LONG_TEXT_BOARD, MANY_BOARD } from '../../fixtures/board'
 import { EMPTY_BOARD_VIEW, numberedTasks } from '../../fixtures/empty_views'
 import { assistive, done, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
@@ -97,4 +98,49 @@ export const LongSections: Story = {
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('button', { name: 'Show all 14' })).toBeVisible()
   },
+}
+
+async function expectNoSidewaysScroll() {
+  const [sideways] = await windowOverflow()
+  await expect(sideways).toBe(0)
+}
+
+export const Busy: Story = {
+  name: 'Every section filled',
+  args: BUSY_BOARD,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('This chat asks')).toBeVisible()
+    await expect(canvas.getByText('12m 00s elapsed')).toBeVisible()
+    await expect(canvas.getByText('Ended 4m ago')).toBeVisible()
+    await expectNoSidewaysScroll()
+  },
+}
+
+export const BusyNarrow: Story = {
+  ...Busy,
+  name: 'Every section filled, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const Many: Story = {
+  name: 'Twenty in the queue and fourteen in the backlog',
+  args: MANY_BOARD,
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('button', { name: 'Show all 14' })).toBeVisible()
+  },
+}
+
+export const LongText: Story = {
+  name: 'Long titles and names in every section',
+  args: LONG_TEXT_BOARD,
+  play: expectNoSidewaysScroll,
+}
+
+export const LongTextNarrow: Story = {
+  ...LongText,
+  name: 'Long titles and names in every section, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
 }

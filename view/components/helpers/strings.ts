@@ -124,6 +124,8 @@ export const done = {
   title: 'Done',
   nothingToSignOff: 'Nothing waiting for sign-off',
   finished: 'Finished {when}',
+  agentTime: 'agent {time}',
+  yourTime: 'you {time}',
   links: '{n links}',
   signOff: 'Sign off',
   followUp: 'Follow-up',
@@ -136,6 +138,7 @@ export const done = {
   appendAndQueue: 'Append & queue',
   cancel: 'Cancel',
   signedOff: 'Signed off',
+  signedOffCount: '{n tasks} signed off',
   showAll: 'Show all {n}',
   showFewer: 'Show fewer',
 } as const

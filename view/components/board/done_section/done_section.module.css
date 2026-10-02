@@ -1,0 +1,51 @@
+/* Copied from anachoic inertia/components/sign_off/sign_off_view/sign_off_view.module.css at fd99e0d */
+.toggle {
+  align-self: flex-start;
+}
+
+.signedOff {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+}
+
+.signedOff > li + li {
+  border-top: var(--border-hairline) solid var(--color-divider);
+}
+
+/* Under 600 px the time wraps below the title rather than squeezing it */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) 0;
+}
+
+.id {
+  color: var(--color-text-subtle);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  appearance: none;
+}
+
+.title:hover {
+  color: var(--color-text-accent);
+}
+
+.when {
+  white-space: nowrap;
+}

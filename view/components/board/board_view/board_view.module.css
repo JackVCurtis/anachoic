@@ -19,7 +19,3 @@
 .entry:empty {
   display: none;
 }
-
-.line {
-  padding: var(--space-3) var(--space-4);
-}

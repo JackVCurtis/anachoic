@@ -1,0 +1,50 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4) var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-stack);
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.id {
+  color: var(--color-text-subtle);
+}
+
+.finished {
+  margin-left: auto;
+  color: var(--color-text-accent);
+}
+
+.heading {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  appearance: none;
+}
+
+.title:hover {
+  color: var(--color-text-accent);
+}

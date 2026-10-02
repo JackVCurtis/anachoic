@@ -1,12 +1,10 @@
 import type { CSSProperties } from 'react'
-import { assistive, done } from '../../helpers/strings'
-import { EmptyState } from '../../patterns/empty_state/empty_state'
-import { Frame } from '../../primitives/frame/frame'
+import { assistive } from '../../helpers/strings'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
-import type { BoardData, BoardTask } from '../board_data'
+import type { BoardData } from '../board_data'
 import { BacklogSection } from '../backlog_section/backlog_section'
 import { BoardHeader } from '../board_header/board_header'
-import { BoardSection } from '../board_section/board_section'
+import { DoneSection } from '../done_section/done_section'
 import { QueueSection } from '../queue_section/queue_section'
 import { SessionsSection } from '../sessions_section/sessions_section'
 import { WorkingSection } from '../working_section/working_section'
@@ -25,22 +23,6 @@ export interface BoardViewActions {
 export type BoardViewProps = BoardData & BoardViewActions
 
 function ignore() {}
-
-/**
- * A task as one line, until each section draws its own cards.
- */
-function TaskLine({ task }: { task: BoardTask }) {
-  return (
-    <Frame className={styles.line}>
-      <span className="text-name">{task.displayId}</span>{' '}
-      <span className="text-body-sm">{task.title}</span>
-    </Frame>
-  )
-}
-
-function taskLines(items: ReadonlyArray<{ task: BoardTask }>) {
-  return items.map(({ task }) => ({ id: task.id, card: <TaskLine task={task} /> }))
-}
 
 /**
  * The host's safe-area insets, which the padding gives way to when they are
@@ -68,6 +50,7 @@ export function BoardView({
   queue: queueTasks,
   backlog: backlogTasks,
   toSignOff,
+  signedOff,
   sessions: sessionList,
   counts,
   updated,
@@ -93,12 +76,7 @@ export function BoardView({
         onOpenTask={onOpenTask}
         onQueueTask={onQueueTask}
       />
-      <BoardSection
-        title={done.title}
-        count={toSignOff.length}
-        cards={taskLines(toSignOff)}
-        empty={<EmptyState variant="dashed" message={done.nothingToSignOff} />}
-      />
+      <DoneSection toSignOff={toSignOff} signedOff={signedOff} onOpenTask={onOpenTask} />
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">
         {null}
       </VisuallyHidden>
