@@ -1,0 +1,26 @@
+id: DOM-12
+title: "Move output formats from user steps to agent steps in the domain"
+area: DOM
+phase: "2"
+summary: >
+  Reverse DOM-09's rule: an agent step may declare an output format and completing it requires an
+  artifact URL; a user step may not declare one. Expose the previous step's artifact as the input of
+  the step that follows, for the props and texts to pass on.
+requirements:
+  - "Add, Add to queue and Follow-up accept an output format on agent steps only; a format on a user step is refused with invalid and 'Only agent steps can declare an output format'"
+  - "complete_step (the claiming session) on a step with an output format is refused with invalid and 'Step 1 of T-012 needs a pull request link (artifact_url)' without a URL, and 'That is not a web address' for an invalid one; a valid URL is stored as artifact_url in the same transaction"
+  - "Mark done on a user step no longer takes a URL; rows that already carry a format on a user step keep it and are never required"
+  - "A derived fact inputOf(step): the previous step's {stepNumber, format, url} when that step is done with an artifact, else null"
+  - "The artifact invariant still holds; the generated and random-operation tests now declare formats on agent steps and complete them with URLs"
+  - "No migration: the columns from 003 are reused"
+acceptance_criteria:
+  - "Unit suite: each refusal with its code and sentence; a valid URL completes the agent step and is stored; a format on a user step is refused"
+  - "Unit suite: inputOf returns the previous step's artifact, and null when there is none"
+  - "Unit suite: the invariants hold across the random-operations test with formatted agent steps"
+depends_on:
+  - "DOM-09"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#output-formats-on-agent-steps"
+  - "11-assignment-and-outputs.md#domain-1"
+  - "03-domain-model.md#refusals"

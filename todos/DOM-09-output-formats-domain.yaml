@@ -21,7 +21,7 @@ depends_on:
   - "DOM-06"
 external_dependencies: []
 docs:
-  - "11-assignment-and-outputs.md#output-formats-on-your-steps"
+  - "11-assignment-and-outputs.md#output-formats-on-agent-steps"
   - "11-assignment-and-outputs.md#formats"
   - "11-assignment-and-outputs.md#domain-1"
   - "03-domain-model.md#step"

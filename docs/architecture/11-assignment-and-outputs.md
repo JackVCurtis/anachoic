@@ -109,24 +109,29 @@ For the second, the text says what you did: "The person finished step 3 of T-012
 
 There is a new invariant: `resumeWith` is set only on a task whose current step is yours and waiting, or on a queued task whose current step is an agent's.
 
-## Output formats on your steps
+## Output formats on agent steps
+
+Changed on 2026-10-02, at the product owner's request. The first version put the format on user steps, which was the wrong way round.
 
 ### The rule
 
-**A step you own may declare an output format** when it is created, in a task or in a follow-up. Completing that step then requires a link to the artifact:
-- **Marking it done** requires an http(s) URL, at most 2,000 characters.
-- **Where it shows.** The link is shown on the task's cards and in the task view. The workers that take later steps read it in `claim_step`'s text, along with each step's summary.
+**An agent step may declare an output format** when it is created, in a task or in a follow-up. The format is set by whoever adds the step: the user on the board, or a session through `add_task`.
+- **Completing it.** `complete_step` on that step requires an `artifact_url`: an absolute http(s) URL, at most 2,000 characters.
+- **The next step receives it,** in a way that depends on who does that step:
+  - **A user step:** its card in Waiting on user shows the link: "Pull request from step 1 ↗".
+  - **An agent step:** the worker that claims it reads the link in `claim_step`'s text, as context: "Input from step 1: Pull request https://…". The text still lists every earlier step's summary and artifact.
+- **Afterwards.** The link also stays on the task's other cards and in the task view.
 
-**Agent steps cannot declare a format.** Declaring one on an agent step is refused with `invalid`: "Only your steps can declare an output format".
+**User steps cannot declare a format.** Declaring one on a user step is refused with `invalid`: "Only agent steps can declare an output format".
 
 ### Formats
 
-| Value | Shown as | Field label when you complete the step |
-|---|---|---|
-| `pull_request` | Pull request | Pull request link |
-| `ticket` | Ticket | Ticket link |
-| `document` | Document | Document link |
-| `link` | Link | Link |
+| Value | Shown as |
+|---|---|
+| `pull_request` | Pull request |
+| `ticket` | Ticket |
+| `document` | Document |
+| `link` | Link |
 
 The URL must parse as an absolute `http:` or `https:` URL. The format is not checked against the URL: a pull request may live on any host.
 
@@ -134,32 +139,43 @@ The URL must parse as an absolute `http:` or `https:` URL. The format is not che
 
 | Field | On | Type | Meaning |
 |---|---|---|---|
-| outputFormat | Step | One of the four values, or empty | Steps you own only. Set when the step is created. |
-| artifactUrl | Step | URL, or empty | Set when a step with an output format is marked done |
+| outputFormat | Step | One of the four values, or empty | Agent steps only. Set when the step is created. |
+| artifactUrl | Step | URL, or empty | Set when a step with an output format is completed |
 
 **Transitions:**
-- **Mark done, on a step that has an output format,** is refused with `invalid` unless a valid URL is given. Without a URL: "Step 2 of T-012 needs a pull request link". With an invalid one: "That is not a web address".
+- **`complete_step` on a step with an output format** is refused with `invalid` unless a valid URL is given. Without a URL: "Step 1 of T-012 needs a pull request link (artifact_url)". With an invalid one: "That is not a web address".
 - **A step with no output format** works as before. A URL given anyway is ignored.
+- **Existing rows** that a user step was given under the first version keep their values. They are only shown, never required.
 
-**A new invariant:** `artifactUrl` is set only on a step that is `done` and has an `outputFormat`.
+**Invariant:** `artifactUrl` is set only on a step that is `done` and has an `outputFormat`.
 
 ### Tools
 
 | Tool | Change |
 |---|---|
-| `add_task`, `add_follow_up` and their view versions | Each step may carry `output_format` (`outputFormat` in the view's tools). Only steps you own may. |
-| `complete_my_step` | New optional `artifactUrl`, required when the step has an output format |
-| `claim_step`, `open_task` | Their text names each earlier step's artifact: "Step 2 (you): Pull request https://…" |
+| `add_task`, `add_follow_up` and their view versions | Each step may carry `output_format` (`outputFormat` in the view's tools). Only agent steps may. |
+| `complete_step` | New `artifact_url`, required when the step has an output format |
+| `complete_my_step` | Loses `artifactUrl` |
+| `claim_step` | Its text names the input artifact, the previous step's, first, then each earlier step's summary and artifact |
+| Tool descriptions and worker instructions | When a claimed step names an output format, finish it with `complete_step` and an `artifact_url` of that kind |
 
 ### Board
 
 | Where | What |
 |---|---|
-| Props | Every step in the props, pips included, carries `outputFormat` and `artifactUrl` as optional fields, present only when set. A task's cards carry `artifacts: [{stepNumber, format, url}]`, the links from its done steps. |
-| TaskEntry and the follow-up composer | A step you own gains a field "Output", a native select: "None", "Pull request", "Ticket", "Document", "Link". Steps owned by an agent don't show it. |
-| YourTurnCard | For a step with a format, the card says what is needed: "Needs a pull request link", or "Needs a link" for the `link` format. Its Mark done form gains a required URL field, labelled as in the formats table, above the optional note. Mark done stays disabled until the URL is valid. |
-| Working, Queue, Backlog and SignOffCard | One line of artifact links, each labelled with its format and step: "Pull request · step 2 ↗". A link opens through the host's `openLink`, because the view is sandboxed. |
-| Text summary | Done steps with artifacts show the link after the task |
+| Props | Every step carries `outputFormat` and `artifactUrl` when set. A task's cards carry `artifacts: [{stepNumber, format, url}]`. A Waiting on user item for a user step carries `input: {stepNumber, format, url}` or null: the previous step's artifact. |
+| TaskEntry and the follow-up composer | An **agent** step has the "Output" select: "None", "Pull request", "Ticket", "Document", "Link". User steps do not show it. |
+| Waiting on user card, for a user step | When the previous step produced an artifact, the card shows it above Mark done: "Pull request from step 1 ↗", opened through the host. Mark done has no URL field. |
+| Working, Queue, Backlog and SignOffCard | One line of artifact links, as before: "Pull request · step 1 ↗" |
+| Working card | For an agent step with a format, the card says what it will produce: "Produces a pull request" |
+
+## Words on screen and for Claude
+
+Changed on 2026-10-02, at the product owner's request: **no second person.** The board and the texts Claude reads say "user".
+- **On screen,** the section "Your turn" is called **Waiting on user**. "Nothing waiting on you" becomes "Nothing waiting on the user". The owner chip reads "User". Every other on-screen string written in the second person is rewritten the same way.
+- **For Claude,** every tool description, tool result, refusal sentence and instruction that said "the person" or "you" for the user now says "the user".
+- **In tool input,** a step's owner is `"agent"` or `"user"`. `"you"` is still accepted as an alias, and outputs say `"user"`.
+- **What stays.** Code identifiers and database values keep `you`.
 
 ## Suggestion chips
 

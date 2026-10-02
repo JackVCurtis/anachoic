@@ -47,8 +47,8 @@ There is one board. Every task belongs to it, and every session reads and writes
 | note | Text or empty | The latest progress note from the agent, or your note when you mark your step done |
 | summary | Text or empty | What the agent reported when it completed the step |
 | links | List of `{label, url}`, up to 10 | Pull requests, files or pages the step produced. Recorded on completion or with a note. |
-| outputFormat | `pull_request`, `ticket`, `document`, `link`, or empty | Steps you own only. The artifact that completing the step requires ([11](11-assignment-and-outputs.md#output-formats-on-your-steps)). |
-| artifactUrl | URL, or empty | Set when a step with an output format is marked done |
+| outputFormat | `pull_request`, `ticket`, `document`, `link`, or empty | Agent steps only. The artifact that completing the step requires, passed on to the next step ([11](11-assignment-and-outputs.md#output-formats-on-agent-steps)). |
+| artifactUrl | URL, or empty | Set when a step with an output format is completed |
 | startedAt, runningSince, waitingSince, finishedAt | Instant or empty | |
 | elapsedSeconds | Whole number | Closed intervals of work. For an agent step, time `running`. For your step, time `waiting` on you. |
 | waitedSeconds | Whole number | Agent steps. Closed intervals spent `waiting` on you. |

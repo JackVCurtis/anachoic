@@ -1,0 +1,29 @@
+id: MCP-21
+title: "Formats on agent steps in the tools, the artifact passed to the next step, and no second person for Claude"
+area: MCP
+phase: "2"
+summary: >
+  The tools follow DOM-12: output_format on agent steps, artifact_url on complete_step, none on
+  complete_my_step. The next step receives the artifact: user steps through their Waiting on user
+  props, agent steps through claim_step's text. Every text Claude reads says "the user", and the step
+  owner value is "user", with "you" accepted as an alias.
+requirements:
+  - "add_task, add_follow_up and their view versions accept output_format/outputFormat on agent steps only; complete_step gains artifact_url; complete_my_step loses artifactUrl (the view caller too)"
+  - "claim_step's text starts with the input artifact when there is one ('Input from step 1: Pull request https://…'), then the earlier steps' summaries and artifacts, and says when the claimed step must produce a format ('Produces: a pull request. Finish with complete_step and artifact_url.')"
+  - "shared/props.ts: Waiting on user items for user steps gain input {stepNumber, format, url} or null; working items carry the current step's outputFormat; backward compatible"
+  - "Tool input accepts owner 'user' and the alias 'you'; every output, text and prop the model reads says 'user'"
+  - "server/instructions.ts, tool descriptions, text results and refusal sentences: no second person for the user; 'the person' becomes 'the user'; the worker rule for producing a declared format"
+  - "The board summary uses 'Waiting on user' for the Your turn line"
+acceptance_criteria:
+  - "Integration suite: a formatted agent step is refused without artifact_url and completes with one; the next user step's props carry input; the next agent step's claim_step text names the input"
+  - "Integration suite: add_task with owner 'user' and with 'you' both make user steps; a format on a user step is refused"
+  - "Unit suite: no instructions, description or text template contains 'the person', 'your turn' or 'you' addressed to the user (a word test over the exported texts, with a short allow list for 'you' addressed to the model)"
+depends_on:
+  - "DOM-12"
+  - "MCP-16"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#output-formats-on-agent-steps"
+  - "11-assignment-and-outputs.md#tools-1"
+  - "11-assignment-and-outputs.md#words-on-screen-and-for-claude"
+  - "06-tools-and-views.md#server-instructions"

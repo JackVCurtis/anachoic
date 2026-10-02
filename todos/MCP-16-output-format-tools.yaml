@@ -22,7 +22,7 @@ depends_on:
   - "MCP-10"
 external_dependencies: []
 docs:
-  - "11-assignment-and-outputs.md#output-formats-on-your-steps"
+  - "11-assignment-and-outputs.md#output-formats-on-agent-steps"
   - "11-assignment-and-outputs.md#tools-1"
   - "11-assignment-and-outputs.md#board-1"
   - "06-tools-and-views.md#app-only-tools"

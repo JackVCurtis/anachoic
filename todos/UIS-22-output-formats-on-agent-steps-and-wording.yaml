@@ -1,0 +1,29 @@
+id: UIS-22
+title: "Output select on agent steps, the input artifact on user cards, and no second person on screen"
+area: UIS
+phase: "2"
+summary: >
+  Move the Output select to agent steps in the chain composer, drop the URL field from user cards,
+  show the previous step's artifact on a user step's card, show what a working agent step produces,
+  and rewrite every on-screen string without the second person, with Your turn renamed Waiting on user.
+requirements:
+  - "The chain composer shows Output on agent steps only, cleared when a step's owner changes to user; the value is sent per step"
+  - "YourTurnCard for a user step: the URL field and its note are removed; when input is present the card shows 'Pull request from step 1 ↗' above Mark done, opened through onOpenLink"
+  - "WorkingCard shows 'Produces a pull request' (format word lower-cased) when the running step has an output format"
+  - "Strings: the section is 'Waiting on user', its empty state 'Nothing waiting on the user', the owner chip and owner radios read 'User', and every other string in the catalogue addressed to the user in the second person is rewritten; announcements too"
+  - "The strings test refuses 'you', 'your' and 'yours' in on-screen strings, with an allow list only where a string addresses the user as the actor of a button (none expected)"
+  - "Fixtures and stories updated for formats on agent steps and the new words"
+acceptance_criteria:
+  - "ui suite: Output appears only on agent steps; the user card shows the input link and has no URL field; the working card shows what it produces"
+  - "ui suite: the strings test passes with the second-person ban"
+  - "Stories pass the axe check at 735 and 600 px"
+  - "Manual desktop check: an agent step with Output 'Pull request' is completed by a worker with a link; the next user step's card shows the link; a following agent step's worker reads it"
+depends_on:
+  - "UIS-19"
+  - "MCP-21"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#board-1"
+  - "11-assignment-and-outputs.md#words-on-screen-and-for-claude"
+  - "07-ui-port.md#content"
+  - "anachoic:ui/17-content-rules.md#rules"
