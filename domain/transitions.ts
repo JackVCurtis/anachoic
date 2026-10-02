@@ -1,0 +1,765 @@
+import { stepId } from '../shared/step_id.js'
+import { currentStepIndex } from './chain.js'
+import {
+  agentStep,
+  archived,
+  claimedByAnother,
+  invalid,
+  isRefusal,
+  onlyASession,
+  onlyYou,
+  signedOff,
+  unanswered,
+  wrongStatus,
+  wrongStepStatus,
+  yourStep,
+  type Refusal,
+} from './refusal.js'
+import {
+  isYou,
+  type Actor,
+  type Event,
+  type EventKind,
+  type Instant,
+  type Link,
+  type SessionId,
+  type Step,
+  type StepInput,
+  type Task,
+  type TaskState,
+} from './types.js'
+
+/**
+ * How a transition changes the queue. The store applies it with the queue
+ * order functions, which renumber every position.
+ */
+export type QueueEffect =
+  | { kind: 'none' }
+  | { kind: 'join'; placement: Placement }
+  | { kind: 'move'; position: number }
+  | { kind: 'leave' }
+
+export type Placement = 'first' | 'last'
+
+/**
+ * What a transition did: the task and its whole chain as they now are, the
+ * queue effect, and the events to append, in order.
+ */
+export interface Change {
+  task: Task
+  steps: Step[]
+  queue: QueueEffect
+  events: Event[]
+}
+
+export type Outcome = Change | Refusal
+
+export interface Context {
+  actor: Actor
+  now: Instant
+  /**
+   * A session's display name, for the sentences of refusals and events.
+   */
+  nameOf?: (sessionId: SessionId) => string | undefined
+}
+
+const NONE: QueueEffect = { kind: 'none' }
+const LEAVE: QueueEffect = { kind: 'leave' }
+const JOIN_FIRST: QueueEffect = { kind: 'join', placement: 'first' }
+const JOIN_LAST: QueueEffect = { kind: 'join', placement: 'last' }
+
+const BRIEF = 120
+
+function brief(text: string) {
+  return text.length <= BRIEF ? text : `${text.slice(0, BRIEF - 1)}…`
+}
+
+function nameOf(ctx: Context, sessionId: SessionId) {
+  return ctx.nameOf?.(sessionId) ?? sessionId
+}
+
+function event(
+  ctx: Context,
+  taskId: number,
+  step: Step | null,
+  kind: EventKind,
+  detail: string,
+  sessionId: Actor = ctx.actor
+): Event {
+  return { taskId, stepId: step?.id ?? null, sessionId, kind, detail, at: ctx.now }
+}
+
+function secondsBetween(since: Instant, now: Instant) {
+  return Math.max(0, Math.floor((Date.parse(now) - Date.parse(since)) / 1000))
+}
+
+/**
+ * Closes the step's open interval. Running time is an agent's work; waiting
+ * time is yours, counted as the step's elapsed time on your step and as its
+ * waited time on an agent's.
+ */
+function closeInterval(step: Step, now: Instant): Step {
+  if (step.status === 'running' && step.runningSince !== null) {
+    return {
+      ...step,
+      elapsedSeconds: step.elapsedSeconds + secondsBetween(step.runningSince, now),
+      runningSince: null,
+    }
+  }
+  if (step.status === 'waiting' && step.waitingSince !== null) {
+    const waited = secondsBetween(step.waitingSince, now)
+    return step.owner === 'you'
+      ? { ...step, elapsedSeconds: step.elapsedSeconds + waited, waitingSince: null }
+      : { ...step, waitedSeconds: step.waitedSeconds + waited, waitingSince: null }
+  }
+  return step
+}
+
+function backToPending(step: Step, now: Instant): Step {
+  return {
+    ...closeInterval(step, now),
+    status: 'pending',
+    claimedBy: null,
+    question: null,
+    answer: null,
+  }
+}
+
+function withStep(steps: readonly Step[], index: number, step: Step): Step[] {
+  return steps.map((each, at) => (at === index ? step : each))
+}
+
+function current(state: TaskState) {
+  const index = currentStepIndex(state.steps)
+  return { index, step: state.steps[index] }
+}
+
+function newSteps(
+  taskId: number,
+  from: number,
+  inputs: readonly StepInput[],
+  origin: Step['origin']
+) {
+  return inputs.map((input, offset): Step => ({
+    id: stepId(taskId, from + offset),
+    taskId,
+    number: from + offset,
+    owner: input.owner,
+    title: input.title,
+    detail: input.detail ?? null,
+    status: 'pending',
+    origin,
+    claimedBy: null,
+    question: null,
+    answer: null,
+    note: null,
+    summary: null,
+    links: [],
+    startedAt: null,
+    runningSince: null,
+    waitingSince: null,
+    finishedAt: null,
+    elapsedSeconds: 0,
+    waitedSeconds: 0,
+  }))
+}
+
+function mergeLinks(existing: readonly Link[], added: readonly Link[] | undefined): Link[] {
+  const merged = [...existing]
+  for (const link of added ?? []) {
+    if (!merged.some((each) => each.url === link.url)) merged.push(link)
+  }
+  return merged
+}
+
+// Preconditions. Each returns the refusal a transition would give, or null.
+// canAct uses them, so the view offers exactly what the domain accepts.
+
+function notArchived(state: TaskState): Refusal | null {
+  return state.task.archivedAt === null ? null : archived(state.task.id)
+}
+
+/**
+ * `action` names what only you can do, with {task} for the task's display id.
+ */
+function byYou(state: TaskState, ctx: Context, action: string): Refusal | null {
+  return isYou(ctx.actor) ? null : onlyYou(state.task.id, action)
+}
+
+function inStatus(state: TaskState, ...statuses: Task['status'][]): Refusal | null {
+  return statuses.includes(state.task.status)
+    ? null
+    : wrongStatus(state.task.id, state.task.status, statuses)
+}
+
+function first(...checks: Array<() => Refusal | null>): Refusal | null {
+  for (const check of checks) {
+    const found = check()
+    if (found) return found
+  }
+  return null
+}
+
+export const preconditions = {
+  queue: (state: TaskState, _ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => inStatus(state, 'backlog')
+    ),
+  unqueue: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'move {task} to the backlog'),
+      () => inStatus(state, 'queue')
+    ),
+  reorder: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'reorder {task}'),
+      () => inStatus(state, 'queue')
+    ),
+  claim: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => (isYou(ctx.actor) ? onlyASession(state.task.id, 'claim a step of {task}') : null),
+      () => inStatus(state, 'queue'),
+      () => {
+        const { step } = current(state)
+        return step.owner === 'agent' && step.status === 'pending'
+          ? null
+          : wrongStepStatus(
+              state.task.id,
+              step.number,
+              'is not an agent step waiting to be claimed'
+            )
+      }
+    ),
+  start: (state: TaskState, _ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => inStatus(state, 'backlog', 'queue'),
+      () => {
+        const { step } = current(state)
+        return step.owner === 'you' ? null : agentStep(state.task.id, step.number)
+      }
+    ),
+  /**
+   * The worker tools act only on the current step, claimed by the caller.
+   */
+  held: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => {
+        const { task } = state
+        if (task.status === 'active') return null
+        const addendum =
+          task.status === 'backlog'
+            ? 'It was parked. Stop work on it.'
+            : task.status === 'queue'
+              ? 'Your claim on it has ended. Call claim_step to take it again.'
+              : 'Every step is done.'
+        return wrongStatus(task.id, task.status, ['active'], addendum)
+      },
+      () => {
+        const { step } = current(state)
+        if (step.owner === 'you') return yourStep(state.task.id, step.number)
+        if (step.claimedBy !== ctx.actor) {
+          return claimedByAnother(state.task.id, step.number, nameOf(ctx, step.claimedBy ?? ''))
+        }
+        return null
+      }
+    ),
+  ask: (state: TaskState, ctx: Context) =>
+    first(
+      () => preconditions.held(state, ctx),
+      () => {
+        const { step } = current(state)
+        return step.status === 'running' ? null : unanswered(state.task.id, step.number)
+      }
+    ),
+  completeStep: (state: TaskState, ctx: Context) =>
+    first(
+      () => preconditions.held(state, ctx),
+      () => {
+        const { step } = current(state)
+        return step.status === 'running' ? null : unanswered(state.task.id, step.number)
+      }
+    ),
+  answer: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'answer the question on {task}'),
+      () => inStatus(state, 'active'),
+      () => {
+        const { step } = current(state)
+        if (step.owner === 'you') {
+          return wrongStepStatus(state.task.id, step.number, 'is your step, not a question')
+        }
+        return step.status === 'waiting'
+          ? null
+          : wrongStepStatus(state.task.id, step.number, 'is not waiting for an answer')
+      }
+    ),
+  completeMyStep: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'mark your own step on {task} done'),
+      () => inStatus(state, 'active'),
+      () => {
+        const { step } = current(state)
+        return step.owner === 'you' ? null : agentStep(state.task.id, step.number)
+      }
+    ),
+  park: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'park {task}'),
+      () => inStatus(state, 'active')
+    ),
+  moveToBacklog: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'move {task} to the backlog'),
+      () => inStatus(state, 'queue', 'active')
+    ),
+  release: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => inStatus(state, 'active'),
+      () => {
+        const { step } = current(state)
+        return step.owner === 'agent' && step.claimedBy === ctx.actor
+          ? null
+          : wrongStepStatus(
+              state.task.id,
+              step.number,
+              `is not claimed by ${nameOf(ctx, ctx.actor)}`
+            )
+      }
+    ),
+  signOff: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'sign off {task}'),
+      () => (state.task.signedOffAt === null ? null : signedOff(state.task.id)),
+      () => inStatus(state, 'done')
+    ),
+  followUp: (state: TaskState, _ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => (state.task.signedOffAt === null ? null : signedOff(state.task.id)),
+      () => inStatus(state, 'done')
+    ),
+  archive: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'archive {task}'),
+      () => (state.task.signedOffAt === null ? null : signedOff(state.task.id))
+    ),
+}
+
+/**
+ * The task's current step is yours, so it starts at once: the task becomes
+ * active and the step waits on you. It never passes through the queue.
+ */
+function startNow(state: TaskState, ctx: Context): Change {
+  const { index, step } = current(state)
+  const started: Step = {
+    ...step,
+    status: 'waiting',
+    waitingSince: ctx.now,
+    startedAt: step.startedAt ?? ctx.now,
+  }
+  return {
+    task: { ...state.task, status: 'active' },
+    steps: withStep(state.steps, index, started),
+    queue: state.task.status === 'queue' ? LEAVE : NONE,
+    events: [event(ctx, state.task.id, started, 'started', `Step ${started.number} waits on you`)],
+  }
+}
+
+/**
+ * Sends a task whose current step is pending to the queue, or starts it at
+ * once when that step is yours.
+ */
+function queueOrStart(state: TaskState, ctx: Context, placement: Placement): Change {
+  if (current(state).step.owner === 'you') {
+    return startNow(state, ctx)
+  }
+  return {
+    task: { ...state.task, status: 'queue' },
+    steps: state.steps,
+    queue: placement === 'first' ? JOIN_FIRST : JOIN_LAST,
+    events: [
+      event(
+        ctx,
+        state.task.id,
+        null,
+        'queued',
+        placement === 'first' ? 'Joined the front of the queue' : 'Joined the back of the queue'
+      ),
+    ],
+  }
+}
+
+function withEvents(change: Change, ...before: Event[]): Change {
+  return { ...change, events: [...before, ...change.events] }
+}
+
+export interface NewTask {
+  taskId: number
+  title: string
+  steps: readonly StepInput[]
+}
+
+/**
+ * Add: a new task in the backlog, every step pending.
+ */
+export function add(input: NewTask, ctx: Context): Change {
+  const task: Task = {
+    id: input.taskId,
+    title: input.title,
+    status: 'backlog',
+    queuePosition: null,
+    createdBy: ctx.actor,
+    createdAt: ctx.now,
+    finishedAt: null,
+    signedOffAt: null,
+    archivedAt: null,
+  }
+  const steps = newSteps(input.taskId, 1, input.steps, 'chain')
+  const count = steps.length === 1 ? '1 step' : `${steps.length} steps`
+  return {
+    task,
+    steps,
+    queue: NONE,
+    events: [event(ctx, task.id, null, 'added', `Added with ${count}`)],
+  }
+}
+
+/**
+ * Add to queue: a new task at the back of the queue, or active at once when
+ * its first step is yours.
+ */
+export function addToQueue(input: NewTask, ctx: Context): Change {
+  const added = add(input, ctx)
+  return withEvents(queueOrStart(added, ctx, 'last'), ...added.events)
+}
+
+/**
+ * Queue: a backlog task joins the back of the queue, or starts at once when
+ * its current step is yours.
+ */
+export function queue(state: TaskState, ctx: Context): Outcome {
+  return preconditions.queue(state, ctx) ?? queueOrStart(state, ctx, 'last')
+}
+
+/**
+ * Unqueue: a queued task goes back to the backlog, and the queue closes up.
+ */
+export function unqueue(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.unqueue(state, ctx)
+  if (refused) return refused
+  return {
+    task: { ...state.task, status: 'backlog' },
+    steps: state.steps,
+    queue: LEAVE,
+    events: [event(ctx, state.task.id, null, 'parked', 'Moved from the queue to the backlog')],
+  }
+}
+
+/**
+ * Reorder: a queued task takes the position it was dropped at. A position
+ * beyond the end means the last place.
+ */
+export function reorder(state: TaskState, ctx: Context, position: number): Outcome {
+  const refused = preconditions.reorder(state, ctx)
+  if (refused) return refused
+  if (!Number.isSafeInteger(position) || position < 1) {
+    return invalid('position must be a whole number from 1')
+  }
+  return {
+    task: state.task,
+    steps: state.steps,
+    queue: { kind: 'move', position },
+    events: [event(ctx, state.task.id, null, 'reordered', `Moved to position ${position}`)],
+  }
+}
+
+/**
+ * Claim: the calling session takes the queued task's current agent step.
+ */
+export function claim(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.claim(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const claimed: Step = {
+    ...step,
+    status: 'running',
+    claimedBy: ctx.actor,
+    runningSince: ctx.now,
+    startedAt: step.startedAt ?? ctx.now,
+  }
+  return {
+    task: { ...state.task, status: 'active' },
+    steps: withStep(state.steps, index, claimed),
+    queue: LEAVE,
+    events: [event(ctx, state.task.id, claimed, 'claimed', `Claimed by ${nameOf(ctx, ctx.actor)}`)],
+  }
+}
+
+/**
+ * Start, for your step: automatic, when your step becomes current on a task
+ * in the backlog or the queue.
+ */
+export function start(state: TaskState, ctx: Context): Outcome {
+  return preconditions.start(state, ctx) ?? startNow(state, ctx)
+}
+
+export interface NoteInput {
+  note: string
+  links?: readonly Link[]
+}
+
+/**
+ * update_step: the claiming session records a progress note on its step.
+ */
+export function note(state: TaskState, ctx: Context, input: NoteInput): Outcome {
+  const refused = preconditions.held(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const noted: Step = { ...step, note: input.note, links: mergeLinks(step.links, input.links) }
+  return {
+    task: state.task,
+    steps: withStep(state.steps, index, noted),
+    queue: NONE,
+    events: [event(ctx, state.task.id, noted, 'noted', brief(input.note))],
+  }
+}
+
+/**
+ * ask_you: the claiming session's running step waits on you with a question.
+ * A new question replaces any answer not yet collected.
+ */
+export function ask(state: TaskState, ctx: Context, question: string): Outcome {
+  const refused = preconditions.ask(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const asked: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'waiting',
+    waitingSince: ctx.now,
+    question,
+    answer: null,
+  }
+  return {
+    task: state.task,
+    steps: withStep(state.steps, index, asked),
+    queue: NONE,
+    events: [event(ctx, state.task.id, asked, 'asked', brief(question))],
+  }
+}
+
+/**
+ * You answer an agent's question: the step runs again with the answer
+ * stored until the agent collects it.
+ */
+export function answer(state: TaskState, ctx: Context, text: string): Outcome {
+  const refused = preconditions.answer(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const answered: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'running',
+    runningSince: ctx.now,
+    question: null,
+    answer: text,
+  }
+  return {
+    task: state.task,
+    steps: withStep(state.steps, index, answered),
+    queue: NONE,
+    events: [event(ctx, state.task.id, answered, 'answered', brief(text))],
+  }
+}
+
+/**
+ * The chain moves on after its current step is done: the task is done when
+ * there is no next step, goes to the front of the queue when the next step is
+ * an agent's, and stays active with your next step waiting on you.
+ */
+function advance(state: TaskState, ctx: Context, completed: Event): Change {
+  const { step } = current(state)
+  if (step.status === 'done') {
+    return {
+      task: { ...state.task, status: 'done', finishedAt: ctx.now },
+      steps: state.steps,
+      queue: NONE,
+      events: [completed],
+    }
+  }
+  if (step.owner === 'agent') {
+    return withEvents(queueOrStart(state, ctx, 'first'), completed)
+  }
+  return withEvents(
+    startNow({ ...state, task: { ...state.task, status: 'backlog' } }, ctx),
+    completed
+  )
+}
+
+export interface CompleteInput {
+  summary: string
+  links?: readonly Link[]
+}
+
+/**
+ * complete_step: the claiming session finishes its running step.
+ */
+export function completeStep(state: TaskState, ctx: Context, input: CompleteInput): Outcome {
+  const refused = preconditions.completeStep(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const done: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'done',
+    claimedBy: null,
+    summary: input.summary,
+    links: mergeLinks(step.links, input.links),
+    finishedAt: ctx.now,
+  }
+  return advance(
+    { task: state.task, steps: withStep(state.steps, index, done) },
+    ctx,
+    event(ctx, state.task.id, done, 'completed', brief(input.summary))
+  )
+}
+
+/**
+ * You mark your waiting step done, with an optional note.
+ */
+export function completeMyStep(
+  state: TaskState,
+  ctx: Context,
+  input: { note?: string | null } = {}
+): Outcome {
+  const refused = preconditions.completeMyStep(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const done: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'done',
+    note: input.note ?? step.note,
+    finishedAt: ctx.now,
+  }
+  return advance(
+    { task: state.task, steps: withStep(state.steps, index, done) },
+    ctx,
+    event(ctx, state.task.id, done, 'completed', input.note ? brief(input.note) : 'Marked done')
+  )
+}
+
+/**
+ * Park: an active task goes to the backlog, and its current step returns to
+ * pending with any claim, question and answer cleared.
+ */
+export function park(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.park(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const parked = backToPending(step, ctx.now)
+  return {
+    task: { ...state.task, status: 'backlog' },
+    steps: withStep(state.steps, index, parked),
+    queue: NONE,
+    events: [event(ctx, state.task.id, parked, 'parked', 'Parked in the backlog')],
+  }
+}
+
+/**
+ * move_to_backlog: parks an active task, and unqueues a queued one.
+ */
+export function moveToBacklog(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.moveToBacklog(state, ctx)
+  if (refused) return refused
+  return state.task.status === 'active' ? park(state, ctx) : unqueue(state, ctx)
+}
+
+/**
+ * Release: automatic, when the session that claimed the current step is found
+ * dead. `ctx.actor` is that session. The task goes to the front of the queue.
+ */
+export function release(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.release(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const released = backToPending(step, ctx.now)
+  return {
+    task: { ...state.task, status: 'queue' },
+    steps: withStep(state.steps, index, released),
+    queue: JOIN_FIRST,
+    events: [
+      event(
+        ctx,
+        state.task.id,
+        released,
+        'released',
+        `Released: ${nameOf(ctx, ctx.actor)} stopped responding`
+      ),
+    ],
+  }
+}
+
+/**
+ * Sign off: you accept a done task.
+ */
+export function signOff(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.signOff(state, ctx)
+  if (refused) return refused
+  return {
+    task: { ...state.task, signedOffAt: ctx.now },
+    steps: state.steps,
+    queue: NONE,
+    events: [event(ctx, state.task.id, null, 'signed_off', 'Signed off')],
+  }
+}
+
+export interface FollowUpInput {
+  steps: readonly StepInput[]
+  placement: Placement
+}
+
+/**
+ * Follow-up: new steps are appended to a done task, which goes back to the
+ * queue where asked, or starts at once when the first new step is yours.
+ */
+export function followUp(state: TaskState, ctx: Context, input: FollowUpInput): Outcome {
+  const refused = preconditions.followUp(state, ctx)
+  if (refused) return refused
+  const added = newSteps(state.task.id, state.steps.length + 1, input.steps, 'follow_up')
+  const extended: TaskState = {
+    task: { ...state.task, status: 'backlog', finishedAt: null },
+    steps: [...state.steps, ...added],
+  }
+  const count = added.length === 1 ? '1 new step' : `${added.length} new steps`
+  return withEvents(
+    queueOrStart(extended, ctx, input.placement),
+    event(ctx, state.task.id, null, 'followed_up', `Followed up with ${count}`)
+  )
+}
+
+/**
+ * Archive: the task leaves every list with its status unchanged. Its queue
+ * position, any claim and any unanswered question are cleared.
+ */
+export function archive(state: TaskState, ctx: Context): Outcome {
+  const refused = preconditions.archive(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const held = step.status === 'running' || step.status === 'waiting'
+  return {
+    task: { ...state.task, archivedAt: ctx.now },
+    steps: held ? withStep(state.steps, index, backToPending(step, ctx.now)) : state.steps,
+    queue: state.task.status === 'queue' ? LEAVE : NONE,
+    events: [event(ctx, state.task.id, null, 'archived', 'Archived')],
+  }
+}
