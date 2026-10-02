@@ -9,7 +9,8 @@ async function errors(filePath: string, code: string) {
   return result.messages.filter((message) => message.severity === 2)
 }
 
-describe('lint refuses', () => {
+// The first lint loads the whole config, which is slow while other suites run.
+describe('lint refuses', { timeout: 30_000 }, () => {
   test.each([
     [
       'the MCP SDK in a component',
@@ -81,7 +82,7 @@ describe('lint refuses', () => {
   })
 })
 
-describe('lint allows', () => {
+describe('lint allows', { timeout: 30_000 }, () => {
   test.each([
     [
       'a view entry importing the bridge and shared/',

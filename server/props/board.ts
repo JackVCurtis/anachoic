@@ -169,7 +169,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
           item.holding = {
             task: ref(held.task),
             step: { number: held.step.number, title: held.step.title },
-            status: held.status,
+            status: held.status === 'blocked' ? 'waiting' : held.status,
           }
         }
       } else {

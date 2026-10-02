@@ -39,6 +39,8 @@ export const EVENT_KINDS = [
   'archived',
   'assigned',
   'unassigned',
+  'blocked',
+  'unblocked',
 ] as const
 
 export type EventKind = (typeof EVENT_KINDS)[number]
@@ -101,6 +103,13 @@ export interface Step {
   links: Link[]
   outputFormat: OutputFormat | null
   artifactUrl: string | null
+  /**
+   * Agent steps only. Why the worker cannot go on, while it has blocked the
+   * step: the step waits on you, but for you to act with the worker in its
+   * own session rather than for an answer.
+   */
+  blockedReason: string | null
+  blockedAt: Instant | null
   startedAt: Instant | null
   runningSince: Instant | null
   waitingSince: Instant | null

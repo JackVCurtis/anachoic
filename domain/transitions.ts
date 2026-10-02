@@ -6,12 +6,15 @@ import type { Placement } from './queue_order.js'
 import {
   agentStep,
   archived,
+  blocked,
   assignedToAnother,
   claimedByAnother,
   invalid,
   isRefusal,
   needsArtifact,
   notAWebAddress,
+  notBlocked,
+  notRunning,
   onlyASession,
   onlyYou,
   signedOff,
@@ -128,7 +131,16 @@ function backToPending(step: Step, now: Instant): Step {
     claimedBy: null,
     question: null,
     answer: null,
+    blockedReason: null,
+    blockedAt: null,
   }
+}
+
+/**
+ * A blocked step waits on you without a question.
+ */
+export function isBlocked(step: Step): boolean {
+  return step.blockedReason !== null
 }
 
 function withStep(steps: readonly Step[], index: number, step: Step): Step[] {
@@ -163,6 +175,8 @@ function newSteps(
     links: [],
     outputFormat: input.outputFormat ?? null,
     artifactUrl: null,
+    blockedReason: null,
+    blockedAt: null,
     startedAt: null,
     runningSince: null,
     waitingSince: null,
@@ -283,9 +297,20 @@ export const preconditions = {
         return null
       }
     ),
-  ask: (state: TaskState, ctx: Context) =>
+  /**
+   * The worker tools other than unblock_step refuse a blocked step.
+   */
+  heldUnblocked: (state: TaskState, ctx: Context) =>
     first(
       () => preconditions.held(state, ctx),
+      () => {
+        const { step } = current(state)
+        return isBlocked(step) ? blocked(state.task.id, step.number) : null
+      }
+    ),
+  ask: (state: TaskState, ctx: Context) =>
+    first(
+      () => preconditions.heldUnblocked(state, ctx),
       () => {
         const { step } = current(state)
         return step.status === 'running' ? null : unanswered(state.task.id, step.number)
@@ -293,10 +318,26 @@ export const preconditions = {
     ),
   completeStep: (state: TaskState, ctx: Context) =>
     first(
-      () => preconditions.held(state, ctx),
+      () => preconditions.heldUnblocked(state, ctx),
       () => {
         const { step } = current(state)
         return step.status === 'running' ? null : unanswered(state.task.id, step.number)
+      }
+    ),
+  block: (state: TaskState, ctx: Context) =>
+    first(
+      () => preconditions.held(state, ctx),
+      () => {
+        const { step } = current(state)
+        return step.status === 'running' ? null : notRunning(state.task.id, step.number)
+      }
+    ),
+  unblock: (state: TaskState, ctx: Context) =>
+    first(
+      () => preconditions.held(state, ctx),
+      () => {
+        const { step } = current(state)
+        return isBlocked(step) ? null : notBlocked(state.task.id, step.number)
       }
     ),
   answer: (state: TaskState, ctx: Context) =>
@@ -309,7 +350,7 @@ export const preconditions = {
         if (step.owner === 'you') {
           return wrongStepStatus(state.task.id, step.number, 'is your step, not a question')
         }
-        return step.status === 'waiting'
+        return step.status === 'waiting' && !isBlocked(step)
           ? null
           : wrongStepStatus(state.task.id, step.number, 'is not waiting for an answer')
       }
@@ -548,7 +589,7 @@ export interface NoteInput {
  * update_step: the claiming session records a progress note on its step.
  */
 export function note(state: TaskState, ctx: Context, input: NoteInput): Outcome {
-  const refused = preconditions.held(state, ctx)
+  const refused = preconditions.heldUnblocked(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
   const noted: Step = { ...step, note: input.note, links: mergeLinks(step.links, input.links) }
@@ -603,6 +644,54 @@ export function answer(state: TaskState, ctx: Context, text: string): Outcome {
     steps: withStep(state.steps, index, answered),
     queue: NONE,
     events: [event(ctx, state.task.id, answered, 'answered', brief(text))],
+  }
+}
+
+/**
+ * block_step: the claiming session cannot go on without you acting with it
+ * in its own session. Its running step waits on you, with the reason.
+ */
+export function block(state: TaskState, ctx: Context, reason: string): Outcome {
+  const refused = preconditions.block(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const blockedStep: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'waiting',
+    waitingSince: ctx.now,
+    blockedReason: reason,
+    blockedAt: ctx.now,
+  }
+  return {
+    task: state.task,
+    steps: withStep(state.steps, index, blockedStep),
+    queue: NONE,
+    events: [event(ctx, state.task.id, blockedStep, 'blocked', brief(reason))],
+  }
+}
+
+/**
+ * unblock_step: the claiming session's blocked step runs again. The time it
+ * spent blocked counts as time waited on you, as for a question.
+ */
+export function unblock(state: TaskState, ctx: Context, withNote?: string | null): Outcome {
+  const refused = preconditions.unblock(state, ctx)
+  if (refused) return refused
+  const { index, step } = current(state)
+  const unblocked: Step = {
+    ...closeInterval(step, ctx.now),
+    status: 'running',
+    runningSince: ctx.now,
+    blockedReason: null,
+    blockedAt: null,
+  }
+  return {
+    task: state.task,
+    steps: withStep(state.steps, index, unblocked),
+    queue: NONE,
+    events: [
+      event(ctx, state.task.id, unblocked, 'unblocked', withNote ? brief(withNote) : 'Unblocked'),
+    ],
   }
 }
 

@@ -8,6 +8,7 @@ import {
   answer,
   archive,
   ask,
+  block,
   claim,
   completeMyStep,
   completeStep,
@@ -21,6 +22,7 @@ import {
   signOff,
   start,
   unassign,
+  unblock,
   unqueue,
   type Outcome,
 } from '../../../domain/transitions.js'
@@ -40,6 +42,8 @@ const OPERATIONS: Operation[] = [
   ['note', (s, a, t) => note(s, ctx(a, t), { note: 'Progress' })],
   ['ask', (s, a, t) => ask(s, ctx(a, t), 'Which?')],
   ['answer', (s, a, t) => answer(s, ctx(a, t), 'That one')],
+  ['block', (s, a, t) => block(s, ctx(a, t), 'Needs credentials')],
+  ['unblock', (s, a, t) => unblock(s, ctx(a, t), 'Resolved')],
   ['completeStep', (s, a, t) => completeStep(s, ctx(a, t), { summary: 'Done' })],
   ['completeMyStep', (s, a, t) => completeMyStep(s, ctx(a, t), { note: 'Checked' })],
   [
@@ -104,6 +108,7 @@ function shape({ task, steps }: TaskState): string {
       step.claimedBy,
       step.question !== null,
       step.answer !== null,
+      step.blockedReason !== null,
       step.outputFormat,
       step.artifactUrl !== null,
     ]),

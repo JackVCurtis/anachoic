@@ -233,6 +233,41 @@ export function askYou(
   )
 }
 
+export function blockStep(
+  database: Database,
+  actor: Actor,
+  now: Instant,
+  task: TaskRef,
+  reason: string
+): ServiceResult {
+  return act(
+    database,
+    actor,
+    now,
+    task,
+    (state, ctx) => transitions.block(state, ctx, reason),
+    checkText('reason', reason)
+  )
+}
+
+export function unblockStep(
+  database: Database,
+  actor: Actor,
+  now: Instant,
+  task: TaskRef,
+  note?: string | null
+): ServiceResult {
+  const given = note === '' ? null : note
+  return act(
+    database,
+    actor,
+    now,
+    task,
+    (state, ctx) => transitions.unblock(state, ctx, given),
+    checkOptionalText('note', given)
+  )
+}
+
 export function answerQuestion(
   database: Database,
   actor: Actor,
@@ -390,7 +425,7 @@ export function checkWaiting(database: Database, task: TaskRef, session: string)
   return read(database, (sqlite) => {
     const state = loadTaskState(sqlite, id)
     if (!state) return notFound(id)
-    const refused = transitions.preconditions.held(state, contextFor(sqlite, session, ''))
+    const refused = transitions.preconditions.heldUnblocked(state, contextFor(sqlite, session, ''))
     if (refused) return refused
     const step = currentStep(state.steps)
     return step.status === 'waiting' || step.answer !== null

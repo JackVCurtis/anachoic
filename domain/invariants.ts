@@ -12,8 +12,8 @@ export class InvariantError extends Error {
 
 /**
  * The invariants of 03 that hold for one task, numbered as 03 numbers them,
- * with the open-interval rule for time on a step. An archived task is held
- * only to invariant 8.
+ * with the open-interval rule for time on a step, and those of 11 and 12. An
+ * archived task is held only to invariant 8.
  */
 export function taskViolations({ task, steps }: TaskState): string[] {
   const found: string[] = []
@@ -53,6 +53,25 @@ export function taskViolations({ task, steps }: TaskState): string[] {
       broken('step', `${name} is yours but running`)
     if (step.question !== null && !(step.owner === 'agent' && step.status === 'waiting')) {
       broken('7', `${name} has a question while ${step.owner === 'you' ? 'yours' : step.status}`)
+    }
+    if (step.blockedReason !== null && !(step.owner === 'agent' && step.status === 'waiting')) {
+      broken(
+        'blocked',
+        `${name} has a blocked reason while ${step.owner === 'you' ? 'yours' : step.status}`
+      )
+    }
+    if ((step.blockedReason !== null) !== (step.blockedAt !== null)) {
+      broken('blocked', `${name} has blockedReason and blockedAt out of step`)
+    }
+    if (
+      step.owner === 'agent' &&
+      step.status === 'waiting' &&
+      (step.question !== null) === (step.blockedReason !== null)
+    ) {
+      broken(
+        'blocked',
+        `${name} waits with ${step.question === null ? 'neither a question nor' : 'both a question and'} a blocked reason`
+      )
     }
     if ((step.runningSince !== null) !== (step.status === 'running')) {
       broken('time', `${name} is ${step.status} with runningSince ${step.runningSince ?? 'empty'}`)

@@ -78,6 +78,21 @@ export function wrongStepStatus(taskId: number, stepNumber: number, why: string)
   return refusal('wrong_status', `${stepOf(taskId, stepNumber)} ${why}`)
 }
 
+export function notRunning(taskId: number, stepNumber: number): Refusal {
+  return refusal('wrong_status', `${stepOf(taskId, stepNumber)} is not running`)
+}
+
+export function notBlocked(taskId: number, stepNumber: number): Refusal {
+  return refusal('wrong_status', `${stepOf(taskId, stepNumber)} is not blocked`)
+}
+
+export function blocked(taskId: number, stepNumber: number): Refusal {
+  return refusal(
+    'wrong_status',
+    `${stepOf(taskId, stepNumber)} is blocked. Call unblock_step first.`
+  )
+}
+
 export function claimedByAnother(taskId: number, stepNumber: number, sessionName: string): Refusal {
   return refusal('not_yours', `${stepOf(taskId, stepNumber)} is claimed by ${sessionName}`)
 }

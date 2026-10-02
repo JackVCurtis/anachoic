@@ -1,6 +1,6 @@
 import { currentStep } from './chain.js'
 import { isRefusal } from './refusal.js'
-import { preconditions, type Context } from './transitions.js'
+import { isBlocked, preconditions, type Context } from './transitions.js'
 import { YOU, type Instant, type Session, type Step, type Task, type TaskState } from './types.js'
 
 /**
@@ -135,7 +135,8 @@ export function counts(states: readonly TaskState[]): Counts {
 export interface Holding {
   task: Task
   step: Step
-  status: 'running' | 'waiting'
+  /** Waiting on your answer, or blocked until you act with the session. */
+  status: 'running' | 'waiting' | 'blocked'
 }
 
 /**
@@ -148,7 +149,7 @@ export function holdings(sessionId: string, states: readonly TaskState[]): Holdi
     if (task.archivedAt !== null) continue
     const step = currentStep(steps)
     if (step.claimedBy === sessionId && (step.status === 'running' || step.status === 'waiting')) {
-      held.push({ task, step, status: step.status })
+      held.push({ task, step, status: isBlocked(step) ? 'blocked' : step.status })
     }
   }
   return held
