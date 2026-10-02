@@ -44,6 +44,7 @@ describe('lint refuses', () => {
     ],
     ['store/ in domain/', 'domain/example.ts', "import { open } from '../store/db.js'"],
     ['node:fs in domain/', 'domain/example.ts', "import { readFileSync } from 'node:fs'"],
+    ['node:sqlite in domain/', 'domain/example.ts', "import { DatabaseSync } from 'node:sqlite'"],
     [
       'server/ in view/',
       'view/entries/board/main.tsx',
