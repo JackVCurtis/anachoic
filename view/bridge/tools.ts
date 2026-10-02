@@ -1,4 +1,10 @@
-import type { ActionResult, BoardProps, GetBoardResult, OutputFormat } from '../../shared/props'
+import type {
+  ActionResult,
+  BoardProps,
+  GetBoardResult,
+  GetTaskResult,
+  OutputFormat,
+} from '../../shared/props'
 import type { HostApp } from './connect'
 
 /**
@@ -55,6 +61,18 @@ type App = Pick<HostApp, 'callServerTool'>
 /** A task as the app-only tools take it: its display id or its number. */
 export type TaskArg = string | number
 
+/**
+ * One task in full, or that the board is still at sinceRevision, or the
+ * refusal's sentence, such as "T-012 was archived".
+ */
+export function getTask(app: App, task: TaskArg, sinceRevision?: number) {
+  return callAppTool<GetTaskResult>(
+    app,
+    'get_task',
+    sinceRevision === undefined ? { task } : { task, sinceRevision }
+  )
+}
+
 export interface NewStep {
   title: string
   owner: 'agent' | 'you'
@@ -104,5 +122,21 @@ export async function openLink(app: Pick<HostApp, 'openLink'>, url: string): Pro
     return !('isError' in result && result.isError)
   } catch {
     return false
+  }
+}
+
+/**
+ * Asks the host to show the view inline or in full screen. Resolves to the
+ * mode the host chose, or null when it could not be reached.
+ */
+export async function requestDisplayMode(
+  app: Pick<HostApp, 'requestDisplayMode'>,
+  mode: 'inline' | 'fullscreen'
+): Promise<string | null> {
+  try {
+    const result = await app.requestDisplayMode({ mode })
+    return result.mode
+  } catch {
+    return null
   }
 }

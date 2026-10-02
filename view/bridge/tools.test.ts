@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { FakeApp } from './testing/fake_app'
-import { actions, callAppTool, openLink } from './tools'
+import { actions, callAppTool, openLink, requestDisplayMode } from './tools'
 
 describe('callAppTool', () => {
   test('returns the structuredContent of a result as props', async () => {
@@ -72,5 +72,25 @@ describe('openLink', () => {
 
     expect(await openLink(refusing, 'https://example.com')).toBe(false)
     expect(await openLink(failing, 'https://example.com')).toBe(false)
+  })
+})
+
+describe('requestDisplayMode', () => {
+  test('asks the host for the mode and resolves to the one it chose', async () => {
+    const app = new FakeApp()
+
+    expect(await requestDisplayMode(app, 'fullscreen')).toBe('fullscreen')
+    expect(await requestDisplayMode(app, 'inline')).toBe('inline')
+    expect(app.calls.requestDisplayMode).toEqual([{ mode: 'fullscreen' }, { mode: 'inline' }])
+  })
+
+  test('is null when the host cannot be reached', async () => {
+    const failing = {
+      requestDisplayMode: async () => {
+        throw new Error('Gone')
+      },
+    }
+
+    expect(await requestDisplayMode(failing, 'fullscreen')).toBeNull()
   })
 })
