@@ -40,7 +40,7 @@ The dedicated session can call these too. Each acts only on a step that the call
 |---|---|---|---|
 | `claim_step` | `task` (optional) | Claim ([05](05-sessions.md#claiming)) | The task, the step's number, title and detail, the chain so far with each completed step's summary, and what to call next |
 | `update_step` | `task`, `note` (1–500 characters), `links` (optional) | Records a progress note, which shows on the board | "Noted on T-012 step 2" |
-| `ask_you` | `task`, `question` (1–2,000 characters) | The step waits on you | For a worker: "Asked. Call wait_for_answer with task T-012 next." For the dedicated session: "Asked. Your answer will arrive as a message from the board." ([05](05-sessions.md#waiting-for-your-answer)) |
+| `ask_you` | `task`, `question` (1–2,000 characters) | The step waits on you | For a worker: "Asked. Call wait_for_answer with task T-012 next." Refused for the dedicated session, which asks in its own chat ([05](05-sessions.md#waiting-for-your-answer)). |
 | `wait_for_answer` | `task` | Waits, as [05](05-sessions.md#waiting-for-your-answer) describes | Your answer, or "No answer yet…", or that the claim ended |
 | `complete_step` | `task`, `summary` (1–2,000 characters), `links` (optional) | Complete the current step | What happened next: done, waiting on you, or back in the queue at position 1. When the next step is an agent's, it adds "Call claim_step with task T-012 to continue it." |
 
@@ -167,33 +167,17 @@ Therefore:
 
 ### Waking the dedicated session
 
-After each successful action you take in the view, the view calls `sendMessage` with one fixed sentence. This posts a user turn, and Claude replies ([spike notes](../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat)).
+**The view never posts a message to the dedicated chat.** The product owner decided this on 2026-10-02. Messages posted by the view were adding noise to the chat, including the suggestion chips that desktop draws under every reply. Your actions take effect on the board and nowhere else.
 
-| Action | Sentence |
-|---|---|
-| Mark your step done | "I finished step 2 of T-012, “Review the PR”." with " Note: …" added when you wrote one |
-| Answer a question | "I answered step 2 of T-012: “…”" |
-| Add a task | "I added T-015, “Add retries”, to the queue." or "…to the backlog." |
-| Reorder | "I moved T-015 to position 1 in the queue." |
-| Queue | "I queued T-015 at position 4." |
-| Queue, when the task's next step is yours, so it starts at once | "I queued T-015, and its next step is mine." |
-| Move to backlog | "I moved T-015 to the backlog." For an active task, "I parked T-015 and moved it to the backlog." |
-| Park your step or a question | "I parked T-012 and moved it to the backlog." |
-| Sign off | "I signed off T-006." |
-| Follow-up | "I added 2 follow-up steps to T-006." |
-| Archive | "I archived T-008." |
-
-The model's instructions say how to respond. For an action that needs nothing from Claude, it replies in one line. For an action that concerns work it holds or coordinates, it carries on.
-
-Only your own actions post a message. Events from workers, including their questions, appear on the live board and never post one ([10](10-open-questions.md#decisions)).
-
-`updateModelContext` is not used. In desktop chat it returns success but never reaches the model ([spike notes](../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat)).
+- **Learning what changed.** The dedicated session sees your actions only when it next reads the board, with `show_board`.
+- **Workers** learn of your answers through `wait_for_answer`, and get their work back through `wait_for_work` ([11](11-assignment-and-outputs.md#handing-work-back-to-the-worker)).
+- **Neither `sendMessage` nor `updateModelContext` is used.** Lint refuses both anywhere under `view/`. `updateModelContext` also never reaches the model in desktop chat ([spike notes](../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat)).
 
 ## Server instructions
 
 The server's `instructions` and each tool's description teach the model its role. The kind of client decides which text applies, using the same rule as [05](05-sessions.md#identity):
 
-- **The dedicated session.** It shows the board when you ask about work. It plans work as tasks with chains, and gives each step an owner: you or an agent. It replies briefly to the view's messages. It never waits in a tool.
+- **The dedicated session.** It shows the board when you ask about work. It plans work as tasks with chains, and gives each step an owner: you or an agent. It learns of your board actions only by reading the board, and asks you questions in its own chat, never through `ask_you`.
 - **A worker.** It joins with a name that fits its project. It claims one step at a time, and reports progress with `update_step`. It asks you through `ask_you` and then `wait_for_answer`, never in its own chat. It completes the step with a summary and links, and continues the chain when `complete_step` says it can.
 
 The full text of both is written in todo MCP-09 and kept in `server/instructions.ts`.

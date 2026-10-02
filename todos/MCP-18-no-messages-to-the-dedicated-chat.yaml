@@ -1,0 +1,30 @@
+id: MCP-18
+title: "Stop posting messages to the dedicated chat"
+area: MCP
+phase: "2"
+summary: >
+  The board view no longer posts any message to the dedicated chat. The posted messages were noise and
+  brought desktop's suggestion chips with them. Your actions take effect on the board only; the
+  dedicated session reads the board when it needs to, asks you questions in its own chat, and is
+  refused ask_you and wait_for_answer.
+requirements:
+  - "view/bridge/wake.ts no longer calls sendMessage; createYourActions keeps its typed callers and their results, and the sentence builders and their tests are deleted"
+  - "The lint rule that refuses updateModelContext under view/ also refuses sendMessage, with a lint unit test for each"
+  - "Entry tests that expected a sentence now assert that no message is sent for any action, including refusals"
+  - "ask_you from the dedicated session is refused with invalid and 'Ask in this chat instead'; wait_for_answer from it with 'This chat does not wait'"
+  - "The dedicated instructions in server/instructions.ts drop the paragraph about messages from the board view, and say: this chat learns of the person's board actions only by calling show_board, and asks the person questions directly in this chat, never with ask_you"
+  - "The ask_you tool description says it is for workers only"
+acceptance_criteria:
+  - "ui suite: a fake App records no sendMessage call across every board action, success or refusal"
+  - "Lint unit test: sendMessage and updateModelContext are each refused in a file under view/"
+  - "Integration suite: ask_you and wait_for_answer from a claude-ai client are refused with their sentences; a worker's ask_you still works"
+  - "Manual desktop check: acting on the board posts nothing in the chat"
+depends_on:
+  - "MCP-12"
+external_dependencies: []
+docs:
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "05-sessions.md#waiting-for-your-answer"
+  - "06-tools-and-views.md#server-instructions"
+  - "10-open-questions.md#decisions"
+  - "11-assignment-and-outputs.md#suggestion-chips"

@@ -9,7 +9,7 @@ summary: >
 requirements:
   - "The chain composer (shared by TaskEntry and the follow-up composer) gains a labelled native select \"Output\" on steps owned by you, with None, Pull request, Ticket, Document and Link; it is hidden for agent steps and cleared when a step's owner changes to agent"
   - "YourTurnCard for a step with a format shows \"Needs a <format> link\" and its Mark done form gains a required URL field labelled from the formats table in 11, above the note; Mark done is disabled until the field holds an absolute http(s) URL, with a polite note saying why"
-  - "The entry sends artifactUrl with complete_my_step and posts the wake sentence with the URL from MCP-16; a refusal keeps the draft and shows the error strip"
+  - "The entry sends artifactUrl with complete_my_step; a refusal keeps the draft and shows the error strip"
   - "Working, Queue, Backlog and SignOffCard draw one line of artifact links \"Pull request · step 2 ↗\", each a button-styled link that calls the host's openLink through the bridge; the ↗ is aria-hidden and each link has hidden text \"opens in your browser\""
   - "Long URLs never widen a card: link text is the format and step only, with the full URL in the title attribute"
   - "New strings follow the content rules; the strings test passes"

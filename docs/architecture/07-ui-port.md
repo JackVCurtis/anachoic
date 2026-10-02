@@ -100,7 +100,7 @@ Dark mode is revisited after phase 2 ([10](10-open-questions.md#open-questions))
 | `host_context.tsx` | A React context with the parts the views use: `displayMode`, `availableDisplayModes`, `safeAreaInsets`, `locale`, `timeZone` |
 | `tools.ts` | One typed function per app-only tool. Each returns the parsed props or a refusal. |
 | `board_source.ts` | Fetch on connect, poll, back off, and swap in fresh props after a write ([06](06-tools-and-views.md#polling)) |
-| `wake.ts` | Builds and sends the `sendMessage` sentence for each action ([06](06-tools-and-views.md#waking-the-dedicated-session)) |
+| `wake.ts` | Your actions' typed callers, which the entries use. It sends no message ([06](06-tools-and-views.md#waking-the-dedicated-session)). |
 
 The clock (`use_now`) takes `timeZone` from the host context, so times are shown in the user's zone.
 

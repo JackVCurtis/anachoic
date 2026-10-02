@@ -16,7 +16,6 @@ requirements:
 acceptance_criteria:
   - "Integration suite: adding a task with a formatted step you own succeeds; on an agent step it is refused with the sentence"
   - "Integration suite: complete_my_step without a URL, with an invalid URL, and with a valid one; a worker's claim_step on the next step reads the artifact in its text"
-  - "ui suite (bridge): the wake sentence with a URL, with and without a note, sent once only after success"
 depends_on:
   - "DOM-09"
   - "MCP-10"

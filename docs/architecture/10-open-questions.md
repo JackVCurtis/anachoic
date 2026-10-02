@@ -10,14 +10,13 @@ The product owner made these decisions while planning, on 2026-10-01.
 | Sessions | You open one dedicated session for Anachoic. Worker sessions run alongside it, and the board shows their work. | [01](01-overview.md#the-two-kinds-of-session), [05](05-sessions.md) |
 | Reuse | Copy anachoic's UI subset rather than share a package | [02](02-stack-and-structure.md#copied-files), [07](07-ui-port.md) |
 | Model | Anachoic-style tasks with chains of steps owned by an agent or by you | [03](03-domain-model.md) |
-| Waking | The view posts a message to the dedicated session after each of your actions | [06](06-tools-and-views.md#waking-the-dedicated-session) |
-| What wakes the dedicated session | Only your own actions. Workers' events never post a message. | [06](06-tools-and-views.md#waking-the-dedicated-session) |
+| Waking | ~~The view posts a message to the dedicated session after each of your actions.~~ **Changed on 2026-10-02:** the view posts no messages. They were noise in the chat and caused desktop's suggestion chips. | [06](06-tools-and-views.md#waking-the-dedicated-session) |
 | Theme | Light only to begin with | [07](07-ui-port.md#theme) |
 | Sign-off | A visible state and an action you take, placed in the board's Done section with no tab of its own | [07](07-ui-port.md#layout) |
 | Agent waiting on you | A free-text question and a free-text answer | [03](03-domain-model.md#what-you-can-do-with-a-waiting-step) |
 | Claiming | Workers claim agent steps. Neither you nor the dedicated session assigns them. **Changed on 2026-10-02:** a task may be assigned to one worker when it is created, and only that worker may then claim it. | [05](05-sessions.md#claiming), [11](11-assignment-and-outputs.md#assigning-a-task-to-a-worker) |
 | Output formats | A step you own may declare a pull request, ticket, document or link. Completing it requires an http(s) URL, shown on the cards. Agent steps cannot declare one. | [11](11-assignment-and-outputs.md#output-formats-on-your-steps) |
-| Suggestion chips | Asked to remove them. They are drawn by Claude desktop, and the server cannot control them. | [11](11-assignment-and-outputs.md#suggestion-chips) |
+| Suggestion chips | Asked to remove them. Desktop drew them under the replies to the view's posted messages, so they go away with those messages. | [11](11-assignment-and-outputs.md#suggestion-chips) |
 | Creating tasks | Any session may create tasks, even when the dedicated session is not open | [06](06-tools-and-views.md#every-session) |
 | Fonts | Keep Barlow if it loads, and choose another if needed. It loads. | [07](07-ui-port.md#fonts) |
 | Timeouts | Taken from the documentation, not measured | [05](05-sessions.md#waiting-for-your-answer) |

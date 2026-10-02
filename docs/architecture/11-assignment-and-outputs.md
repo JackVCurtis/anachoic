@@ -159,9 +159,8 @@ The URL must parse as an absolute `http:` or `https:` URL. The format is not che
 | TaskEntry and the follow-up composer | A step you own gains a field "Output", a native select: "None", "Pull request", "Ticket", "Document", "Link". Steps owned by an agent don't show it. |
 | YourTurnCard | For a step with a format, the card says what is needed: "Needs a pull request link". Its Mark done form gains a required URL field, labelled as in the formats table, above the optional note. Mark done stays disabled until the URL is valid. |
 | Working, Queue, Backlog and SignOffCard | One line of artifact links, each labelled with its format and step: "Pull request · step 2 ↗". A link opens through the host's `openLink`, because the view is sandboxed. |
-| Wake sentence | "I finished step 2 of T-012, “Review the PR”: https://…" with " Note: …" added when you wrote one |
 | Text summary | Done steps with artifacts show the link after the task |
 
 ## Suggestion chips
 
-You also asked that the suggestion chips under replies in the board's chat be removed. Claude desktop draws those chips itself. The MCP Apps specification and the SDK give a server no way to control them, so this app cannot remove them. If they can be turned off, it is by a setting in Claude desktop.
+You asked for the suggestion chips in the board's chat to be removed. Desktop draws them under Claude's replies, and most of those replies were answers to the messages the view posted after each of your actions. The view no longer posts messages ([06](06-tools-and-views.md#waking-the-dedicated-session)), so the chips go with them. Chips that desktop draws under replies to your own messages are outside the server's control.

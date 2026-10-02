@@ -10,7 +10,6 @@ requirements:
   - "The chosen worker is sent as assignTo with add_task_from_view; \"Any worker\" sends nothing. The field resets to \"Any worker\" after each add"
   - "A worker who ends while selected disappears from the list on the next poll and the field falls back to \"Any worker\""
   - "QueueCard, BacklogCard and WorkingCard add \"Assigned to <name>\" to their meta line when the task is assigned"
-  - "The wake sentence for an assigned add is \"I added T-015, “Add retries”, to the queue for api-server.\" (or \"…to the backlog for api-server.\"), added to wake.ts and 06"
   - "New strings in the catalogue follow the content rules; the strings test passes"
 acceptance_criteria:
   - "ui suite: the select lists live workers, is absent with none, sends assignTo, and resets after add"

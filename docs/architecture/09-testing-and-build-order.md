@@ -17,7 +17,7 @@
 - **`wait_for_answer`.** It returns on an answer. It sends progress at the interval, which tests can shorten, and returns on its own timeout. It returns at once when the task is parked or archived.
 - **Identity.** Identity is resolved for each client kind in [05](05-sessions.md#identity), using fake `clientInfo` and environment.
 - **Text results.** The board summary stays under its token budget for a board of 100 tasks and 10 sessions.
-- **Views.** A view draws from `get_board`, not from the replayed result. It redraws only on a changed revision. Its height is unchanged by a dimensions-only context change. Each action sends its exact `sendMessage` sentence.
+- **Views.** A view draws from `get_board`, not from the replayed result. It redraws only on a changed revision. Its height is unchanged by a dimensions-only context change. No action sends a message to the host.
 - **Queue moves.** Keyboard moves, pointer moves and their announcements, as listed in `anachoic:ui/19-organization-and-testing.md#interactions-that-must-have-a-test`.
 
 ### The manual desktop check
