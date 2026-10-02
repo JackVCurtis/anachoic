@@ -54,7 +54,24 @@ A worker is any Claude Code session with the server added. The worker runs the s
     views/
 ```
 
-**Adding the server.** `pnpm print-worker-command` prints the command, with the installed path filled in:
+**The preferred install: the `anachoic-worker` plugin.** `pnpm run pack` also lays out a local Claude Code marketplace in `plugin/` (git-ignored), beside `anachoic.mcpb`:
+
+```text
+plugin/
+  .claude-plugin/marketplace.json     the marketplace "anachoic"
+  anachoic-worker/
+    .claude-plugin/plugin.json        the MCP server and the SessionEnd hook
+    server/
+      server.js                       dist/server.js
+      views/                          dist/views/*.html
+```
+
+- **The MCP server.** `node ${CLAUDE_PLUGIN_ROOT}/server/server.js`, with `ANACHOIC_DATA_DIR` set to the data directory in the extension's manifest, so the worker opens the same `board.sqlite` as desktop.
+- **The SessionEnd hook.** `node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended` with the same `ANACHOIC_DATA_DIR` and a `timeout` of 5 s. It removes the worker from the board when its session ends ([13](13-ending-sessions.md#the-hook)).
+- **Installing.** In Claude Code, `/plugin marketplace add <repository>/plugin`, then `/plugin install anachoic-worker@anachoic`. It replaces the `claude mcp add` below. After a new `pnpm run pack`, update the plugin from `/plugin`.
+- **Its build.** The plugin carries its own copy of the server, from the same `pnpm run pack` as the `.mcpb`. Install both from one pack, so the worker and desktop run the same build.
+
+**The alternative: `claude mcp add` and a settings snippet.** `pnpm print-worker-command` prints the command, with the installed path filled in:
 
 ```bash
 claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"
@@ -64,6 +81,7 @@ claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Applica
 - **Not installed.** If the extension's folder is missing, the script says so in one line and exits non-zero.
 - **`--project`.** Prints the `--scope project` form, which writes the server into one repository's `.mcp.json` instead of adding it for every project.
 - **`--dev`.** Prints the command for `dist/server.js`, named `anachoic-dev`, with `.cache/dev-data` as its data directory. That is the board the reference host uses ([Development loop](#development-loop)).
+- **`--hook`.** Prints the `hooks.SessionEnd` entry to add to `~/.claude/settings.json` by hand, beside the `claude mcp add` command, so the worker leaves the board when its session ends. With `--dev`, it points at `dist/server.js` and `.cache/dev-data`. No script ever edits your settings.
 
 **Requirements:**
 - **Node.** The worker's `node` must be version 24 or newer, for `node:sqlite`. The script warns when `node -v` on the `PATH` is older.

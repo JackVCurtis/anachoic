@@ -77,6 +77,39 @@ export function workerCommand({ name, scope, serverPath, dataDir, home }) {
   ].join(' ')
 }
 
+/**
+ * The `hooks.SessionEnd` entry for ~/.claude/settings.json that removes the
+ * worker from the board when its Claude Code session ends, for an install
+ * without the anachoic-worker plugin. It is printed, never written.
+ */
+export function hookSettings({ serverPath, dataDir, home }) {
+  return {
+    hooks: {
+      SessionEnd: [
+        {
+          hooks: [
+            {
+              type: 'command',
+              command: `ANACHOIC_DATA_DIR=${quotePath(dataDir, home)} node ${quotePath(serverPath, home)} --session-ended`,
+              timeout: 5,
+            },
+          ],
+        },
+      ],
+    },
+  }
+}
+
+/**
+ * What to print for a server and data directory: the `claude mcp add`
+ * command, or with --hook the settings entry for the SessionEnd hook.
+ */
+function output({ hook, name, scope, serverPath, dataDir, home }) {
+  return hook
+    ? JSON.stringify(hookSettings({ serverPath, dataDir, home }), null, 2)
+    : workerCommand({ name, scope, serverPath, dataDir, home })
+}
+
 function nodeOnPath() {
   const result = spawnSync('node', ['-v'], { encoding: 'utf8' })
   return result.status === 0 ? result.stdout.trim() : undefined
@@ -109,6 +142,7 @@ export function printWorkerCommand({
   manifest = readJson(join(ROOT, 'mcpb', 'manifest.json')),
 } = {}) {
   const dev = argv.includes('--dev')
+  const hook = argv.includes('--hook')
   const scope = argv.includes('--project') ? 'project' : 'user'
   const stderr = []
 
@@ -128,7 +162,8 @@ export function printWorkerCommand({
         stderr: [...stderr, `${DEV_SERVER} is missing. Run pnpm build first.`],
       }
     }
-    const command = workerCommand({
+    const command = output({
+      hook,
       name: `${manifest.name}-dev`,
       scope,
       serverPath: DEV_SERVER,
@@ -162,7 +197,7 @@ export function printWorkerCommand({
       ],
     }
   }
-  const command = workerCommand({ name: manifest.name, scope, serverPath, dataDir, home })
+  const command = output({ hook, name: manifest.name, scope, serverPath, dataDir, home })
   return { code: 0, stdout: command, stderr }
 }
 

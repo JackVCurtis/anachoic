@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { isRefusal } from '../../domain/refusal.js'
 import { YOU } from '../../domain/types.js'
 import { LIMITS } from '../../shared/limits.js'
-import { actionResultSchema, type ActionResult } from '../../shared/props.js'
+import { actionResultSchema, boardPropsSchema, type ActionResult } from '../../shared/props.js'
 import {
   addFollowUp,
   addTask,
@@ -18,8 +18,10 @@ import {
   type Acted,
   type ServiceResult,
 } from '../../store/services.js'
+import { removeSession } from '../../store/sessions.js'
 import { readBoardProps, taskRef } from '../props/board.js'
 import { guarded, refusalResult } from '../results.js'
+import { formatTaskId } from '../../shared/task_id.js'
 import { viewActionText } from '../text/view_actions.js'
 import type { ToolContext } from './context.js'
 import { taskInput, titleInput, viewStepsInput } from './inputs.js'
@@ -86,6 +88,30 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
       })
     )
   }
+
+  registerAppTool(
+    server,
+    'remove_session',
+    {
+      title: 'Remove a session',
+      description:
+        'Ends and removes a worker session: its claims go back to the queue and its assignments are cleared. For the board view only.',
+      inputSchema: z.object({ session: z.string().min(1).max(100) }),
+      outputSchema: boardPropsSchema,
+      _meta: { ui: { visibility: ['app'] } },
+    },
+    guarded(logger, 'remove_session', ({ session }): CallToolResult => {
+      const at = now()
+      const result = removeSession(database, session, at)
+      if (isRefusal(result)) return refusalResult(result)
+      const { session: removed, tasks } = result.value
+      const released = tasks.length === 0 ? '' : `, from ${tasks.map(formatTaskId).join(', ')}`
+      return {
+        content: [{ type: 'text', text: `Removed ${removed.name}${released}` }],
+        structuredContent: readBoardProps(database, at),
+      }
+    })
+  )
 
   const task = { task: taskInput }
 

@@ -110,3 +110,33 @@ test('the server path it checks is the one in the command', () => {
   })
   expect(checked).toContain(SERVER)
 })
+
+describe('--hook', () => {
+  test('prints the hooks.SessionEnd settings entry for the installed server, as JSON', () => {
+    const { code, stdout } = run(['--hook'])
+    expect(code).toBe(0)
+    expect(JSON.parse(stdout)).toEqual({
+      hooks: {
+        SessionEnd: [
+          {
+            hooks: [
+              {
+                type: 'command',
+                command:
+                  'ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js" --session-ended',
+                timeout: 5,
+              },
+            ],
+          },
+        ],
+      },
+    })
+  })
+
+  test('with --dev points at dist/server.js and the scratch data directory', () => {
+    const { command } = JSON.parse(run(['--hook', '--dev'], { installed: false }).stdout).hooks
+      .SessionEnd[0].hooks[0]
+    expect(command).toContain(DEV_SERVER.replace(HOME, '$HOME'))
+    expect(command).toMatch(/--session-ended$/)
+  })
+})

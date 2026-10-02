@@ -15,10 +15,12 @@ import { describeTools, kindOfOpening, serveByClient } from './client_texts.js'
 import { hostVariableNames, kindOfClient } from './identity.js'
 import { INSTRUCTIONS } from './instructions.js'
 import { createLifecycle } from './lifecycle.js'
+import { readInput, sessionEnded } from './session_ended.js'
 import { createLogger, describeError } from './logger.js'
 import { registerBoardTools } from './tools/board.js'
 import type { ToolContext } from './tools/context.js'
 import { registerJoinBoard } from './tools/join_board.js'
+import { registerLeaveBoard } from './tools/leave_board.js'
 import { registerModelTools } from './tools/model.js'
 import { registerViewActions } from './tools/view_actions.js'
 import { registerWaitForAnswer } from './tools/wait_for_answer.js'
@@ -54,6 +56,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     ...registerModelTools(server, context),
     wait_for_answer: registerWaitForAnswer(server, context),
     wait_for_work: registerWaitForWork(server, context),
+    leave_board: registerLeaveBoard(server, context),
   })
   registerViewActions(server, context)
   server.server.oninitialized = () => {
@@ -112,6 +115,21 @@ async function serveHttp(shared: Shared, lifecycle: ReturnType<typeof createLife
         listener.closeAllConnections()
       })
   )
+}
+
+if (process.argv.includes('--session-ended')) {
+  // A SessionEnd hook: no MCP and no server, and always exit 0.
+  try {
+    sessionEnded({
+      input: await readInput(process.stdin),
+      env: process.env,
+      platform: process.platform,
+      userHome: homeFromUserDatabase,
+    })
+  } catch {
+    // sessionEnded logs its own failures; nothing may reach the hook's exit code.
+  }
+  process.exit(0)
 }
 
 const resolution = resolveDataDirectory({

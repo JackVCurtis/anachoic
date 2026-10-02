@@ -11,6 +11,19 @@ The board's data lives in `~/Library/Application Support/Anachoic MCP`.
 
 ## Add Claude Code sessions as workers
 
+### With the plugin (preferred)
+
+`pnpm run pack` also builds a local Claude Code marketplace in `plugin/`. It holds the `anachoic-worker` plugin, which adds the server to every Claude Code session and removes the session from the board when it ends, through a `SessionEnd` hook. In Claude Code:
+
+```text
+/plugin marketplace add /path/to/anachoic-mcp-app/plugin
+/plugin install anachoic-worker@anachoic
+```
+
+The plugin runs its own copy of the server against the same data directory as desktop, so install the `.mcpb` and the plugin from the same `pnpm run pack`.
+
+### With `claude mcp add` and a settings snippet
+
 Desktop installs the extension's files at:
 
 ```text
@@ -31,6 +44,7 @@ claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Applica
 
 - `--project` prints the `--scope project` form, which adds the server to one repository's `.mcp.json` only.
 - `--dev` prints a command for `dist/server.js` with a scratch data directory, for development.
+- `--hook` prints the `hooks.SessionEnd` entry to add to `~/.claude/settings.json` yourself, so a worker leaves the board when its session ends. The script never edits your settings.
 - The worker's `node` must be version 24 or newer. The script warns when it is older.
 
 `claude mcp list` then shows `anachoic` as connected. More detail is in [08. Packaging and hosts](docs/architecture/08-packaging-and-hosts.md#worker-sessions).

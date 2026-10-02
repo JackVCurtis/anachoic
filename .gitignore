@@ -5,6 +5,7 @@ coverage/
 storybook-static/
 test-results/
 mcpb/server/
+plugin/
 *.mcpb
 
 # Storybook and Vitest browser mode

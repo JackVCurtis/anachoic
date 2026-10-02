@@ -13,6 +13,7 @@ const APP_ONLY_TOOLS = [
   'sign_off',
   'add_follow_up_from_view',
   'archive_task',
+  'remove_session',
 ]
 
 function sentences(text: string) {
@@ -79,6 +80,7 @@ describe('a worker’s instructions', () => {
     "when complete_step says the next step is the person's, call wait_for_work and keep calling it",
     'call block_step with a clear reason, then end your turn',
     'call unblock_step and carry on',
+    'before this session is closed on purpose, call leave_board',
   ])('says %s', (phrase) => {
     expect(text).toContain(phrase)
   })

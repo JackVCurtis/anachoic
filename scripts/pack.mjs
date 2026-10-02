@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { buildPlugin } from './plugin.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const DIST = join(ROOT, 'dist')
@@ -8,6 +9,7 @@ const EXTENSION = join(ROOT, 'mcpb')
 const EXTENSION_SERVER = join(EXTENSION, 'server')
 const MCPB = join(ROOT, 'node_modules', '.bin', 'mcpb')
 const PACKAGE = join(ROOT, 'anachoic.mcpb')
+const PLUGIN = join(ROOT, 'plugin')
 
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: ROOT, stdio: 'inherit' })
@@ -30,7 +32,8 @@ if (packageVersion !== manifestVersion) {
 
 /**
  * Builds, lays the server and its views out in mcpb/server/ as the
- * extension runs them, and packs mcpb/ into anachoic.mcpb.
+ * extension runs them, packs mcpb/ into anachoic.mcpb, and lays out the
+ * worker plugin's local marketplace in plugin/.
  */
 run('pnpm', ['build'])
 
@@ -44,3 +47,10 @@ for (const file of readdirSync(join(DIST, 'views')).filter((name) => name.endsWi
 rmSync(PACKAGE, { force: true })
 run(MCPB, ['validate', join(EXTENSION, 'manifest.json')])
 run(MCPB, ['pack', EXTENSION, PACKAGE])
+
+buildPlugin({
+  dist: DIST,
+  out: PLUGIN,
+  manifest: JSON.parse(readFileSync(join(EXTENSION, 'manifest.json'), 'utf8')),
+  version: packageVersion,
+})
