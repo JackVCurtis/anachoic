@@ -173,6 +173,8 @@ export const boardPropsSchema = z.object({
   sessions: z.array(sessionItemSchema),
   /** The live workers a task can be assigned to. The server always sends it. */
   workers: z.array(workerSchema).optional(),
+  /** Every signed-off task, of which signedOff holds the latest 10. The server always sends it. */
+  signedOffTotal: z.number().int().nonnegative().optional(),
   counts: boardCountsSchema,
 })
 
@@ -291,6 +293,47 @@ export const taskPropsSchema = z.object({
 
 export const getTaskResultSchema = z.union([unchangedSchema, taskPropsSchema])
 
+/**
+ * The History view shows this many completed tasks to a page.
+ */
+export const HISTORY_PAGE_SIZE = 20
+
+/**
+ * One completed task, a row of the History view's table.
+ */
+export const historyRowSchema = z.object({
+  task: taskRefSchema,
+  signedOffAt: instant,
+  finishedAt: instant,
+  steps: pips,
+  /** Closed intervals on the agent's steps, and the user's: as the board's toSignOff items. */
+  agentSeconds: z.number().int().nonnegative(),
+  userSeconds: z.number().int().nonnegative(),
+  /** The names of the sessions that completed its agent steps, in step order, each once. */
+  workers: z.array(z.string()),
+  artifacts: z.array(artifactSchema),
+})
+
+/**
+ * One page of completed tasks: tasks that are done and signed off, newest
+ * sign-off first, HISTORY_PAGE_SIZE to a page.
+ */
+export const historyPropsSchema = z.object({
+  revision: z.number().int().nonnegative(),
+  now: instant,
+  /** The page shown, from 1. A page past the end is answered with the last page. */
+  page: z.number().int().positive(),
+  /** At least 1, even when no task matches. */
+  pageCount: z.number().int().positive(),
+  /** The completed tasks that match the filter, on every page. */
+  total: z.number().int().nonnegative(),
+  /** The filter applied, matching the title or the display id; '' for none. */
+  filter: z.string(),
+  rows: z.array(historyRowSchema),
+})
+
+export const getHistoryResultSchema = z.union([unchangedSchema, historyPropsSchema])
+
 export type OutputFormat = z.infer<typeof outputFormatSchema>
 export type Artifact = z.infer<typeof artifactSchema>
 export type Worker = z.infer<typeof workerSchema>
@@ -314,3 +357,6 @@ export type TaskStep = z.infer<typeof taskStepSchema>
 export type TaskEvent = z.infer<typeof taskEventSchema>
 export type TaskProps = z.infer<typeof taskPropsSchema>
 export type GetTaskResult = z.infer<typeof getTaskResultSchema>
+export type HistoryRow = z.infer<typeof historyRowSchema>
+export type HistoryProps = z.infer<typeof historyPropsSchema>
+export type GetHistoryResult = z.infer<typeof getHistoryResultSchema>

@@ -45,6 +45,26 @@ export function taskRef(
 }
 
 /**
+ * A chain as a row of pips, with the session holding a running or waiting
+ * step named by `nameOf`.
+ */
+export function pipsOf(
+  steps: readonly Step[],
+  nameOf: (id: string | null) => string | null
+): Pip[] {
+  return steps.map((step) => ({
+    id: step.id,
+    owner: step.owner,
+    status: step.status,
+    title: step.title,
+    sessionName:
+      step.status === 'running' || step.status === 'waiting' ? nameOf(step.claimedBy) : null,
+    ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
+    ...(step.artifactUrl === null ? {} : { artifactUrl: step.artifactUrl }),
+  }))
+}
+
+/**
  * Builds the board props from one snapshot. Which list a task is in, what
  * you can do with it and every time on it come from domain/, so the view
  * only formats what it is given.
@@ -57,17 +77,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
   const ref = (task: Pick<Task, 'id' | 'title' | 'assignedTo'>) =>
     taskRef(task, (id) => known.get(id)?.name ?? id)
 
-  const pips = (steps: readonly Step[]): Pip[] =>
-    steps.map((step) => ({
-      id: step.id,
-      owner: step.owner,
-      status: step.status,
-      title: step.title,
-      sessionName:
-        step.status === 'running' || step.status === 'waiting' ? nameOf(step.claimedBy) : null,
-      ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
-      ...(step.artifactUrl === null ? {} : { artifactUrl: step.artifactUrl }),
-    }))
+  const pips = (steps: readonly Step[]) => pipsOf(steps, nameOf)
 
   const holder = (state: TaskState) => {
     const claim = claimedBy(state, (id) => known.get(id))
@@ -203,6 +213,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
     workers: snapshot.sessions
       .filter(({ session, live }) => live && session.kind === 'worker')
       .map(({ session }) => ({ id: session.id, name: session.name })),
+    signedOffTotal: snapshot.signedOffTotal,
     counts: counts(snapshot.tasks),
   }
 }
@@ -212,12 +223,19 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
  * `artifacts` field, or nothing when there are none.
  */
 function artifactsOf(steps: readonly Step[]): { artifacts?: Artifact[] } {
-  const artifacts = steps.flatMap((step): Artifact[] =>
+  const artifacts = artifactLinks(steps)
+  return artifacts.length === 0 ? {} : { artifacts }
+}
+
+/**
+ * The links from a task's done steps that have an artifact, by step number.
+ */
+export function artifactLinks(steps: readonly Step[]): Artifact[] {
+  return steps.flatMap((step): Artifact[] =>
     step.status === 'done' && step.outputFormat !== null && step.artifactUrl !== null
       ? [{ stepNumber: step.number, format: step.outputFormat, url: step.artifactUrl }]
       : []
   )
-  return artifacts.length === 0 ? {} : { artifacts }
 }
 
 /**

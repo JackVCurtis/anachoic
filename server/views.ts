@@ -6,7 +6,7 @@ import { registerAppResource, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/e
 import type { McpServer } from '@modelcontextprotocol/server'
 import type { Logger } from './logger.js'
 
-export const VIEW_ENTRIES = ['board', 'task'] as const
+export const VIEW_ENTRIES = ['board', 'task', 'history'] as const
 
 export type ViewEntry = (typeof VIEW_ENTRIES)[number]
 
@@ -29,7 +29,7 @@ export function viewUris(viewsDirectory: string): ViewUris {
       return `ui://anachoic/${entry}.html`
     }
   }
-  return { board: uri('board'), task: uri('task') }
+  return { board: uri('board'), task: uri('task'), history: uri('history') }
 }
 
 /**

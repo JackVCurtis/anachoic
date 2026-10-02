@@ -16,6 +16,7 @@ export function emptyBoard(now: Date = new Date()): BoardProps {
     signedOff: [],
     sessions: [],
     workers: [],
+    signedOffTotal: 0,
     counts: { yourTurn: 0, working: 0, queue: 0, toSignOff: 0 },
   }
 }

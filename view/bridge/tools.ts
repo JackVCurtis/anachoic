@@ -2,6 +2,7 @@ import type {
   ActionResult,
   BoardProps,
   GetBoardResult,
+  GetHistoryResult,
   GetTaskResult,
   OutputFormat,
 } from '../../shared/props'
@@ -71,6 +72,19 @@ export function getTask(app: App, task: TaskArg, sinceRevision?: number) {
     'get_task',
     sinceRevision === undefined ? { task } : { task, sinceRevision }
   )
+}
+
+/**
+ * One page of the history, from 1, matching the filter when there is one,
+ * or that the board is still at sinceRevision. A page past the end gives
+ * the last page.
+ */
+export function getHistory(app: App, page: number, filter?: string, sinceRevision?: number) {
+  return callAppTool<GetHistoryResult>(app, 'get_history', {
+    page,
+    ...(filter ? { filter } : {}),
+    ...(sinceRevision === undefined ? {} : { sinceRevision }),
+  })
 }
 
 export interface NewStep {

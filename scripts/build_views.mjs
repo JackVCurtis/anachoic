@@ -5,7 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 
 const ROOT = resolve(import.meta.dirname, '..')
 
-export const VIEW_ENTRIES = ['board', 'task']
+export const VIEW_ENTRIES = ['board', 'task', 'history']
 
 /**
  * Vite names the page after its source, index.html. Each view is written as

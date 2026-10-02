@@ -14,6 +14,7 @@ export type DescribedTool =
   | ModelTool
   | 'join_board'
   | 'show_board'
+  | 'show_history'
   | 'open_task'
   | 'wait_for_answer'
   | 'wait_for_work'
@@ -66,6 +67,8 @@ const CLAIMED_ONLY = 'Acts only on a step this session claimed.'
 const WORKER_DESCRIPTIONS: ToolDescriptions = {
   show_board:
     'Shows the Anachoic board: what waits on the user, what is running, the queue, the backlog, what is ready to sign off, and the sessions. No input. Returns a compact summary: a revision line, then one line each for Waiting on user, Working, Queue, Backlog, To sign off and Sessions.',
+  show_history:
+    'Shows the Anachoic history: the completed tasks, which are done and signed off, newest sign-off first, 20 to a page. filter (optional) matches a title, ignoring case, or a task id such as T-012. Returns the count, such as "38 completed tasks", then one line for each task on the first page, such as "T-012 “Fix the flaky login test” · signed off 2 Oct · 2 links".',
   open_task:
     'Shows one task of the Anachoic board in full (task: T-012 or 12). Returns its place on the board, who created it, its assignment and times; every step with its status, session, input, detail, artifact, blocks past and present, question, answer, note, summary and links; and the last 10 events. Long texts drop the oldest events first. A task that does not exist is refused: "T-012 does not exist".',
   join_board:
@@ -93,6 +96,8 @@ const DEDICATED_DESCRIPTIONS: ToolDescriptions = {
   ...WORKER_DESCRIPTIONS,
   show_board:
     'Shows the Anachoic board in this chat: what waits on the user, what is running, the queue, the backlog, what is ready to sign off, and the sessions. No input. Call it whenever the user asks about work. Returns a compact summary: a revision line, then one line each for Waiting on user, Working, Queue, Backlog, To sign off and Sessions.',
+  show_history:
+    'Shows the Anachoic history in this chat: the completed tasks, which are done and signed off, newest sign-off first, 20 to a page, with their steps, times, workers and artifact links. filter (optional) matches a title, ignoring case, or a task id such as T-012. Call it when the user asks about finished work. Returns the count, such as "38 completed tasks", then one line for each task on the first page, such as "T-012 “Fix the flaky login test” · signed off 2 Oct · 2 links".',
   open_task:
     'Shows one task of the Anachoic board in full in this chat (task: T-012 or 12), inline or in full screen. Call it when the user asks about one task. Returns its place on the board, who created it, its assignment and times; every step with its status, session, input, detail, artifact, blocks past and present, question, answer, note, summary and links; and the last 10 events. Long texts drop the oldest events first. A task that does not exist is refused: "T-012 does not exist".',
   join_board:

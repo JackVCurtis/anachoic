@@ -19,6 +19,7 @@ import { readInput, sessionEnded } from './session_ended.js'
 import { createLogger, describeError } from './logger.js'
 import { registerBoardTools } from './tools/board.js'
 import type { ToolContext } from './tools/context.js'
+import { registerHistoryTools } from './tools/history.js'
 import { registerJoinBoard } from './tools/join_board.js'
 import { registerLeaveBoard } from './tools/leave_board.js'
 import { registerModelTools } from './tools/model.js'
@@ -58,6 +59,7 @@ function createServer(shared: Shared, kind: SessionKind) {
   describeTools(kind, {
     ...registerBoardTools(server, context),
     ...registerTaskTools(server, context),
+    ...registerHistoryTools(server, context),
     join_board: registerJoinBoard(server, context),
     ...registerModelTools(server, context),
     wait_for_answer: registerWaitForAnswer(server, context),

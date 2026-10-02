@@ -22,10 +22,12 @@ function hashOf(html: string) {
 test('each address carries the first 12 hex digits of a SHA-256 of its HTML', async () => {
   await writeFile(join(directory, 'board.html'), '<!doctype html><p>board</p>')
   await writeFile(join(directory, 'task.html'), '<!doctype html><p>task</p>')
+  await writeFile(join(directory, 'history.html'), '<!doctype html><p>history</p>')
 
   expect(viewUris(directory)).toEqual({
     board: `ui://anachoic/board-${hashOf('<!doctype html><p>board</p>')}.html`,
     task: `ui://anachoic/task-${hashOf('<!doctype html><p>task</p>')}.html`,
+    history: `ui://anachoic/history-${hashOf('<!doctype html><p>history</p>')}.html`,
   })
 })
 
@@ -45,5 +47,6 @@ test('a view whose file cannot be read keeps its plain address', () => {
   expect(viewUris(directory)).toEqual({
     board: 'ui://anachoic/board.html',
     task: 'ui://anachoic/task.html',
+    history: 'ui://anachoic/history.html',
   })
 })

@@ -1,6 +1,15 @@
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { DEAD_WINDOW_MS } from '../domain/derived.js'
-import type { Instant, Session, SessionId, Step, Task, TaskState } from '../domain/types.js'
+import {
+  YOU,
+  type Instant,
+  type Session,
+  type SessionId,
+  type Step,
+  type Task,
+  type TaskState,
+} from '../domain/types.js'
+import { InvalidTaskIdError, toTaskNumber } from '../shared/task_id.js'
 import type { Database } from './database.js'
 import { read } from './read.js'
 import {
@@ -24,7 +33,19 @@ export interface BoardSnapshot {
   tasks: TaskState[]
   /** The most recently signed-off tasks, latest first. */
   signedOff: TaskState[]
+  /** How many tasks are signed off, of which signedOff holds the latest. */
+  signedOffTotal: number
   sessions: ListedSession[]
+}
+
+const SIGNED_OFF = 'archived_at IS NULL AND signed_off_at IS NOT NULL'
+
+function signedOffCount(sqlite: DatabaseSync): number {
+  return (
+    sqlite.prepare(`SELECT count(*) AS total FROM tasks WHERE ${SIGNED_OFF}`).get() as {
+      total: number
+    }
+  ).total
 }
 
 function revisionOf(sqlite: DatabaseSync): number {
@@ -63,7 +84,7 @@ export function readBoard(
       .map(taskFromRow)
     const signed = sqlite
       .prepare(
-        'SELECT * FROM tasks WHERE archived_at IS NULL AND signed_off_at IS NOT NULL ORDER BY signed_off_at DESC, id DESC LIMIT ?'
+        `SELECT * FROM tasks WHERE ${SIGNED_OFF} ORDER BY signed_off_at DESC, id DESC LIMIT ?`
       )
       .all(SIGNED_OFF_SHOWN)
       .map(taskFromRow)
@@ -71,8 +92,100 @@ export function readBoard(
       revision: revisionOf(sqlite),
       tasks: withSteps(sqlite, open),
       signedOff: withSteps(sqlite, signed),
+      signedOffTotal: signedOffCount(sqlite),
       sessions: listSessionRows(sqlite, now, deadWindowMs),
     }
+  })
+}
+
+export interface HistoryQuery {
+  /** From 1. A page past the end gives the last page. */
+  page: number
+  /** Matches a title, ignoring case, or the task a display id or number names. */
+  filter?: string
+  pageSize: number
+}
+
+export interface HistorySnapshot {
+  revision: number
+  /** The page given, after clamping to the pages there are. */
+  page: number
+  /** The signed-off tasks that match, on every page. */
+  total: number
+  /** This page's tasks, newest sign-off first, with their chains. */
+  tasks: TaskState[]
+  /** Each agent step's completing session id, by step id. */
+  completedBy: Map<string, SessionId>
+  /** The names of the sessions completedBy names, removed ones included. */
+  sessionNames: Map<SessionId, string>
+}
+
+/**
+ * The task number a filter names, as T-012, T-12 or 12, or null.
+ */
+function filteredNumber(filter: string): number | null {
+  try {
+    return toTaskNumber(filter.toUpperCase())
+  } catch (error) {
+    if (error instanceof InvalidTaskIdError) return null
+    throw error
+  }
+}
+
+/**
+ * One page of the signed-off tasks, newest sign-off first, that match the
+ * filter, with the total that match and who completed their agent steps.
+ */
+export function readHistory(database: Database, query: HistoryQuery): HistorySnapshot {
+  const filter = query.filter?.trim() ?? ''
+  const matching: { where: string; params: Record<string, SQLInputValue> } =
+    filter === ''
+      ? { where: SIGNED_OFF, params: {} }
+      : {
+          where: `${SIGNED_OFF} AND (instr(lower(title), lower(:filter)) > 0 OR id = :number)`,
+          params: { filter, number: filteredNumber(filter) },
+        }
+  return read(database, (sqlite) => {
+    const total = (
+      sqlite
+        .prepare(`SELECT count(*) AS total FROM tasks WHERE ${matching.where}`)
+        .get(matching.params) as { total: number }
+    ).total
+    const pageCount = Math.max(1, Math.ceil(total / query.pageSize))
+    const page = Math.min(Math.max(1, Math.floor(query.page)), pageCount)
+    const tasks = withSteps(
+      sqlite,
+      sqlite
+        .prepare(
+          `SELECT * FROM tasks WHERE ${matching.where}
+           ORDER BY signed_off_at DESC, id DESC LIMIT :limit OFFSET :offset`
+        )
+        .all({ ...matching.params, limit: query.pageSize, offset: (page - 1) * query.pageSize })
+        .map(taskFromRow)
+    )
+
+    const completedBy = new Map<string, SessionId>()
+    const ids = tasks.map(({ task }) => task.id)
+    if (ids.length > 0) {
+      const completions = sqlite
+        .prepare(
+          `SELECT step_id, session_id FROM events
+           WHERE kind = 'completed' AND step_id IS NOT NULL AND session_id <> ?
+             AND task_id IN (${ids.map(() => '?').join(', ')})
+           ORDER BY id`
+        )
+        .all(YOU, ...ids) as Array<{ step_id: string; session_id: string }>
+      for (const { step_id: stepId, session_id: sessionId } of completions) {
+        completedBy.set(stepId, sessionId)
+      }
+    }
+    const sessionNames = new Map<SessionId, string>()
+    for (const id of new Set(completedBy.values())) {
+      const session = loadSession(sqlite, id)
+      if (session) sessionNames.set(id, session.name)
+    }
+
+    return { revision: revisionOf(sqlite), page, total, tasks, completedBy, sessionNames }
   })
 }
 
