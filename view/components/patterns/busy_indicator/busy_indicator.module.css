@@ -1,0 +1,6 @@
+/* Copied from anachoic inertia/components/patterns/busy_indicator/busy_indicator.module.css at fd99e0d */
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

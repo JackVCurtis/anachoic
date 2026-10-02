@@ -1,0 +1,43 @@
+/* Copied from anachoic inertia/components/patterns/flash_message/flash_message.module.css at fd99e0d */
+.strip {
+  /* The Dismiss button draws its border from this token. */
+  --tone-control-border-quiet: var(--color-divider);
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-6);
+  border-block: var(--border-hairline) solid;
+}
+
+.success {
+  border-color: var(--color-accent-300);
+  background-color: var(--color-accent-100);
+  color: var(--color-text-on-tint);
+}
+
+/* The heaviest line in the product: ink at full strength, not the 16% hairline. */
+.error {
+  border-color: var(--color-text);
+  background-color: transparent;
+  color: var(--color-text);
+}
+
+.announced {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.word {
+  flex: none;
+  color: inherit;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

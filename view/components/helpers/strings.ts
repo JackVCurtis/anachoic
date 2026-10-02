@@ -168,6 +168,24 @@ export const taskView = {
 } as const
 
 /**
+ * The labels of a BusyIndicator while a tool call runs.
+ */
+export const busy = {
+  loadingBoard: 'Loading board…',
+  loadingTask: 'Loading task…',
+} as const
+
+/**
+ * The labels of a CopyButton: a task's display id, or every id in a list.
+ */
+export const copy = {
+  copy: 'Copy',
+  copied: 'Copied',
+  copyAll: 'Copy all IDs',
+  copiedAll: 'Copied all',
+} as const
+
+/**
  * The fold of a section with more cards than it shows at first.
  */
 export const fold = {
@@ -236,6 +254,8 @@ export const strings = {
   backlog,
   done,
   taskView,
+  busy,
+  copy,
   fold,
   times,
   assistive,
