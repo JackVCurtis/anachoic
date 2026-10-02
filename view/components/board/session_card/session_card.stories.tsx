@@ -2,6 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { SESSIONS } from '../../fixtures/board_sections'
+import { fillTemplate, sessions as strings } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { SessionCard } from './session_card'
 
@@ -123,4 +124,56 @@ export const EndedNarrow: Story = {
   name: 'Ended, released two tasks, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
+}
+
+export const RemoveConfirming: Story = {
+  name: 'Remove, a live worker holding a step, confirming',
+  args: { session: SESSIONS.running, onRemove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const holding = SESSIONS.running.holding!
+    await userEvent.click(canvas.getByRole('button', { name: strings.remove }))
+    const question = fillTemplate(strings.removeQuestion, {
+      name: SESSIONS.running.name,
+      id: holding.task.displayId,
+    })
+    await expect(canvas.getByText(question)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: strings.keepWorker })).toHaveFocus()
+    await expect(args.onRemove).not.toHaveBeenCalled()
+    const [sideways] = await windowOverflow()
+    await expect(sideways).toBe(0)
+  },
+}
+
+export const RemoveConfirmingNarrow: Story = {
+  ...RemoveConfirming,
+  name: 'Remove, a live worker holding a step, confirming, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const RemoveEnded: Story = {
+  name: 'Remove, an ended worker',
+  args: { session: SESSIONS.endedTwo, onRemove: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: strings.remove }))
+    await expect(args.onRemove).toHaveBeenCalledWith(SESSIONS.endedTwo.id)
+    await expect(canvas.queryByRole('group')).toBeNull()
+  },
+}
+
+export const RemoveEndedNarrow: Story = {
+  ...RemoveEnded,
+  name: 'Remove, an ended worker, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const RemoveThisChat: Story = {
+  name: 'Remove offered, this chat holding a step',
+  args: { session: SESSIONS.thisChat, onRemove: fn() },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole('button', { name: strings.remove })).toBeNull()
+  },
 }

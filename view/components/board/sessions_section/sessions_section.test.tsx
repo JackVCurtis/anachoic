@@ -55,4 +55,37 @@ describe('SessionsSection', () => {
 
     expect(section.textContent).not.toMatch(/Cancel step|Capped|\bcap\b/i)
   })
+
+  test.each([
+    ['a live worker', SESSIONS.idle],
+    ['an ended worker', SESSIONS.endedTwo],
+  ])('when %s is removed, focus moves to the section heading', async (_, removed) => {
+    const all = [SESSIONS.running, SESSIONS.idle, SESSIONS.endedTwo]
+    const onRemoveSession = vi.fn()
+    const section = (list: readonly BoardSession[]) => (
+      <SessionsSection sessions={list} onOpenTask={vi.fn()} onRemoveSession={onRemoveSession} />
+    )
+    const { user, rerender } = renderComponent(section(all))
+    const card = screen.getByText(removed.name).closest('li')!
+
+    await user.click(within(card).getByRole('button', { name: strings.remove }))
+    expect(onRemoveSession).toHaveBeenCalledExactlyOnceWith(removed.id)
+    rerender(section(all.filter((session) => session.id !== removed.id)))
+
+    expect(screen.getByRole('heading', { level: 2, name: strings.title })).toHaveFocus()
+  })
+
+  test('the dedicated session offers no Remove', () => {
+    renderComponent(
+      <SessionsSection
+        sessions={SESSIONS.idleSessions}
+        onOpenTask={vi.fn()}
+        onRemoveSession={vi.fn()}
+      />
+    )
+
+    expect(screen.getAllByRole('button', { name: strings.remove })).toHaveLength(
+      SESSIONS.idleSessions.filter((session) => session.kind === 'worker').length
+    )
+  })
 })

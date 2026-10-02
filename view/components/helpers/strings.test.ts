@@ -181,7 +181,11 @@ describe('voice and punctuation', () => {
   /**
    * The confirmations, and what a screen reader speaks.
    */
-  const FULL_SENTENCES = new Set(['yourTurn.parkQuestion', 'done.archiveQuestion'])
+  const FULL_SENTENCES = new Set([
+    'yourTurn.parkQuestion',
+    'done.archiveQuestion',
+    'sessions.removeQuestion',
+  ])
 
   test.each(ALL.filter(({ path }) => !FULL_SENTENCES.has(path) && !path.startsWith('assistive.')))(
     '$path ends without a full stop',
@@ -241,6 +245,11 @@ describe('fillTemplate', () => {
       template: assistive.blockedIn,
       values: { id: 'T-012', session: 'api-server' },
       expected: 'T-012 is blocked in api-server',
+    },
+    {
+      template: sessions.removeQuestion,
+      values: { name: 'api-server', id: 'T-012' },
+      expected: 'Remove api-server? Its step on T-012 goes back to the queue.',
     },
     { template: queue.title, values: {}, expected: 'Queue' },
   ])('$template gives "$expected"', ({ template, values, expected }) => {

@@ -41,6 +41,10 @@ export interface BoardViewActions {
   pending?: PendingCardAction | null
   /** Asks the host to open an artifact link. Without it no card draws its links. */
   onOpenLink?: (url: string) => void
+  /** "Remove" on a worker's card in Sessions. Without it no card offers the button. */
+  onRemoveSession?: (sessionId: string) => void
+  /** The session whose removal is in flight, if any. */
+  removingSessionId?: string | null
 }
 
 /**
@@ -123,6 +127,8 @@ export function BoardView({
   onArchive,
   pending = null,
   onOpenLink,
+  onRemoveSession,
+  removingSessionId = null,
   announcement = null,
   messages = [],
   onDismissMessage = ignore,
@@ -151,7 +157,12 @@ export function BoardView({
         onPark={onPark}
         pending={yourTurnPending}
       />
-      <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
+      <SessionsSection
+        sessions={sessionList}
+        onOpenTask={onOpenTask}
+        onRemoveSession={onRemoveSession}
+        removingSessionId={removingSessionId}
+      />
       <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} onOpenLink={onOpenLink} />
       <QueueSection
         tasks={queueTasks}

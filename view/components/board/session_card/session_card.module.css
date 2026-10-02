@@ -71,3 +71,11 @@
 .id {
   color: var(--color-text-subtle);
 }
+
+.remove {
+  min-width: 0;
+}
+
+.removeRow {
+  display: flex;
+}

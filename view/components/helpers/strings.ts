@@ -146,6 +146,9 @@ export const sessions = {
   released: 'Released',
   releasedTasks: 'Released {n tasks}',
   nothingLive: 'No session is connected',
+  remove: 'Remove',
+  removeQuestion: 'Remove {name}? Its step on {id} goes back to the queue.',
+  keepWorker: 'Keep worker',
 } as const
 
 export const working = {

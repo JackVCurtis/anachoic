@@ -10,15 +10,36 @@ export interface SessionsSectionProps {
   /** The live sessions and those that ended in the last 10 minutes, in the server's order. */
   sessions: readonly BoardSession[]
   onOpenTask: (taskId: string) => void
+  /** Removes a worker. Without it no card offers "Remove". */
+  onRemoveSession?: (sessionId: string) => void
+  /** The session whose removal is in flight, if any. */
+  removingSessionId?: string | null
 }
 
 /**
  * Each live session in the server's order, counted in the header, then the
- * sessions that ended recently with what they released.
+ * sessions that ended recently with what they released. When a card that
+ * held focus is removed, focus goes to the section's heading.
  */
-export function SessionsSection({ sessions, onOpenTask }: SessionsSectionProps) {
+export function SessionsSection({
+  sessions,
+  onOpenTask,
+  onRemoveSession,
+  removingSessionId = null,
+}: SessionsSectionProps) {
   const live = sessions.filter((session) => session.live)
   const ended = sessions.filter((session) => !session.live)
+
+  function card(session: BoardSession) {
+    return (
+      <SessionCard
+        session={session}
+        onOpenTask={onOpenTask}
+        onRemove={onRemoveSession}
+        removing={removingSessionId === session.id}
+      />
+    )
+  }
 
   return (
     <BoardSection
@@ -27,14 +48,14 @@ export function SessionsSection({ sessions, onOpenTask }: SessionsSectionProps) 
       empty={<EmptyState variant="dashed" message={strings.nothingLive} />}
       cards={live.map((session) => ({
         id: session.id,
-        card: <SessionCard session={session} onOpenTask={onOpenTask} />,
+        card: card(session),
       }))}
       footer={
         ended.length > 0 && (
           <ul className={styles.ended}>
             {ended.map((session) => (
-              <li key={session.id}>
-                <SessionCard session={session} onOpenTask={onOpenTask} />
+              <li key={session.id} data-card>
+                {card(session)}
               </li>
             ))}
           </ul>

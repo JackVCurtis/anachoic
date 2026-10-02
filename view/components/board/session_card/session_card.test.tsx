@@ -1,10 +1,19 @@
 // Copied from anachoic inertia/components/board/agent_slot_card/agent_slot_card.test.tsx at fd99e0d
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { SESSIONS } from '../../fixtures/board_sections'
+import { fillTemplate, sessions as strings } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import type { BoardSession } from '../board_data'
 import { SessionCard } from './session_card'
+
+function renderRemovable(session: BoardSession, removing = false) {
+  const onRemove = vi.fn()
+  const rendered = renderComponent(
+    <SessionCard session={session} onOpenTask={vi.fn()} onRemove={onRemove} removing={removing} />
+  )
+  return { ...rendered, onRemove }
+}
 
 function renderCard(session: BoardSession) {
   const onOpenTask = vi.fn()
@@ -104,5 +113,110 @@ describe('SessionCard', () => {
       expect(container.textContent).not.toMatch(/Cancel step|Capped|\bcap\b/i)
       unmount()
     }
+  })
+
+  describe('Remove', () => {
+    test('appears on worker cards, live or ended, and not on this chat', () => {
+      const workers = [
+        SESSIONS.running,
+        SESSIONS.waitingWorker,
+        SESSIONS.blocked,
+        SESSIONS.idle,
+        SESSIONS.endedTwo,
+      ]
+      for (const session of workers) {
+        const { unmount } = renderRemovable(session)
+        expect(screen.getByRole('button', { name: strings.remove })).toBeVisible()
+        unmount()
+      }
+
+      renderRemovable(SESSIONS.thisChat)
+      expect(screen.queryByRole('button', { name: strings.remove })).toBeNull()
+    })
+
+    test('is not offered without onRemove', () => {
+      renderCard(SESSIONS.running)
+
+      expect(screen.queryByRole('button', { name: strings.remove })).toBeNull()
+    })
+
+    test('on a worker holding a step it asks first, and confirming removes it once', async () => {
+      const { user, onRemove } = renderRemovable(SESSIONS.running)
+      const holding = SESSIONS.running.holding!
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+
+      expect(onRemove).not.toHaveBeenCalled()
+      const question = fillTemplate(strings.removeQuestion, {
+        name: SESSIONS.running.name,
+        id: holding.task.displayId,
+      })
+      const group = screen.getByRole('group', { name: question })
+      expect(within(group).getByRole('button', { name: strings.keepWorker })).toHaveFocus()
+
+      await user.click(within(group).getByRole('button', { name: strings.remove }))
+
+      expect(onRemove).toHaveBeenCalledExactlyOnceWith(SESSIONS.running.id)
+    })
+
+    test('the question names the worker and the task it holds', async () => {
+      const { user } = renderRemovable(SESSIONS.running)
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+
+      expect(
+        screen.getByText(
+          `Remove api-server? Its step on ${SESSIONS.running.holding!.task.displayId} goes back to the queue.`
+        )
+      ).toBeVisible()
+    })
+
+    test('a worker that blocked its step asks first too', async () => {
+      const { user, onRemove } = renderRemovable(SESSIONS.blocked)
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+
+      expect(onRemove).not.toHaveBeenCalled()
+      expect(screen.getByRole('button', { name: strings.keepWorker })).toBeVisible()
+    })
+
+    test('"Keep worker" closes the question, removes nothing and returns focus to Remove', async () => {
+      const { user, onRemove } = renderRemovable(SESSIONS.running)
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+      await user.click(screen.getByRole('button', { name: strings.keepWorker }))
+
+      expect(screen.queryByRole('group')).toBeNull()
+      expect(screen.getByRole('button', { name: strings.remove })).toHaveFocus()
+      expect(onRemove).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      ['an idle worker', SESSIONS.idle],
+      ['an ended worker', SESSIONS.endedTwo],
+    ])('on %s it removes at once, without a question', async (_, session) => {
+      const { user, onRemove } = renderRemovable(session)
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+
+      expect(screen.queryByRole('group')).toBeNull()
+      expect(onRemove).toHaveBeenCalledExactlyOnceWith(session.id)
+    })
+
+    test('while the removal is in flight the confirm button is busy', async () => {
+      const { user, rerender } = renderRemovable(SESSIONS.running)
+
+      await user.click(screen.getByRole('button', { name: strings.remove }))
+      rerender(
+        <SessionCard session={SESSIONS.running} onOpenTask={vi.fn()} onRemove={vi.fn()} removing />
+      )
+
+      const group = screen.getByRole('group')
+      expect(within(group).getByRole('button', { name: strings.remove })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      )
+      expect(within(group).getByRole('button', { name: strings.keepWorker })).toBeDisabled()
+    })
   })
 })
