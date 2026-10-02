@@ -8,7 +8,7 @@ import type { ModelTool } from './tools/model.js'
  * uses the board; these texts call them "the person".
  */
 
-export type DescribedTool = ModelTool | 'join_board' | 'show_board'
+export type DescribedTool = ModelTool | 'join_board' | 'show_board' | 'wait_for_answer'
 export type ToolDescriptions = Record<DescribedTool, string>
 
 const DEDICATED_INSTRUCTIONS = `You are the dedicated session of Anachoic, a board of tasks shared between the person and Claude sessions. Worker sessions in Claude Code take agent steps from the board; this chat plans the work, shows the board and keeps the person informed.
@@ -55,6 +55,7 @@ const WORKER_DESCRIPTIONS: ToolDescriptions = {
     'Claims an agent step for this session. With no task, it claims the current agent step of the task at queue position 1; with task (T-012 or 12), that queued task’s current agent step. The step is then this session’s: only it can note, ask about or complete it. Hold one claim at a time. Returns the task, the step’s number, title and detail, the chain so far with each completed step’s summary, and what to call next; or "Nothing in the queue needs an agent".',
   update_step: `Records a progress note (1–500 characters) and optional links (up to 10 of {label, url}) on the current step of the task (T-012 or 12). The note shows on the board. ${CLAIMED_ONLY} Returns "Noted on T-012 step 2".`,
   ask_you: `Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Call wait_for_answer with task T-012 next."; then call wait_for_answer to receive the answer.`,
+  wait_for_answer: `Waits for the person’s answer to the question asked with ask_you on the current step of the task (T-012 or 12). Call it right after ask_you. ${CLAIMED_ONLY} It returns the answer as soon as the person gives it, or after 20 minutes "No answer yet. Call wait_for_answer again to keep waiting.", or, when the task was parked or archived or the claim ended, a sentence saying to stop work on it. Returns the answer only once.`,
   complete_step: `Completes the current step of the task (T-012 or 12), with a summary (1–2,000 characters) of what was done and optional links (up to 10 of {label, url}). ${CLAIMED_ONLY} It is refused while the step waits for the person’s answer. Returns what happens next: the task is done, the next step waits on the person, or the task is back in the queue at position 1 with "Call claim_step with task T-012 to continue it."`,
 }
 
@@ -65,6 +66,8 @@ const DEDICATED_DESCRIPTIONS: ToolDescriptions = {
   join_board:
     'Joins the Anachoic board as this chat, the dedicated session, and optionally sets its display name (name: 1–40 characters). Returns the session’s id, kind and name. This chat is on the board without it.',
   ask_you: `Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Your answer will arrive as a message from the board."; the answer arrives as a message from the view in this chat.`,
+  wait_for_answer:
+    'For worker sessions in Claude Code only. This chat never waits in a tool: the answer to its question arrives as a message from the board. Returns "The answer arrives as a message in this chat" as an error.',
 }
 
 export const TOOL_DESCRIPTIONS: Record<SessionKind, ToolDescriptions> = {

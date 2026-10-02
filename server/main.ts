@@ -21,8 +21,10 @@ import type { ToolContext } from './tools/context.js'
 import { registerJoinBoard } from './tools/join_board.js'
 import { registerModelTools } from './tools/model.js'
 import { registerViewActions } from './tools/view_actions.js'
+import { registerWaitForAnswer } from './tools/wait_for_answer.js'
 import { VERSION } from './version.js'
 import { registerViews } from './views.js'
+import { waitTimings } from './wait_timings.js'
 
 const VIEWS_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), 'views')
 const HTTP_HOST = '127.0.0.1'
@@ -49,6 +51,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     ...registerBoardTools(server, context),
     join_board: registerJoinBoard(server, context),
     ...registerModelTools(server, context),
+    wait_for_answer: registerWaitForAnswer(server, context),
   })
   registerViewActions(server, context)
   server.server.oninitialized = () => {
@@ -161,7 +164,13 @@ const callers: Callers = createCallers({
   },
   logger,
 })
-const shared: Shared = { logger, database, callers, now: () => new Date().toISOString() }
+const shared: Shared = {
+  logger,
+  database,
+  callers,
+  now: () => new Date().toISOString(),
+  wait: waitTimings(process.env),
+}
 
 if (transport === 'http') {
   await serveHttp(shared, lifecycle)

@@ -1,6 +1,13 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { currentStep } from '../domain/chain.js'
-import { invalid, isRefusal, nothingToClaim, notFound, type Refusal } from '../domain/refusal.js'
+import {
+  invalid,
+  isRefusal,
+  nothingToClaim,
+  notFound,
+  wrongStepStatus,
+  type Refusal,
+} from '../domain/refusal.js'
 import * as transitions from '../domain/transitions.js'
 import type { Context, Outcome, Placement } from '../domain/transitions.js'
 import type { Actor, Event, Instant, Link, StepInput, TaskState } from '../domain/types.js'
@@ -359,6 +366,30 @@ function answerStateOf(state: TaskState | null, taskId: number, session: string)
   }
   if (step.status === 'waiting') return { kind: 'waiting' }
   return step.answer === null ? { kind: 'none' } : { kind: 'answered', answer: step.answer }
+}
+
+/**
+ * Whether the session may wait for an answer on the task: the current step
+ * is its claimed step, and it waits on you or holds an answer not yet
+ * collected. A read only.
+ */
+export function checkWaiting(database: Database, task: TaskRef, session: string): Refusal | null {
+  const id = taskNumber(task)
+  if (isRefusal(id)) return id
+  return read(database, (sqlite) => {
+    const state = loadTaskState(sqlite, id)
+    if (!state) return notFound(id)
+    const refused = transitions.preconditions.held(state, contextFor(sqlite, session, ''))
+    if (refused) return refused
+    const step = currentStep(state.steps)
+    return step.status === 'waiting' || step.answer !== null
+      ? null
+      : wrongStepStatus(
+          id,
+          step.number,
+          'has no question waiting for an answer. Call ask_you first.'
+        )
+  })
 }
 
 /**
