@@ -5,7 +5,7 @@ import { badgeFor } from './task_view'
 describe('badgeFor', () => {
   test.each([
     { list: 'working', label: 'running', look: 'accent' },
-    { list: 'yourTurn', label: 'your turn', look: 'accent' },
+    { list: 'yourTurn', label: 'waiting on user', look: 'accent' },
     { list: 'toSignOff', label: 'to sign off', look: 'accent' },
     { list: 'signedOff', label: 'done', look: 'accent' },
     { list: 'queue', label: 'queue', look: 'neutral' },

@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type FormEvent } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
-import { artifactUrlProblem, ARTIFACT_URL_MAX } from '../../helpers/output_format'
-import { fillTemplate, outputFormat as formatWords, yourTurn } from '../../helpers/strings'
+import { inputLinkLabel } from '../../helpers/output_format'
+import { fillTemplate, yourTurn } from '../../helpers/strings'
 import { formatWaited } from '../../helpers/time'
 import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
@@ -11,15 +11,15 @@ import { Button } from '../../primitives/button/button'
 import { StatusSquare } from '../../primitives/status_square/status_square'
 import { Tag } from '../../primitives/tag/tag'
 import { TextArea } from '../../primitives/text_area/text_area'
-import { TextInput } from '../../primitives/text_input/text_input'
+import { ArtifactLink } from '../artifact_links/artifact_links'
 import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
 
-/** What you can do with a step that waits on you. */
+/** What can be done with a step that waits on the user. */
 export type YourTurnAction = 'complete' | 'answer' | 'park'
 
-/** The Your turn action in flight, and the task it acts on. */
+/** The Waiting on user action in flight, and the task it acts on. */
 export interface YourTurnPending {
   taskId: string
   action: YourTurnAction
@@ -28,18 +28,16 @@ export interface YourTurnPending {
 export interface YourTurnCardProps {
   item: YourTurnTask
   onOpenTask: (taskId: string) => void
-  /**
-   * "Mark done" on your step, with the note trimmed, or none, and the
-   * artifact link trimmed when the step has an output format. Without it the
-   * card offers no Mark done.
-   */
-  onCompleteStep?: (taskId: string, note?: string, artifactUrl?: string) => void
+  /** "Mark done" on a user step, with the note trimmed, or none. Without it the card offers no Mark done. */
+  onCompleteStep?: (taskId: string, note?: string) => void
   /** "Answer" to an agent's question, trimmed. Without it the card offers no answer field. */
   onAnswer?: (taskId: string, answer: string) => void
   /** A confirmed "Park". Without it the card offers no Park. */
   onPark?: (taskId: string) => void
   /** This card's action in flight, if any. */
   busy?: YourTurnAction | null
+  /** Asks the host to open the step's input link. Without it the card draws no link. */
+  onOpenLink?: (url: string) => void
 }
 
 /** The longest note and answer the tools take, as shared/limits.ts sets them. */
@@ -47,7 +45,7 @@ const NOTE_MAX = 500
 const ANSWER_MAX = 4000
 
 /**
- * "Your step" for your own step; for an agent's question, the session that
+ * "User step" for a user step; for an agent's question, the session that
  * asks, or "Asks" when the props name none.
  */
 function kindLabel({ step, sessionName }: YourTurnTask): string {
@@ -58,8 +56,8 @@ function kindLabel({ step, sessionName }: YourTurnTask): string {
 }
 
 /**
- * One step that waits on you, inverted so that it cannot be missed: your own
- * step, an agent's question with the session that asks it, or a step a
+ * One step that waits on the user, inverted so that it cannot be missed: a
+ * user step, an agent's question with the session that asks it, or a step a
  * worker blocked.
  */
 export function YourTurnCard({
@@ -69,6 +67,7 @@ export function YourTurnCard({
   onAnswer,
   onPark,
   busy = null,
+  onOpenLink,
 }: YourTurnCardProps) {
   if (item.blocked) {
     return <BlockedCard item={item} blocked={item.blocked} onOpenTask={onOpenTask} />
@@ -81,6 +80,7 @@ export function YourTurnCard({
       onAnswer={onAnswer}
       onPark={onPark}
       busy={busy}
+      onOpenLink={onOpenLink}
     />
   )
 }
@@ -138,7 +138,8 @@ function BlockedCard({ item, blocked, onOpenTask }: BlockedCardProps) {
 }
 
 /**
- * Your own step, or an agent's question, with the actions the server allows.
+ * A user step, or an agent's question, with the actions the server allows.
+ * A user step links to the artifact the step before it produced, if any.
  */
 function WaitingCard({
   item,
@@ -147,6 +148,7 @@ function WaitingCard({
   onAnswer,
   onPark,
   busy = null,
+  onOpenLink,
 }: YourTurnCardProps) {
   const now = useNow(LABEL_TICK.waited)
   const { task, step, steps } = item
@@ -183,10 +185,13 @@ function WaitingCard({
         </p>
       )}
       {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
-      {step.owner === 'you' && step.outputFormat && !completesHere(item, onCompleteStep) && (
-        <p className={joinClasses('text-hint', styles.needs)}>
-          {fillTemplate(yourTurn.needs, { needed: formatWords.needed[step.outputFormat] })}
-        </p>
+      {step.owner === 'you' && item.input && onOpenLink && (
+        <ArtifactLink
+          url={item.input.url}
+          label={inputLinkLabel(item.input.format, item.input.stepNumber)}
+          onOpenLink={onOpenLink}
+          className={styles.input}
+        />
       )}
       <YourTurnActions
         item={item}
@@ -199,11 +204,11 @@ function WaitingCard({
   )
 }
 
-type YourTurnActionsProps = Omit<YourTurnCardProps, 'onOpenTask' | 'busy'> & {
+type YourTurnActionsProps = Omit<YourTurnCardProps, 'onOpenTask' | 'busy' | 'onOpenLink'> & {
   busy: YourTurnAction | null
 }
 
-/** Whether the card offers Mark done, which then says what link the step needs. */
+/** Whether the card offers Mark done. */
 function completesHere(
   { step, canAct }: YourTurnTask,
   onCompleteStep: YourTurnCardProps['onCompleteStep']
@@ -213,27 +218,21 @@ function completesHere(
 
 /**
  * The card's actions, offered only where the server says they can act: Mark
- * done with an optional note on your step, after the link the step needs when
- * it has an output format, an answer field on an agent's question, and Park
- * behind a confirmation on either. The draft is kept by step, so a new step
- * on the same task starts empty.
+ * done with an optional note on a user step, an answer field on an agent's
+ * question, and Park behind a confirmation on either. The draft is kept by
+ * step, so a new step on the same task starts empty.
  */
 function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourTurnActionsProps) {
   const { task, step, canAct, sessionName } = item
   const labelId = useId()
   const noteId = useId()
-  const urlLabelId = useId()
-  const urlNoteId = useId()
   const parkButton = useRef<HTMLButtonElement>(null)
   const [confirming, setConfirming] = useState(false)
   const stepKey = `${task.id}:${step.number}`
-  const [draft, setDraft] = useState({ stepKey, text: '', url: '' })
+  const [draft, setDraft] = useState({ stepKey, text: '' })
   const text = draft.stepKey === stepKey ? draft.text : ''
-  const url = draft.stepKey === stepKey ? draft.url : ''
 
   const completes = completesHere(item, onCompleteStep)
-  const format = step.owner === 'you' ? (step.outputFormat ?? null) : null
-  const urlProblem = format === null ? null : artifactUrlProblem(format, url)
   const answers = step.owner === 'agent' && canAct.answer === true && onAnswer !== undefined
   const parks = canAct.park && onPark !== undefined
   if (!completes && !answers && !parks) {
@@ -248,23 +247,11 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
       : yourTurn.answerReadyUnnamed
 
   function edit(next: string) {
-    setDraft({ stepKey, text: next.slice(0, answers ? ANSWER_MAX : NOTE_MAX), url })
-  }
-
-  function editUrl(next: string) {
-    setDraft({ stepKey, text, url: next.slice(0, ARTIFACT_URL_MAX) })
+    setDraft({ stepKey, text: next.slice(0, answers ? ANSWER_MAX : NOTE_MAX) })
   }
 
   function complete() {
-    if (urlProblem !== null) {
-      return
-    }
-    const note = text.trim() === '' ? undefined : text.trim()
-    if (format === null) {
-      onCompleteStep?.(task.id, note)
-    } else {
-      onCompleteStep?.(task.id, note, url.trim())
-    }
+    onCompleteStep?.(task.id, text.trim() === '' ? undefined : text.trim())
   }
 
   function answer(event?: FormEvent) {
@@ -291,10 +278,7 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
         <Button
           variant="inverse-solid"
           busy={busy === 'complete'}
-          disabled={
-            (busy !== null && busy !== 'complete') || (urlProblem !== null && busy === null)
-          }
-          aria-describedby={format === null ? undefined : urlNoteId}
+          disabled={busy !== null && busy !== 'complete'}
           onPress={complete}
         >
           {yourTurn.markDone}
@@ -349,39 +333,6 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
 
   return (
     <div data-raised className={styles.actions}>
-      {completes && format !== null && (
-        <>
-          <div className={styles.fieldHeader}>
-            <span id={urlLabelId} className={joinClasses('text-label', styles.label)}>
-              {formatWords.field[format]}
-            </span>
-            <span
-              id={urlNoteId}
-              aria-live="polite"
-              className={joinClasses('text-hint', styles.note)}
-            >
-              {urlProblem}
-            </span>
-          </div>
-          <TextInput
-            labelledBy={urlLabelId}
-            describedBy={urlNoteId}
-            required
-            invalid={urlProblem !== null && url.trim() !== ''}
-            value={url}
-            placeholder={yourTurn.urlPlaceholder}
-            onChange={editUrl}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                if (busy === null) {
-                  complete()
-                }
-              }
-            }}
-          />
-        </>
-      )}
       {completes && (
         <>
           <span id={labelId} className={joinClasses('text-label', styles.label)}>

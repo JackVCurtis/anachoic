@@ -58,7 +58,7 @@ export const Default: Story = {
     const queue = canvas.getByRole('button', { name: 'Queue' })
 
     await expect(cardOf(canvasElement, RENAME.task.title)).toHaveTextContent(
-      'T-003 · 2 steps · 1 for you'
+      'T-003 · 2 steps · 1 for the user'
     )
     await expect(queue).toHaveTextContent(/^Queue\s*→$/)
     await expect(canvas.queryByRole('img')).toBeNull()
@@ -137,7 +137,7 @@ export const Assigned: Story = {
   args: { task: DARK_MODE },
   play: async ({ canvasElement }) => {
     await expect(cardOf(canvasElement, DARK_MODE.task.title)).toHaveTextContent(
-      'T-010 · 3 steps · 1 for you · Assigned to web-client'
+      'T-010 · 3 steps · 1 for the user · Assigned to web-client'
     )
   },
 }

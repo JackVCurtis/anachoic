@@ -37,10 +37,10 @@ export const Inverse: Story = {
   name: 'Inverse tone, with text',
   args: {
     tone: 'inverse',
-    children: <Sample text="Your turn: review the migration plan" />,
+    children: <Sample text="Waiting on user: review the migration plan" />,
   },
   play: async ({ canvasElement }) => {
-    const text = within(canvasElement).getByText('Your turn: review the migration plan')
+    const text = within(canvasElement).getByText('Waiting on user: review the migration plan')
     const frame = text.closest('[data-tone]') as HTMLElement
 
     expect(frame.dataset.tone).toBe('inverse')

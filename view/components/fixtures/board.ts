@@ -35,9 +35,9 @@ export interface YourTurnSample {
     title: string
     owner: Owner
     question?: string
-    outputFormat?: OutputFormat
     waitingSince: string
   }
+  input?: ArtifactSample | null
   sessionName?: string
   blocked?: { reason: string; since: string }
   steps: readonly PipStepSample[]
@@ -46,7 +46,13 @@ export interface YourTurnSample {
 
 export interface WorkingSample {
   task: TaskSample
-  step: { number: number; title: string; note?: string; runningSince: string }
+  step: {
+    number: number
+    title: string
+    note?: string
+    outputFormat?: OutputFormat
+    runningSince: string
+  }
   sessionName: string
   steps: readonly PipStepSample[]
   artifacts?: ArtifactSample[]
@@ -295,9 +301,16 @@ export function withArtifacts<Item extends { artifacts?: ArtifactSample[] }>(
 }
 
 /**
- * Your waiting step, declaring the output format it needs to be marked done.
+ * A waiting user step, handed the artifact the step before it produced.
  */
-export function needing(item: YourTurnSample, outputFormat: OutputFormat): YourTurnSample {
+export function withInput(item: YourTurnSample, input: ArtifactSample): YourTurnSample {
+  return { ...item, input }
+}
+
+/**
+ * A running agent step that declares the output format it must produce.
+ */
+export function producing(item: WorkingSample, outputFormat: OutputFormat): WorkingSample {
   return { ...item, step: { ...item.step, outputFormat } }
 }
 

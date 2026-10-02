@@ -20,7 +20,7 @@ export interface TaskEntryStep {
   title: string
   owner: Owner
   detail: string
-  /** What a step of yours hands on when it is done. Absent or null for none, and on agent steps. */
+  /** What an agent step hands on when it is done. Absent or null for none, and on user steps. */
   outputFormat?: OutputFormat | null
 }
 
@@ -95,15 +95,14 @@ export function stepsFilled(steps: readonly TaskEntryStep[]): boolean {
 
 /**
  * The steps as the tools take them: every text trimmed, a detail left out
- * when it is empty, and an output format only on a step of yours that has
- * one.
+ * when it is empty, and an output format only on an agent step that has one.
  */
 export function submittedSteps(steps: readonly TaskEntryStep[]) {
   return steps.map(({ title, owner, detail, outputFormat }) => ({
     title: title.trim(),
     owner,
     ...(isFilled(detail) ? { detail: detail.trim() } : {}),
-    ...(owner === 'you' && outputFormat ? { outputFormat } : {}),
+    ...(owner === 'agent' && outputFormat ? { outputFormat } : {}),
   }))
 }
 

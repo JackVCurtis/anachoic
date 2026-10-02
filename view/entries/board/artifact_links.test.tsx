@@ -87,3 +87,55 @@ describe('artifact links on the cards', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(card.linkNotOpened)
   })
 })
+
+describe('what the entry hands the cards about output formats', () => {
+  const HANDED: BoardProps = {
+    ...emptyBoardProps(3),
+    yourTurn: [
+      {
+        task: { id: 'task-12', displayId: 'T-012', title: 'Ship the retries' },
+        step: {
+          number: 2,
+          title: 'Review the PR',
+          owner: 'you',
+          waitingSince: '2026-03-12T09:30:00.000Z',
+        },
+        input: { stepNumber: 1, format: 'pull_request', url: PR },
+        steps: [],
+        canAct: { complete: true, park: true },
+      },
+    ],
+    working: [
+      {
+        task: { id: 'task-16', displayId: 'T-016', title: 'File the follow-up' },
+        step: {
+          number: 1,
+          title: 'File the ticket',
+          outputFormat: 'ticket',
+          runningSince: '2026-03-12T09:30:00.000Z',
+        },
+        session: { id: 'session-a', name: 'api-server' },
+        steps: [],
+      },
+    ],
+    counts: { yourTurn: 1, working: 1, queue: 0, toSignOff: 0 },
+  }
+
+  test("a user step's input link and a running step's output format reach the cards", async () => {
+    const app = new FakeApp({
+      hostContext: { displayMode: 'inline', timeZone: 'UTC' },
+      answer: (params) => {
+        const since = params.arguments?.sinceRevision as number | undefined
+        return since === undefined
+          ? boardResult(HANDED)
+          : boardResult({ changed: false, revision: since })
+      },
+    })
+    const user = await renderBoard(app)
+
+    expect(screen.getByText('Produces a ticket')).toBeVisible()
+    await user.click(screen.getByRole('link', { name: /^Pull request from step 1/ }))
+
+    expect(app.calls.openLink).toEqual([{ url: PR }])
+  })
+})

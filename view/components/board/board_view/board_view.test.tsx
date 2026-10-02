@@ -58,7 +58,7 @@ describe('BoardView', () => {
     expect(h1[0].textContent).toBe(assistive.boardTitle)
     expect(h1[0].getBoundingClientRect().height).toBeLessThanOrEqual(1)
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'Your turn',
+      'Waiting on user',
       'Sessions',
       'Working',
       'Queue',
@@ -67,19 +67,19 @@ describe('BoardView', () => {
     ])
   })
 
-  test('each empty section counts 0, and Your turn sits on the inverse surface', () => {
+  test('each empty section counts 0, and Waiting on user sits on the inverse surface', () => {
     renderBoard()
 
-    for (const title of ['Your turn', 'Sessions', 'Working', 'Queue', 'Backlog', 'Done']) {
+    for (const title of ['Waiting on user', 'Sessions', 'Working', 'Queue', 'Backlog', 'Done']) {
       expect(within(section(title)).getByText('0')).toBeTruthy()
     }
-    const yourTurnHeading = screen.getByRole('heading', { level: 2, name: 'Your turn' })
+    const yourTurnHeading = screen.getByRole('heading', { level: 2, name: 'Waiting on user' })
     expect(yourTurnHeading.closest('[data-tone]')?.getAttribute('data-tone')).toBe('inverse')
     expect(getComputedStyle(yourTurnHeading).color).toBe(resolvedColor('--inverse-fg'))
     expect(getComputedStyle(yourTurnHeading.nextElementSibling!).color).toBe(
       resolvedColor('--inverse-fg')
     )
-    expect(within(section('Your turn')).getByText(yourTurn.nothingWaiting)).toBeTruthy()
+    expect(within(section('Waiting on user')).getByText(yourTurn.nothingWaiting)).toBeTruthy()
     expect(within(section('Done')).getByText('Nothing waiting for sign-off')).toBeTruthy()
     expect(within(section('Queue')).queryByRole('list')).toBeNull()
     expect(section('Queue').children).toHaveLength(1)

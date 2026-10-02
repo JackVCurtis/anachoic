@@ -10,18 +10,18 @@ import {
 
 export interface YourTurnSectionProps extends Pick<
   YourTurnCardProps,
-  'onCompleteStep' | 'onAnswer' | 'onPark'
+  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onOpenLink'
 > {
   /** In the server's order. */
   tasks: readonly YourTurnTask[]
   onOpenTask: (taskId: string) => void
-  /** The Your turn action in flight, if any. */
+  /** The Waiting on user action in flight, if any. */
   pending?: YourTurnPending | null
 }
 
 /**
- * What waits on you, under a header on the inverse surface. It folds after
- * eight cards.
+ * What waits on the user, under a header on the inverse surface. It folds
+ * after eight cards.
  */
 export function YourTurnSection({
   tasks,
@@ -29,6 +29,7 @@ export function YourTurnSection({
   onCompleteStep,
   onAnswer,
   onPark,
+  onOpenLink,
   pending = null,
 }: YourTurnSectionProps) {
   return (
@@ -46,6 +47,7 @@ export function YourTurnSection({
             onCompleteStep={onCompleteStep}
             onAnswer={onAnswer}
             onPark={onPark}
+            onOpenLink={onOpenLink}
             busy={pending?.taskId === item.task.id ? pending.action : null}
           />
         ),

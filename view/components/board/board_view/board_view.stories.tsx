@@ -147,7 +147,7 @@ export const AssignedNarrow: Story = {
 }
 
 export const Blocked: Story = {
-  name: 'Your step, a question and a blocked step together',
+  name: 'User step, a question and a blocked step together',
   args: BLOCKED_BOARD,
   parameters: {
     a11y: {
@@ -163,7 +163,7 @@ export const Blocked: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Your step')).toBeVisible()
+    await expect(canvas.getByText('User step')).toBeVisible()
     await expect(canvas.getByText('This chat asks')).toBeVisible()
     await expect(canvas.getByText('Unblock it in api-server’s session')).toBeVisible()
     await expect(canvas.getByText('Blocked on T-030 step 2')).toBeVisible()
@@ -173,7 +173,7 @@ export const Blocked: Story = {
 
 export const BlockedNarrow: Story = {
   ...Blocked,
-  name: 'Your step, a question and a blocked step together, narrow',
+  name: 'User step, a question and a blocked step together, narrow',
   globals: NARROW,
   parameters: { ...Blocked.parameters, frame: 'narrow' },
 }

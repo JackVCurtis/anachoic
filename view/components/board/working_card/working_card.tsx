@@ -1,4 +1,5 @@
 import { joinClasses } from '../../helpers/join_classes'
+import { producesLine } from '../../helpers/output_format'
 import { stepCounter } from '../../helpers/steps'
 import { fillTemplate, working } from '../../helpers/strings'
 import { formatElapsed } from '../../helpers/time'
@@ -22,8 +23,9 @@ export interface WorkingCardProps {
 
 /**
  * An active task whose current step is running: the session that claimed it,
- * how long it has run, the worker it is assigned to, the step, and the
- * session's latest note, and the links its done steps produced.
+ * how long it has run, the worker it is assigned to, the step and what it
+ * will produce, the session's latest note, and the links its done steps
+ * produced.
  */
 export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) {
   const now = useNow(LABEL_TICK.elapsed)
@@ -60,6 +62,11 @@ export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) 
       <p className={styles.stepLine}>
         {joinFacts([stepCounter(step.number, stepCount(steps, step.number), 'long'), step.title])}
       </p>
+      {step.outputFormat && (
+        <p className={joinClasses('text-hint', styles.produces)}>
+          {producesLine(step.outputFormat)}
+        </p>
+      )}
       {step.note && (
         <p data-raised className={joinClasses('text-detail', styles.note)}>
           {step.note}

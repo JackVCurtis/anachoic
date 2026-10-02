@@ -12,5 +12,5 @@ export type TaskStatus = 'backlog' | 'queue' | 'active' | 'done'
 
 export type Tone = 'light' | 'inverse'
 
-/** What a step of yours hands on when it is done: a link of this kind. */
+/** What an agent step hands on when it is done: a link of this kind. */
 export type OutputFormat = 'pull_request' | 'ticket' | 'document' | 'link'

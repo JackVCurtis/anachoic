@@ -7,14 +7,15 @@ import {
   finished,
   LONG_TEXT_BOARD,
   MANY_BOARD,
-  needing,
   parked,
+  producing,
   queued,
   running,
   taskOf,
   THIS_CHAT,
   WEB_CLIENT,
   withArtifacts,
+  withInput,
   workerBlocks,
   yourStep,
   type ArtifactSample,
@@ -349,13 +350,13 @@ export const DONE = {
 } as const
 
 const PULL_REQUEST: ArtifactSample = {
-  stepNumber: 2,
+  stepNumber: 1,
   format: 'pull_request',
   url: 'https://github.com/acme/billing/pull/412',
 }
 
 const TICKET: ArtifactSample = {
-  stepNumber: 3,
+  stepNumber: 2,
   format: 'ticket',
   url: 'https://acme.atlassian.net/browse/BILL-88',
 }
@@ -368,59 +369,66 @@ const LONG_DOCUMENT: ArtifactSample = {
 }
 
 /**
- * Output formats: your steps that need a pull request link or a plain link
- * to be marked done, and a card of each section with the links its done
- * steps produced, one of them 2,000 characters long.
+ * Output formats on agent steps: user steps handed a pull request or a
+ * 2,000-character document link by the agent step before them, a running
+ * step that must produce a document, and a card of each other section with
+ * the links its done steps produced.
  */
 export const OUTPUTS = {
-  needsPullRequest: needing(
+  handedPullRequest: withInput(
     yourStep(
       90,
       'Add retries to the billing webhooks',
       [
-        ['agent', 'done', 'Add retries with backoff'],
-        ['you', 'waiting', 'Open the PR'],
+        ['agent', 'done', 'Open the PR'],
+        ['you', 'waiting', 'Review the PR'],
         ['agent', 'pending', 'Merge and watch the build'],
       ],
       before({ minutes: 8 })
     ),
-    'pull_request'
+    PULL_REQUEST
   ),
-  needsLink: needing(
+  handedLongDocument: withInput(
     yourStep(
       91,
       'Share the design review',
-      [['you', 'waiting', 'Post the review notes']],
+      [
+        ['agent', 'done', 'Write the design doc'],
+        ['you', 'waiting', 'Read the design doc'],
+      ],
       before({ minutes: 3 })
     ),
-    'link'
+    LONG_DOCUMENT
   ),
   working: withArtifacts(
-    running(
-      92,
-      'Add retries to the billing webhooks',
-      [
-        ['agent', 'done', 'Add retries with backoff', API_SERVER],
-        ['you', 'done', 'Open the PR'],
-        ['you', 'done', 'File the follow-up ticket'],
-        ['agent', 'running', 'Merge and watch the build', API_SERVER],
-      ],
-      before({ minutes: 4 })
+    producing(
+      running(
+        92,
+        'Add retries to the billing webhooks',
+        [
+          ['agent', 'done', 'Open the PR', API_SERVER],
+          ['agent', 'done', 'File the follow-up ticket', API_SERVER],
+          ['you', 'done', 'Review the PR'],
+          ['agent', 'running', 'Write the release notes', API_SERVER],
+        ],
+        before({ minutes: 4 })
+      ),
+      'document'
     ),
     [PULL_REQUEST, TICKET]
   ),
   queued: withArtifacts(
     queued(1, 93, 'Roll out the new invoice layout', [
-      ['agent', 'done', 'Build the layout'],
-      ['you', 'done', 'Open the PR'],
+      ['agent', 'done', 'Open the PR'],
+      ['you', 'done', 'Review the PR'],
       ['agent', 'pending', 'Roll it out'],
     ]),
     [PULL_REQUEST]
   ),
   parked: withArtifacts(
     parked(94, 'Write up the billing outage', [
-      ['you', 'done', 'Draft the write-up'],
-      ['agent', 'pending', 'Turn it into a runbook'],
+      ['agent', 'done', 'Draft the write-up'],
+      ['you', 'pending', 'Review the write-up'],
     ]),
     [LONG_DOCUMENT]
   ),
@@ -429,9 +437,9 @@ export const OUTPUTS = {
       95,
       'Fix the rounding in the tax report',
       [
-        ['agent', 'done', 'Find the rounding error'],
-        ['you', 'done', 'Open the PR'],
-        ['you', 'done', 'Close the ticket'],
+        ['agent', 'done', 'Open the PR'],
+        ['agent', 'done', 'File the follow-up ticket'],
+        ['you', 'done', 'Review the PR'],
       ],
       { finishedAt: before({ minutes: 30 }), agentSeconds: 1_200, yourSeconds: 300, linkCount: 2 }
     ),

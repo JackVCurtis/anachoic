@@ -155,6 +155,7 @@ export function BoardView({
         onCompleteStep={onCompleteStep}
         onAnswer={onAnswer}
         onPark={onPark}
+        onOpenLink={onOpenLink}
         pending={yourTurnPending}
       />
       <SessionsSection

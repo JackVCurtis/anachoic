@@ -1,9 +1,9 @@
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
-import { YOUR_TURN } from '../../fixtures/board_sections'
+import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
-import { yourTurn } from '../../helpers/strings'
+import { assistive, yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
@@ -21,10 +21,10 @@ afterEach(() => {
 })
 
 describe('YourTurnCard', () => {
-  test('a step owned by you reads "Your step" and shows no question', () => {
+  test('a user step reads "User step" and shows no question', () => {
     const { card } = renderCard(YOUR_TURN.yourStep)
 
-    expect(screen.getByText('Your step')).toBeVisible()
+    expect(screen.getByText('User step')).toBeVisible()
     expect(screen.getByText(YOUR_TURN.yourStep.task.displayId)).toBeVisible()
     expect(screen.getByText(YOUR_TURN.yourStep.step.title)).toBeVisible()
     expect(screen.getByText('Step 3/4 · 14m')).toBeVisible()
@@ -36,7 +36,7 @@ describe('YourTurnCard', () => {
 
     expect(screen.getByText('This chat asks')).toBeVisible()
     expect(screen.getByText('Redis or in-process?')).toBeVisible()
-    expect(screen.queryByText('Your step')).toBeNull()
+    expect(screen.queryByText('User step')).toBeNull()
   })
 
   test('a question with no session named reads "Asks"', () => {
@@ -255,6 +255,55 @@ describe('YourTurnCard actions', () => {
     rerender(<YourTurnCard item={next} onOpenTask={vi.fn()} onAnswer={vi.fn()} />)
 
     expect(screen.getByRole('textbox')).toHaveValue('')
+  })
+})
+
+describe('YourTurnCard, a user step handed an artifact', () => {
+  const item = OUTPUTS.handedPullRequest
+  const linkName = `Pull request from step 1 ${assistive.opensInBrowser}`
+
+  function renderHanded(onOpenLink?: (url: string) => void) {
+    const callbacks = { onOpenTask: vi.fn(), onCompleteStep: vi.fn() }
+    const rendered = renderComponent(
+      <YourTurnCard item={item} onOpenLink={onOpenLink} {...callbacks} />
+    )
+    return { ...rendered, ...callbacks }
+  }
+
+  test('shows the link above Mark done, and pressing it asks the host to open it', async () => {
+    const onOpenLink = vi.fn()
+    const { user, onOpenTask } = renderHanded(onOpenLink)
+    const link = screen.getByRole('link', { name: linkName })
+    const markDone = screen.getByRole('button', { name: yourTurn.markDone })
+
+    expect(link.compareDocumentPosition(markDone)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(link).toHaveAttribute('title', item.input!.url)
+    await user.click(link)
+
+    expect(onOpenLink).toHaveBeenCalledExactlyOnceWith(item.input!.url)
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('has no URL field: the note is its only field, and Mark done reports no link', async () => {
+    const { user, onCompleteStep } = renderHanded(vi.fn())
+
+    expect(screen.getAllByRole('textbox')).toEqual([
+      screen.getByRole('textbox', { name: yourTurn.noteLabel }),
+    ])
+    await user.click(screen.getByRole('button', { name: yourTurn.markDone }))
+
+    expect(onCompleteStep).toHaveBeenCalledExactlyOnceWith(item.task.id, undefined)
+  })
+
+  test('draws no link without onOpenLink, nor on a step handed nothing', () => {
+    renderHanded()
+    expect(screen.queryByRole('link')).toBeNull()
+    cleanup()
+
+    renderComponent(
+      <YourTurnCard item={YOUR_TURN.yourStep} onOpenTask={vi.fn()} onOpenLink={vi.fn()} />
+    )
+    expect(screen.queryByRole('link')).toBeNull()
   })
 })
 

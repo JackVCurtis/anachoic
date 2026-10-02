@@ -14,24 +14,24 @@
   min-width: 0;
 }
 
-/* A small secondary button's box, on a link the host opens */
+/* A small secondary button's box, on a link the host opens, in the tone of its card */
 .link {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
   padding: 3px 10px;
-  border: var(--border-hairline) solid var(--color-divider);
-  color: var(--color-text);
+  border: var(--border-hairline) solid var(--tone-control-border);
+  color: var(--tone-fg);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .link:hover {
-  background-color: var(--tint-hover);
+  background-color: var(--tone-tint-hover);
 }
 
 .link:active {
-  background-color: var(--tint-pressed);
+  background-color: var(--tone-tint-pressed);
 }
 
 .link:focus-visible {

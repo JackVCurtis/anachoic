@@ -74,7 +74,7 @@ describe('ChainPreview', () => {
     renderComponent(<ChainPreview variant="framed" steps={NEW_TASK} />)
     const list = screen.getByRole('list', { name: 'Chain preview' })
     const frame = list.parentElement as HTMLElement
-    const note = screen.getByText('4 steps · 2 for you')
+    const note = screen.getByText('4 steps · 2 for the user')
     const space3 = getComputedStyle(document.documentElement).getPropertyValue('--space-3').trim()
 
     expect(list.getAttribute('start')).toBe('1')
@@ -113,10 +113,10 @@ describe('ChainPreview', () => {
   test('a row with a session shows the named chip, and a row without one the generic chip', () => {
     renderComponent(<ChainPreview variant="framed" steps={rowsOf(AGENT_ASKS)} />)
 
-    expect(chips()).toEqual(['api-server', 'api-server', 'you'])
+    expect(chips()).toEqual(['api-server', 'api-server', 'user'])
 
     renderComponent(<ChainPreview variant="bare" steps={NEW_TASK} />)
-    expect(chips().slice(3)).toEqual(['agent', 'you', 'agent', 'you'])
+    expect(chips().slice(3)).toEqual(['agent', 'user', 'agent', 'user'])
   })
 
   test('twelve steps number 01 to 12', () => {

@@ -72,14 +72,14 @@ export const Default: Story = {
 }
 
 export const YourTurn: Story = {
-  name: 'Your turn, roomy, with a count, inverted',
-  args: { title: 'Your turn', spacing: 'roomy', summary: 2 },
+  name: 'Waiting on user, roomy, with a count, inverted',
+  args: { title: 'Waiting on user', spacing: 'roomy', summary: 2 },
   parameters: { tone: 'inverse' },
 }
 
 export const YourTurnClear: Story = {
-  name: 'Your turn, roomy, with nothing waiting, inverted',
-  args: { title: 'Your turn', spacing: 'roomy', summary: 0 },
+  name: 'Waiting on user, roomy, with nothing waiting, inverted',
+  args: { title: 'Waiting on user', spacing: 'roomy', summary: 0 },
   parameters: { tone: 'inverse' },
 }
 

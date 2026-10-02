@@ -129,7 +129,7 @@ describe('the card actions', () => {
     await user.keyboard('Check the nightly run')
     await user.click(
       within(within(card).getByRole('group', { name: 'Owner of step 4' })).getByRole('radio', {
-        name: 'You',
+        name: 'User',
       })
     )
     await user.click(within(card).getByRole('radio', { name: done.placementFirst }))

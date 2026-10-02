@@ -23,7 +23,7 @@ describe('SessionsSection', () => {
     const states = [...section.querySelectorAll('li')]
       .filter((item) => item.parentElement?.closest('li') === null)
       .map((item) => item.querySelector('.text-status')?.textContent)
-    expect(states).toEqual(['Waiting on you', 'Running', 'Idle', 'Ended 4m ago'])
+    expect(states).toEqual(['Waiting on user', 'Running', 'Idle', 'Ended 4m ago'])
   })
 
   test('with no session it shows the empty state', () => {

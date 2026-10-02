@@ -101,7 +101,7 @@
   outline-color: var(--color-bg);
 }
 
-/* Your step's output format, its short label before the select */
+/* An agent step's output format, its short label before the select */
 .output {
   display: inline-flex;
   flex: none;

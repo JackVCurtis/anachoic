@@ -54,7 +54,7 @@ export const Waiting: Story = {
   name: 'Holding a step that waits on you',
   args: { session: SESSIONS.waitingWorker },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Waiting on you')).toBeVisible()
+    await expect(within(canvasElement).getByText('Waiting on user')).toBeVisible()
     await expect(canvasElement.querySelector('[data-tone="inverse"]')).toBeNull()
   },
 }

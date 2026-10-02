@@ -32,7 +32,7 @@ const TYPE: Record<MetaLineTone, { className: string; size: string; color: strin
 
 describe('MetaLine', () => {
   test.each(META_LINE_TONES)('%s has its type and color', (tone) => {
-    renderComponent(<MetaLine tone={tone} facts={['3 steps', '1 for you']} />)
+    renderComponent(<MetaLine tone={tone} facts={['3 steps', '1 for the user']} />)
     const line = lineOf('3 steps')
     const style = getComputedStyle(line)
 
@@ -43,18 +43,18 @@ describe('MetaLine', () => {
 
   test('the separators are hidden and the facts are read in order', () => {
     renderComponent(
-      <MetaLine tone="meta" facts={['Step 2/3', 'This chat', '3 steps', '1 for you']} />
+      <MetaLine tone="meta" facts={['Step 2/3', 'This chat', '3 steps', '1 for the user']} />
     )
     const line = lineOf('Step 2/3')
     const separators = line.querySelectorAll('[aria-hidden="true"]')
 
-    expect(spokenText(line)).toEqual(['Step 2/3', 'This chat', '3 steps', '1 for you'])
+    expect(spokenText(line)).toEqual(['Step 2/3', 'This chat', '3 steps', '1 for the user'])
     expect(separators).toHaveLength(3)
     for (const separator of separators) {
       expect(separator.textContent).toBe(' · ')
       expect(separator.textContent?.codePointAt(1)).toBe(0xb7)
     }
-    expect(line.textContent).toBe('Step 2/3 · This chat · 3 steps · 1 for you')
+    expect(line.textContent).toBe('Step 2/3 · This chat · 3 steps · 1 for the user')
   })
 
   test('a line of one fact has no separator', () => {

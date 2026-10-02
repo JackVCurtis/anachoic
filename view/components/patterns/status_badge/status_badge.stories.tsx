@@ -21,7 +21,7 @@ export const Default: Story = {
 }
 
 export const YourTurn: Story = {
-  name: 'Your turn, an agent step that asked you',
+  name: 'Waiting on user, an agent step that asked you',
   args: { list: 'yourTurn' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText(taskView.badgeYourTurn)).toBeVisible()
@@ -54,7 +54,7 @@ export const DefaultInverted: Story = {
 }
 
 export const YourTurnInverted: Story = {
-  name: 'Your turn, inverted',
+  name: 'Waiting on user, inverted',
   args: YourTurn.args,
   parameters: INVERSE,
 }

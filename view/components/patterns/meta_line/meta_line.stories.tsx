@@ -8,7 +8,7 @@ import { MetaLine } from './meta_line'
 const WORKING_FACTS = ['Step 2/3', 'This chat', '14m 03s']
 
 /** A Queue card's facts. */
-const QUEUE_FACTS = ['3 steps', '1 for you']
+const QUEUE_FACTS = ['3 steps', '1 for the user']
 
 /** A Done card's facts. */
 const DONE_FACTS = ['3 steps', 'Finished 08:05', '3 links']

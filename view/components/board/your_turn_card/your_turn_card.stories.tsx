@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
-import { yourTurn } from '../../helpers/strings'
+import { assistive, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
@@ -22,6 +22,7 @@ const meta = {
     onCompleteStep: fn(),
     onAnswer: fn(),
     onPark: fn(),
+    onOpenLink: fn(),
     busy: null,
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
@@ -50,10 +51,10 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const YourStep: Story = {
-  name: 'Your step',
+  name: 'User step',
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Your step')).toBeVisible()
+    await expect(canvas.getByText('User step')).toBeVisible()
     await expect(canvas.getByText('Step 3/4 · 14m')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: YOUR_TURN.yourStep.task.title }))
     await expect(args.onOpenTask).toHaveBeenCalledWith(YOUR_TURN.yourStep.task.id)
@@ -87,7 +88,7 @@ export const LongTitle: Story = {
 }
 
 export const YourStepNarrow: Story = {
-  name: 'Your step, narrow',
+  name: 'User step, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
   play: async () => {
@@ -116,7 +117,7 @@ export const LongTitleNarrow: Story = {
 }
 
 export const YourStepWithNote: Story = {
-  name: 'Your step, with a note typed',
+  name: 'User step, with a note typed',
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(
@@ -162,7 +163,7 @@ export const ParkConfirmingNarrow: Story = {
 }
 
 export const YourStepBusy: Story = {
-  name: 'Your step, marking done',
+  name: 'User step, marking done',
   args: { busy: 'complete' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -205,56 +206,55 @@ export const NoActions: Story = {
   },
 }
 
-export const NeedsPullRequest: Story = {
-  name: 'Your step needing a pull request link',
-  args: { item: OUTPUTS.needsPullRequest },
+const HANDED_PR = OUTPUTS.handedPullRequest
+
+export const HandedPullRequest: Story = {
+  name: 'User step handed a pull request',
+  args: { item: HANDED_PR },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    const link = canvas.getByRole('link', {
+      name: `Pull request from step 1 ${assistive.opensInBrowser}`,
+    })
     const markDone = canvas.getByRole('button', { name: yourTurn.markDone })
-    await expect(canvas.getByText('Needs a pull request link')).toBeVisible()
-    await expect(markDone).toBeDisabled()
+    await expect(link).toBeVisible()
+    await expect(link.compareDocumentPosition(markDone)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    await expect(canvas.getAllByRole('textbox')).toHaveLength(1)
 
-    const field = canvas.getByRole('textbox', { name: 'Pull request link' })
-    await userEvent.type(field, 'the PR')
-    await expect(canvas.getByText('That is not a web address')).toBeVisible()
-    await expect(markDone).toBeDisabled()
+    await userEvent.click(link)
+    await expect(args.onOpenLink).toHaveBeenCalledWith(HANDED_PR.input!.url)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
 
-    await userEvent.clear(field)
-    await userEvent.type(field, 'https://github.com/acme/billing/pull/412')
     await expect(markDone).toBeEnabled()
     await userEvent.click(markDone)
-    await expect(args.onCompleteStep).toHaveBeenCalledWith(
-      OUTPUTS.needsPullRequest.task.id,
-      undefined,
-      'https://github.com/acme/billing/pull/412'
-    )
+    await expect(args.onCompleteStep).toHaveBeenCalledWith(HANDED_PR.task.id, undefined)
   },
 }
 
-export const NeedsPullRequestNarrow: Story = {
-  ...NeedsPullRequest,
-  name: 'Your step needing a pull request link, narrow',
+export const HandedPullRequestNarrow: Story = {
+  ...HandedPullRequest,
+  name: 'User step handed a pull request, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }
 
-export const NeedsLink: Story = {
-  name: 'Your step needing a link',
-  args: { item: OUTPUTS.needsLink },
+export const HandedLongDocument: Story = {
+  name: 'User step handed a link of 2,000 characters, narrow',
+  args: { item: OUTPUTS.handedLongDocument },
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Needs a link')).toBeVisible()
-    await expect(canvas.getByRole('textbox', { name: 'Link' })).toBeVisible()
+    await expect(canvas.getByText('Document from step 1')).toBeVisible()
+    await expectNoSidewaysScroll()
   },
 }
 
-export const NeedsLinkWithoutMarkDone: Story = {
-  name: 'Your step needing a link, without Mark done',
-  args: { item: OUTPUTS.needsLink, onCompleteStep: undefined },
+export const HandedWithoutHost: Story = {
+  name: 'User step handed a link, with no way to open it',
+  args: { item: HANDED_PR, onOpenLink: undefined },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('Needs a link')).toBeVisible()
-    await expect(canvas.queryByRole('textbox', { name: 'Link' })).toBeNull()
+    await expect(within(canvasElement).queryByRole('link')).toBeNull()
   },
 }
 

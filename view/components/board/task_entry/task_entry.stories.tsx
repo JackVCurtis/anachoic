@@ -88,12 +88,12 @@ export const Default: Story = {
   },
 }
 
-export const OneStepYours: Story = {
-  name: 'One step yours',
+export const OneUserStep: Story = {
+  name: 'One user step',
   args: { draft: TASK_ENTRY_DRAFTS.oneYours },
   play: async ({ canvasElement }) => {
     const group = within(canvasElement).getByRole('group', { name: 'Owner of step 2' })
-    await expect(within(group).getByRole('radio', { name: 'You' })).toBeChecked()
+    await expect(within(group).getByRole('radio', { name: 'User' })).toBeChecked()
   },
 }
 
@@ -205,14 +205,14 @@ export const LongWorkerName: Story = {
 }
 
 export const WithOutput: Story = {
-  name: 'Your steps with an Output field',
+  name: 'Agent steps with an Output field',
   args: { draft: TASK_ENTRY_DRAFTS.withOutput },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.queryByRole('combobox', { name: 'Output of step 1' })).toBeNull()
-    await expect(canvas.getByRole('combobox', { name: 'Output of step 2' })).toHaveValue(
+    await expect(canvas.getByRole('combobox', { name: 'Output of step 1' })).toHaveValue(
       'pull_request'
     )
+    await expect(canvas.queryByRole('combobox', { name: 'Output of step 2' })).toBeNull()
     await expect(canvas.getByRole('combobox', { name: 'Output of step 3' })).toHaveValue('')
   },
 }
@@ -220,7 +220,7 @@ export const WithOutput: Story = {
 export const CollapsedNarrow = narrow(Collapsed, 'Collapsed')
 export const EmptyNarrow = narrow(Empty, 'Empty')
 export const TypedNarrow = narrow(Default, 'Typed')
-export const OneStepYoursNarrow = narrow(OneStepYours, 'One step yours')
+export const OneUserStepNarrow = narrow(OneUserStep, 'One user step')
 export const TwentyStepsNarrow = narrow(TwentySteps, '20 steps')
 export const DetailOpenNarrow = narrow(DetailOpen, 'Detail open')
 export const InvalidNarrow = narrow(Invalid, 'A step without a title')
@@ -230,4 +230,4 @@ export const LongTitleNarrow = narrow(LongTitle, 'Long title')
 export const WithWorkersNarrow = narrow(WithWorkers, 'With live workers')
 export const AssignedNarrow = narrow(Assigned, 'Assigned to a worker')
 export const LongWorkerNameNarrow = narrow(LongWorkerName, 'A worker named with 40 characters')
-export const WithOutputNarrow = narrow(WithOutput, 'Your steps with an Output field')
+export const WithOutputNarrow = narrow(WithOutput, 'Agent steps with an Output field')

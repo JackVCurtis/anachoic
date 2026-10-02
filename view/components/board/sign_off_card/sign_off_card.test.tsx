@@ -14,16 +14,16 @@ function renderCard(task: SignOffTask) {
 }
 
 describe('SignOffCard', () => {
-  test('the stats line reads "agent 14m · you 6m · 2 links"', () => {
+  test('the stats line reads "agent 14m · user 6m · 2 links"', () => {
     const { card } = renderCard(DONE.twoLinks)
 
-    expect(card).toHaveTextContent('agent 14m · you 6m · 2 links')
+    expect(card).toHaveTextContent('agent 14m · user 6m · 2 links')
   })
 
   test('the stats line reads "1 link" for one', () => {
     const { card } = renderCard(DONE.oneLink)
 
-    expect(card).toHaveTextContent('agent 14m · you 6m · 1 link')
+    expect(card).toHaveTextContent('agent 14m · user 6m · 1 link')
   })
 
   test('the meta row reads the task id and when it finished', () => {

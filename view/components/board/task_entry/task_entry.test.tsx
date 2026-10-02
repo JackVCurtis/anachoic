@@ -121,7 +121,7 @@ describe('TaskEntry', () => {
     const firstStep = screen.getAllByRole('listitem')[0]
     const group = within(firstStep).getByRole('group', { name: 'Owner of step 1' })
     const agent = within(group).getByRole('radio', { name: 'Agent' })
-    const you = within(group).getByRole('radio', { name: 'You' })
+    const you = within(group).getByRole('radio', { name: 'User' })
 
     within(firstStep).getByRole('textbox', { name: 'Title of step 1' }).focus()
     await user.tab()
@@ -249,7 +249,7 @@ describe('TaskEntry worker field', () => {
     ['no worker is live', []],
   ])('is absent when %s', (_, workers) => {
     renderEntry(TASK_ENTRY_DRAFTS.typed, true, workers)
-    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(screen.queryByRole('combobox', { name: taskEntry.workerLabel })).toBeNull()
   })
 
   test('choosing a worker puts its id in the draft, and Any worker clears it', async () => {

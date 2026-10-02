@@ -42,10 +42,10 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const EachKind: Story = {
-  name: 'Your step and an agent’s question',
+  name: 'User step and an agent’s question',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Your step')).toBeVisible()
+    await expect(canvas.getByText('User step')).toBeVisible()
     await expect(canvas.getByText('This chat asks')).toBeVisible()
   },
 }
@@ -62,7 +62,7 @@ export const ThreeKinds: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(yourTurn.kindBlocked)).toBeVisible()
-    await expect(canvas.getByText('Your step')).toBeVisible()
+    await expect(canvas.getByText('User step')).toBeVisible()
     await expect(canvas.getByText('This chat asks')).toBeVisible()
     const [sideways] = await windowOverflow()
     await expect(sideways).toBe(0)
@@ -106,7 +106,7 @@ export const LongText: Story = {
 
 export const EachKindNarrow: Story = {
   ...EachKind,
-  name: 'Your step and an agent’s question, narrow',
+  name: 'User step and an agent’s question, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }

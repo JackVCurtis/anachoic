@@ -32,10 +32,10 @@ describe('SessionCard', () => {
     expect(screen.queryByText(/elapsed$/)).toBeNull()
   })
 
-  test('a session holding a waiting step reads "Waiting on you" and is not inverted', () => {
+  test('a session holding a waiting step reads "Waiting on user" and is not inverted', () => {
     const { container } = renderCard(SESSIONS.waitingWorker)
 
-    expect(screen.getByText('Waiting on you')).toBeVisible()
+    expect(screen.getByText('Waiting on user')).toBeVisible()
     expect(container.querySelector('[data-tone="inverse"]')).toBeNull()
     expect(container.querySelector('article')).not.toBeNull()
   })
@@ -46,7 +46,7 @@ describe('SessionCard', () => {
     expect(screen.getByText('api-server')).toBeVisible()
     expect(screen.getByText('Blocked on T-030 step 2')).toBeVisible()
     expect(screen.getByText('Step 2 · Deploy')).toBeVisible()
-    expect(screen.queryByText('Waiting on you')).toBeNull()
+    expect(screen.queryByText('Waiting on user')).toBeNull()
     const square = container.querySelector('[aria-hidden="true"]')
     expect(square?.className).toMatch(/attention/)
     expect(container.querySelector('[data-tone="inverse"]')).toBeNull()

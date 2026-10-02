@@ -82,7 +82,7 @@ export const Inverse: Story = {
   args: {
     tone: 'inverse',
     title: INVERSE_TITLE,
-    children: <p className="text-note">Your turn · waiting 4m</p>,
+    children: <p className="text-note">Waiting on user · waiting 4m</p>,
   },
   play: async ({ canvasElement }) => {
     const card = cardOf(canvasElement)
@@ -151,7 +151,7 @@ export const InverseNestedControls: Story = {
     title: INVERSE_TITLE,
     children: (
       <>
-        <p className="text-note">Your turn · waiting 4m</p>
+        <p className="text-note">Waiting on user · waiting 4m</p>
         <div className={sample.actions}>
           <a href="#task" className={sample.link}>
             Open task

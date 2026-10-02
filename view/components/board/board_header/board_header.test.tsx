@@ -13,12 +13,12 @@ describe('BoardHeader', () => {
 
     const items = screen.getAllByRole('listitem')
     expect(items.map((item) => item.querySelector('[aria-hidden]')?.textContent)).toEqual([
-      'Your turn 1',
+      'Waiting on user 1',
       'Working 3',
       'Queue 0',
       'To sign off 2',
     ])
-    expect(screen.getByText('Your turn: 1 task')).toBeTruthy()
+    expect(screen.getByText('Waiting on user: 1 task')).toBeTruthy()
     expect(screen.getByText('Queue: 0 tasks')).toBeTruthy()
     expect(screen.queryByText(/^Updated/)).toBeNull()
     expect(screen.queryByText(boardHeader.cantReach)).toBeNull()

@@ -49,7 +49,7 @@ describe('the assignment in the meta line', () => {
 
   test('BacklogCard adds it after the chain note', () => {
     renderComponent(<BacklogCard task={ASSIGNED_BACKLOGGED} onOpenTask={() => {}} />)
-    expect(card()).toHaveTextContent('T-010 · 3 steps · 1 for you · Assigned to web-client')
+    expect(card()).toHaveTextContent('T-010 · 3 steps · 1 for the user · Assigned to web-client')
   })
 
   test('BacklogCard shows nothing for an unassigned task', () => {

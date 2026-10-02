@@ -57,7 +57,7 @@ export function FieldError({ id, text }: { id: string; text: string }) {
 
 /**
  * The steps of a chain being written: an ordered list of 1 to 20 steps, each
- * with a title, an owner, an optional detail and, on your steps, an output
+ * with a title, an owner, an optional detail and, on agent steps, an output
  * format, and "Add step". The steps belong to the parent.
  */
 export function ChainComposer({
@@ -82,9 +82,9 @@ export function ChainComposer({
     }
   })
 
-  /** A step handed to an agent loses its output format, which only your steps may declare. */
+  /** A step handed to the user loses its output format, which only agent steps may declare. */
   function changeStep(index: number, change: Partial<TaskEntryStep>) {
-    const cleared = change.owner === 'agent' ? { outputFormat: null } : {}
+    const cleared = change.owner === 'you' ? { outputFormat: null } : {}
     onChange(steps.map((step, at) => (at === index ? { ...step, ...change, ...cleared } : step)))
   }
 
@@ -212,7 +212,7 @@ function StepRow({
               </label>
             ))}
           </fieldset>
-          {step.owner === 'you' && (
+          {step.owner === 'agent' && (
             <div className={styles.output}>
               <span aria-hidden="true" className={joinClasses('text-label', styles.outputLabel)}>
                 {taskEntry.outputLabel}

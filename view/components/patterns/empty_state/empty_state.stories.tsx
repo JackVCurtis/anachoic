@@ -8,7 +8,7 @@ const meta = {
   component: EmptyState,
   args: {
     variant: 'dashed',
-    message: 'Nothing waiting on you',
+    message: 'Nothing waiting on the user',
   },
   parameters: {
     a11y: {
@@ -34,11 +34,11 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
-  name: 'Your turn, dashed',
+  name: 'Waiting on user, dashed',
 }
 
 export const Inverted: Story = {
-  name: 'Your turn, dashed, inverted',
+  name: 'Waiting on user, dashed, inverted',
   parameters: { tone: 'inverse' },
 }
 

@@ -39,7 +39,7 @@ export async function loadBoard(
 }
 
 /**
- * The fact a card arriving in Your turn is announced as.
+ * The fact a card arriving in Waiting on user is announced as.
  */
 function arrivalFact({ task, step, session, blocked }: YourTurnItem): AnnouncementFact {
   if (blocked) {
@@ -51,7 +51,7 @@ function arrivalFact({ task, step, session, blocked }: YourTurnItem): Announceme
 }
 
 /**
- * The sentences for the tasks a poll brought into Your turn, one per card.
+ * The sentences for the tasks a poll brought into Waiting on user, one per card.
  */
 function arrivalAnnouncement(
   items: readonly YourTurnItem[],

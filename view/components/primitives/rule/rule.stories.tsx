@@ -8,7 +8,7 @@ const meta = {
   decorators: [
     (Story) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', maxWidth: 480 }}>
-        <h2 className="text-name">Your turn</h2>
+        <h2 className="text-name">Waiting on user</h2>
         <Story />
       </div>
     ),

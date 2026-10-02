@@ -70,7 +70,7 @@ describe('the words of 07', () => {
   })
 
   test("the board header's counts, its update cue and its error line", () => {
-    expect(boardHeader.yourTurn).toBe('Your turn')
+    expect(boardHeader.yourTurn).toBe('Waiting on user')
     expect(boardHeader.working).toBe('Working')
     expect(boardHeader.queue).toBe('Queue')
     expect(boardHeader.toSignOff).toBe('To sign off')
@@ -86,7 +86,7 @@ describe('the words of 07', () => {
       backlog.title,
       done.title,
       strings.working.title,
-    ]).toEqual(['Your turn', 'Sessions', 'Queue', 'Backlog', 'Done', 'Working'])
+    ]).toEqual(['Waiting on user', 'Sessions', 'Queue', 'Backlog', 'Done', 'Working'])
   })
 
   test('the time words are kept as anachoic has them', () => {
@@ -144,10 +144,28 @@ describe('voice and punctuation', () => {
     expect(value).not.toMatch(/\p{Emoji_Presentation}/u)
   })
 
-  test.each(ALL)('$path does not say please, user or human', ({ value }) => {
+  test.each(ALL)('$path does not say please or human', ({ value }) => {
     expect(value).not.toMatch(/please/i)
-    expect(value).not.toMatch(/\busers?\b/i)
     expect(value).not.toMatch(/\bhumans?\b/i)
+  })
+
+  /**
+   * Strings that address the user as the actor of a button, the one place
+   * the second person may stand. There are none.
+   */
+  const SECOND_PERSON_ALLOWED = new Set<string>([])
+
+  test.each(ALL.filter(({ path }) => !SECOND_PERSON_ALLOWED.has(path)))(
+    '$path does not address the user in the second person',
+    ({ value }) => {
+      expect(value).not.toMatch(/\b(?:you|your|yours)\b/i)
+    }
+  )
+
+  test('the user is named as the user', () => {
+    expect(yourTurn.nothingWaiting).toBe('Nothing waiting on the user')
+    expect(taskEntry.ownerYou).toBe('User')
+    expect(sessions.waitingOnYou).toBe('Waiting on user')
   })
 
   test.each(ALL)('$path names no grant and no notify setting', ({ value }) => {

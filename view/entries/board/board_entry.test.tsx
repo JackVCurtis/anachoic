@@ -160,7 +160,7 @@ describe('the board entry', () => {
     expect(app.callsTo('get_board')).toEqual([{ name: 'get_board', arguments: {} }])
     expect(app.calls.callServerTool).toHaveLength(1)
     expect(screen.queryByText('An old task from the replay')).toBeNull()
-    expect(screen.getByText('Nothing waiting on you')).toBeTruthy()
+    expect(screen.getByText('Nothing waiting on the user')).toBeTruthy()
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Board')
   })
 
@@ -247,7 +247,7 @@ describe('the board entry', () => {
     expect(screen.queryByText('From the slow poll')).toBeNull()
   })
 
-  test('removing a focused Your turn card moves focus to the Your turn header, without scrolling', async () => {
+  test('removing a focused Waiting on user card moves focus to the Waiting on user header, without scrolling', async () => {
     const app = queuedApp([
       boardResult(board(3, [yourStep('a', 'Review the PR'), yourStep('b', 'Ship it')])),
       boardResult(board(4, [yourStep('b', 'Ship it')])),
@@ -261,7 +261,7 @@ describe('the board entry', () => {
 
     expect(screen.queryByText('Review the PR')).toBeNull()
     expect(document.activeElement).toBe(
-      screen.getByRole('heading', { level: 2, name: 'Your turn' })
+      screen.getByRole('heading', { level: 2, name: 'Waiting on user' })
     )
     expect([window.scrollX, window.scrollY]).toEqual(scroll)
   })
@@ -280,7 +280,7 @@ describe('the board entry', () => {
     expect(document.activeElement).toBe(staying)
   })
 
-  test('says politely when a poll brings a task into Your turn, for each kind of card', async () => {
+  test('says politely when a poll brings a task into Waiting on user, for each kind of card', async () => {
     const app = queuedApp([
       boardResult(board(3, [yourStep('a', 'Review the PR')])),
       boardResult(board(4, [yourStep('a', 'Review the PR'), yourStep('b', 'Ship it')])),
@@ -291,10 +291,10 @@ describe('the board entry', () => {
     expect(liveRegion().textContent).toBe('')
 
     await advance(POLL_MS)
-    expect(liveRegion().textContent).toBe('“Ship it” is waiting on you')
+    expect(liveRegion().textContent).toBe('“Ship it” is waiting on the user')
 
     await advance(POLL_MS)
-    expect(liveRegion().textContent).toBe('“Ship it” is waiting on you')
+    expect(liveRegion().textContent).toBe('“Ship it” is waiting on the user')
 
     await advance(POLL_MS)
     expect(liveRegion().textContent).toBe('Session 2 asks about “Cache keys”')
@@ -323,7 +323,7 @@ describe('the board entry', () => {
     ])
     await renderEntry(app)
     const yourTurnSection = screen
-      .getByRole('heading', { level: 2, name: /^Your turn/ })
+      .getByRole('heading', { level: 2, name: /^Waiting on user/ })
       .closest('section')!
 
     expect(within(yourTurnSection).getByText('Needs AWS credentials')).toBeTruthy()
@@ -342,7 +342,7 @@ describe('the board entry', () => {
     expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('says which worker blocked a task that a poll brings into Your turn blocked', async () => {
+  test('says which worker blocked a task that a poll brings into Waiting on user blocked', async () => {
     const app = queuedApp([
       boardResult(board(3, [yourStep('a', 'Review the PR')])),
       boardResult(

@@ -17,7 +17,7 @@ const GROUPS: { title: string; samples: Sample[] }[] = [
   {
     title: 'Labels',
     samples: [
-      { name: 'text-section', text: 'Your turn' },
+      { name: 'text-section', text: 'Waiting on user' },
       { name: 'text-label', text: 'Chain preview' },
       { name: 'text-note', text: 'Then the reviewer signs off' },
       { name: 'text-status', text: 'Step 3/5 · 14m' },
@@ -28,11 +28,11 @@ const GROUPS: { title: string; samples: Sample[] }[] = [
   {
     title: 'Plain text',
     samples: [
-      { name: 'text-count', text: '2 agents · 1 for you' },
+      { name: 'text-count', text: '2 agents · 1 for the user' },
       { name: 'text-body', text: 'The default body text of the dashboard.' },
       {
         name: 'text-body-sm',
-        text: 'Tasks that finished and wait for you to read the result and sign it off before they move to Completed.',
+        text: 'Tasks that finished and wait for the user to read the result and sign it off before they move to Completed.',
       },
       { name: 'text-detail', text: 'Plan, then build, then review' },
       { name: 'text-hint', text: '⇧ Enter adds a line' },

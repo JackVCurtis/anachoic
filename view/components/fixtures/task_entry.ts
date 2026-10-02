@@ -52,9 +52,9 @@ export const TASK_ENTRY_DRAFTS = {
   withOutput: {
     title: 'Add retries to the billing webhook',
     steps: [
-      step(1, 'Draft the retry policy', 'agent'),
-      step(2, 'Open the PR', 'you', '', 'pull_request'),
-      step(3, 'File the follow-up ticket', 'you'),
+      step(1, 'Open the PR', 'agent', '', 'pull_request'),
+      step(2, 'Review the PR', 'you'),
+      step(3, 'File the follow-up ticket', 'agent'),
     ],
   },
   assigned: {

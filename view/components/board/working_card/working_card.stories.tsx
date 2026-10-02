@@ -107,9 +107,10 @@ export const AssignedNarrow: Story = {
 }
 
 export const WithArtifacts: Story = {
-  name: 'With artifact links',
+  name: 'With artifact links, producing a document',
   args: { item: OUTPUTS.working, onOpenLink: fn() },
   play: async ({ args, canvasElement }) => {
+    await expect(within(canvasElement).getByText('Produces a document')).toBeVisible()
     const [first] = OUTPUTS.working.artifacts
     const link = within(canvasElement).getByRole('link', {
       name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
@@ -125,7 +126,7 @@ export const WithArtifacts: Story = {
 
 export const WithArtifactsNarrow: Story = {
   ...WithArtifacts,
-  name: 'With artifact links, narrow',
+  name: 'With artifact links, producing a document, narrow',
   globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
 }

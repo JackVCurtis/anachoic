@@ -19,7 +19,7 @@ export const Default: Story = {
 
 export const AccentLabel: Story = {
   name: 'Accent, label',
-  args: { variant: 'accent', children: 'Your turn' },
+  args: { variant: 'accent', children: 'Waiting on user' },
 }
 
 export const NeutralLabel: Story = {

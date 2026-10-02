@@ -40,7 +40,7 @@ export const ZeroCounts: Story = {
   name: 'Every count at zero',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Your turn: 0 tasks')).toBeInTheDocument()
+    await expect(canvas.getByText('Waiting on user: 0 tasks')).toBeInTheDocument()
     await expect(canvas.queryByText(/^Updated/)).toBeNull()
     await expect(canvas.queryByText(boardHeader.cantReach)).toBeNull()
   },

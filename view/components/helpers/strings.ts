@@ -18,7 +18,7 @@ export const message = {
 
 export const boardHeader = {
   title: 'Board',
-  yourTurn: 'Your turn',
+  yourTurn: 'Waiting on user',
   working: 'Working',
   queue: 'Queue',
   toSignOff: 'To sign off',
@@ -41,16 +41,16 @@ export const taskEntry = {
   stepTitlePlaceholder: 'What this step does',
   ownerLabel: 'Owner of step {n}',
   ownerAgent: 'Agent',
-  ownerYou: 'You',
+  ownerYou: 'User',
   agentChip: 'agent',
-  youChip: 'you',
+  youChip: 'user',
   detail: 'Detail',
   detailLabel: 'Detail of step {n}',
   detailPlaceholder: 'What whoever does this step needs to know',
   addStep: 'Add step',
   removeStep: 'Remove step {n}',
   chainPreview: 'Chain preview',
-  chainNote: '{n steps} · {h} for you',
+  chainNote: '{n steps} · {h} for the user',
   add: 'Add',
   addToQueue: 'Add to queue',
   cancel: 'Cancel',
@@ -63,10 +63,8 @@ export const taskEntry = {
 } as const
 
 /**
- * The words of each output format: how a card names it, the label of its
- * field when you mark the step done, and what the step needs, as a sentence
- * ends. The same as the server's (shared/output_format.ts, which components
- * may not import).
+ * How a card names each output format. The same as the server's
+ * (shared/output_format.ts, which components may not import).
  */
 export const outputFormat = {
   shown: {
@@ -74,18 +72,6 @@ export const outputFormat = {
     ticket: 'Ticket',
     document: 'Document',
     link: 'Link',
-  },
-  field: {
-    pull_request: 'Pull request link',
-    ticket: 'Ticket link',
-    document: 'Document link',
-    link: 'Link',
-  },
-  needed: {
-    pull_request: 'a pull request link',
-    ticket: 'a ticket link',
-    document: 'a document link',
-    link: 'a link',
   },
 } as const
 
@@ -100,9 +86,9 @@ export const card = {
 } as const
 
 export const yourTurn = {
-  title: 'Your turn',
-  nothingWaiting: 'Nothing waiting on you',
-  kindYourStep: 'Your step',
+  title: 'Waiting on user',
+  nothingWaiting: 'Nothing waiting on the user',
+  kindYourStep: 'User step',
   kindQuestion: 'Asks',
   asks: '{session} asks',
   stepCounter: 'Step {n}/{m}',
@@ -110,8 +96,8 @@ export const yourTurn = {
   markDone: 'Mark done',
   noteLabel: 'Note',
   notePlaceholder: 'Add a note for the next step',
-  answerLabel: 'Your answer',
-  answerPlaceholder: 'Your answer to the agent',
+  answerLabel: 'Answer to the agent',
+  answerPlaceholder: 'What the agent needs to know',
   answer: 'Answer',
   needsAnswer: 'An answer needs some text',
   answerReady: '{session} resumes with this',
@@ -119,9 +105,7 @@ export const yourTurn = {
   park: 'Park',
   parkQuestion: 'Park “{title}”? It moves to the backlog and its step is released.',
   keepStep: 'Keep step',
-  needs: 'Needs {needed}',
-  urlPlaceholder: 'https://…',
-  notWebAddress: 'That is not a web address',
+  input: '{format} from step {n} ↗',
   kindBlocked: 'Blocked',
   blockedStep: 'Step {n} · {step title}',
   blockedFor: 'Blocked {waited}',
@@ -138,7 +122,7 @@ export const sessions = {
   unclaimed: 'Unclaimed',
   idle: 'Idle',
   running: 'Running',
-  waitingOnYou: 'Waiting on you',
+  waitingOnYou: 'Waiting on user',
   holding: 'Step {n} of {m} · {step title}',
   holdingStep: 'Step {n} · {step title}',
   blockedOn: 'Blocked on {id} step {n}',
@@ -156,6 +140,7 @@ export const working = {
   nothingWorking: 'Nothing is running',
   elapsed: '{elapsed} elapsed',
   latestNote: 'Latest note',
+  produces: 'Produces a {format}',
 } as const
 
 export const queue = {
@@ -183,7 +168,7 @@ export const done = {
   nothingToSignOff: 'Nothing waiting for sign-off',
   finished: 'Finished {when}',
   agentTime: 'agent {time}',
-  yourTime: 'you {time}',
+  yourTime: 'user {time}',
   links: '{n links}',
   signOff: 'Sign off',
   followUp: 'Follow up',
@@ -205,7 +190,7 @@ export const done = {
 
 export const taskView = {
   badgeRunning: 'running',
-  badgeYourTurn: 'your turn',
+  badgeYourTurn: 'waiting on user',
   badgeToSignOff: 'to sign off',
   badgeQueue: 'queue',
   badgeBacklog: 'backlog',
@@ -221,7 +206,7 @@ export const taskView = {
   stepDoneAt: 'Done · {time}',
   stepDone: 'Done',
   stepRunning: 'Running · {time}',
-  stepWaiting: 'Waiting on you · {time}',
+  stepWaiting: 'Waiting on user · {time}',
   stepNotStarted: 'Not started',
   openInFullScreen: 'Open in full screen',
   backToInline: 'Back to inline',
@@ -284,13 +269,13 @@ export const assistive = {
   boardTitle: 'Board',
   close: 'Close',
   opensInNewTab: 'opens in a new tab',
-  opensInBrowser: 'opens in your browser',
+  opensInBrowser: 'opens in the browser',
   none: 'none',
   landmarkMessages: 'Messages',
   pipSummaryIntro: '{n steps}: {parts}',
   pipDone: '{d} done',
   pipRunning: '{r} running',
-  pipWaiting: '{w} waiting on you',
+  pipWaiting: '{w} waiting on the user',
   pipNotStarted: '{p} not started',
   entryHint: 'Enter to add, Shift Enter to queue',
   moveDescription:
@@ -300,9 +285,9 @@ export const assistive = {
   moveDropped: '“{title}” dropped at position {n} of {m}',
   moveCancelled: 'Move cancelled. “{title}” is back at position {n} of {m}',
   moveLeftQueue: '“{title}” left the queue. Move ended',
-  waitingOnYou: '“{title}” is waiting on you',
+  waitingOnYou: '“{title}” is waiting on the user',
   sessionAsks: '{session} asks about “{title}”',
-  questionForYou: '“{title}” has a question for you',
+  questionForYou: '“{title}” has a question for the user',
   waitingForSignOff: '“{title}” is finished and waiting for sign-off',
   blockedIn: '{id} is blocked in {session}',
   blockedUnnamed: '{id} is blocked',

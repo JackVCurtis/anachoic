@@ -31,7 +31,7 @@ describe('StepPips', () => {
     renderComponent(<StepPips steps={FIVE_STEPS} />)
 
     const image = screen.getByRole('img')
-    expect(image).toHaveAccessibleName('5 steps: 2 done, 1 waiting on you, 2 not started')
+    expect(image).toHaveAccessibleName('5 steps: 2 done, 1 waiting on the user, 2 not started')
     expect(screen.getAllByRole('img')).toHaveLength(1)
   })
 
@@ -51,9 +51,9 @@ describe('StepPips', () => {
     expect(barsOf(screen.getByRole('img')).map((bar) => bar.title)).toEqual([
       'api-server · Draft the migration',
       'api-server · Write the tests',
-      'you · Review the migration',
+      'user · Review the migration',
       'agent · Open the PR',
-      'you · Merge',
+      'user · Merge',
     ])
   })
 

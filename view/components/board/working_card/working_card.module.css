@@ -54,6 +54,13 @@
   overflow-wrap: anywhere;
 }
 
+/* What the running step will produce, in MetaLine's meta tone */
+.produces {
+  min-width: 0;
+  color: var(--color-text-meta);
+  overflow-wrap: anywhere;
+}
+
 .note {
   min-width: 0;
   opacity: var(--dim-2);

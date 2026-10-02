@@ -58,7 +58,7 @@ export const SeveralWorkers: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByText('Running')).toHaveLength(3)
-    await expect(canvas.getAllByText('Waiting on you')).toHaveLength(1)
+    await expect(canvas.getAllByText('Waiting on user')).toHaveLength(1)
     await expectNoCap(canvasElement)
   },
 }

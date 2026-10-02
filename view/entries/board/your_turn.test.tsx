@@ -77,7 +77,7 @@ async function renderBoard(app: FakeApp) {
   return userEvent.setup()
 }
 
-describe('your actions on Your turn', () => {
+describe('the actions on Waiting on user', () => {
   test('Mark done calls complete_my_step with the note, redraws from the result and posts nothing', async () => {
     const app = fakeApp(written(board(4, [QUESTION]), YOUR_STEP))
     const user = await renderBoard(app)
@@ -153,14 +153,14 @@ describe('your actions on Your turn', () => {
   })
 })
 
-describe('Mark done on a step that needs a link', () => {
-  const NEEDS_PR: YourTurnItem = {
-    ...YOUR_STEP,
-    step: { ...YOUR_STEP.step, outputFormat: 'pull_request' },
-  }
+describe('Mark done on a user step handed an artifact', () => {
   const PR = 'https://github.com/acme/billing/pull/412'
+  const HANDED: YourTurnItem = {
+    ...YOUR_STEP,
+    input: { stepNumber: 1, format: 'pull_request', url: PR },
+  }
 
-  function appNeedingPr(write: CallToolResult) {
+  function appHanded(write: CallToolResult) {
     return new FakeApp({
       hostContext: { displayMode: 'inline', timeZone: 'UTC' },
       answer: (params) => {
@@ -169,63 +169,36 @@ describe('Mark done on a step that needs a link', () => {
         }
         const since = params.arguments?.sinceRevision as number | undefined
         return since === undefined
-          ? boardResult(board(3, [NEEDS_PR]))
+          ? boardResult(board(3, [HANDED]))
           : boardResult({ changed: false, revision: since })
       },
     })
   }
 
-  test('stays disabled, saying why, until the field holds a web address', async () => {
-    const app = appNeedingPr(written(board(4, []), NEEDS_PR))
+  test('shows the input link, opened through the host, and no URL field', async () => {
+    const app = appHanded(written(board(4, []), HANDED))
     const user = await renderBoard(app)
-    const markDone = screen.getByRole('button', { name: yourTurn.markDone })
-    const field = screen.getByRole('textbox', { name: 'Pull request link' })
 
-    expect(markDone).toBeDisabled()
-    expect(markDone).toHaveAccessibleDescription('Needs a pull request link')
-    expect(field).toHaveAttribute('aria-required', 'true')
+    expect(screen.getAllByRole('textbox')).toEqual([
+      screen.getByRole('textbox', { name: yourTurn.noteLabel }),
+    ])
+    await user.click(screen.getByRole('link', { name: /^Pull request from step 1/ }))
 
-    await user.type(field, 'github.com/acme/billing/pull/412')
-    expect(markDone).toBeDisabled()
-    expect(markDone).toHaveAccessibleDescription('That is not a web address')
-    await user.click(markDone)
-    await user.type(field, '{Enter}')
+    expect(app.calls.openLink).toEqual([{ url: PR }])
     expect(app.callsTo('complete_my_step')).toEqual([])
   })
 
-  test('sends artifactUrl, trimmed, with the note', async () => {
-    const app = appNeedingPr(written(board(4, []), NEEDS_PR))
+  test('sends the note and no artifact link', async () => {
+    const app = appHanded(written(board(4, []), HANDED))
     const user = await renderBoard(app)
 
-    await user.type(screen.getByRole('textbox', { name: 'Pull request link' }), ` ${PR} `)
     await user.type(screen.getByRole('textbox', { name: yourTurn.noteLabel }), 'Ready')
     await user.click(screen.getByRole('button', { name: yourTurn.markDone }))
 
     expect(app.callsTo('complete_my_step')).toEqual([
-      {
-        name: 'complete_my_step',
-        arguments: { task: 'T-012', note: 'Ready', artifactUrl: PR },
-      },
+      { name: 'complete_my_step', arguments: { task: 'T-012', note: 'Ready' } },
     ])
-    expect(screen.queryByText(NEEDS_PR.task.title)).toBeNull()
-    expect(app.calls.sendMessage).toEqual([])
-  })
-
-  test('a refusal keeps the card and the draft, and shows the error strip', async () => {
-    const app = appNeedingPr({
-      content: [{ type: 'text', text: 'Step 2 of T-012 needs a pull request link' }],
-      isError: true,
-    })
-    const user = await renderBoard(app)
-
-    await user.type(screen.getByRole('textbox', { name: 'Pull request link' }), PR)
-    await user.type(screen.getByRole('textbox', { name: yourTurn.noteLabel }), 'Ready')
-    await user.click(screen.getByRole('button', { name: yourTurn.markDone }))
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Step 2 of T-012 needs a pull request link')
-    expect(screen.getByRole('textbox', { name: 'Pull request link' })).toHaveValue(PR)
-    expect(screen.getByRole('textbox', { name: yourTurn.noteLabel })).toHaveValue('Ready')
-    expect(screen.getByRole('button', { name: yourTurn.markDone })).toBeEnabled()
+    expect(screen.queryByText(HANDED.task.title)).toBeNull()
     expect(app.calls.sendMessage).toEqual([])
   })
 })

@@ -12,7 +12,7 @@ const NEUTRAL = { background: '--color-neutral-100', color: '--color-neutral-800
 
 const BADGES: ReadonlyArray<{ list: TaskList; label: string; look: typeof ACCENT }> = [
   { list: 'working', label: 'running', look: ACCENT },
-  { list: 'yourTurn', label: 'your turn', look: ACCENT },
+  { list: 'yourTurn', label: 'waiting on user', look: ACCENT },
   { list: 'toSignOff', label: 'to sign off', look: ACCENT },
   { list: 'signedOff', label: 'done', look: ACCENT },
   { list: 'queue', label: 'queue', look: NEUTRAL },
@@ -43,7 +43,7 @@ describe('StatusBadge', () => {
     expect(style.padding).toBe('3px 10px')
   })
 
-  test('a task in Your turn whose step a session still holds shows "your turn"', () => {
+  test('a task in Waiting on user whose step a session still holds shows "waiting on user"', () => {
     const current = AGENT_ASKS.find((step) => step.status === 'waiting')
 
     expect(current?.owner).toBe('agent')
@@ -51,7 +51,7 @@ describe('StatusBadge', () => {
 
     renderComponent(<StatusBadge list="yourTurn" />)
 
-    expect(screen.getByText('your turn')).toBeTruthy()
+    expect(screen.getByText('waiting on user')).toBeTruthy()
     expect(screen.queryByText('running')).toBeNull()
   })
 })

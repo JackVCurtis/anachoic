@@ -51,6 +51,6 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('heading', { level: 2 })).toHaveLength(6)
-    await expect(canvas.getByText('Nothing waiting on you')).toBeVisible()
+    await expect(canvas.getByText('Nothing waiting on the user')).toBeVisible()
   },
 }

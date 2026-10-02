@@ -11,9 +11,9 @@ function boxOf(message: string): HTMLElement {
 
 describe('EmptyState', () => {
   test('dashed: a dashed neutral-400 box, --space-6 padding, heading type at 12px', () => {
-    renderComponent(<EmptyState variant="dashed" message="Nothing waiting on you" />)
-    const text = getComputedStyle(screen.getByText('Nothing waiting on you'))
-    const box = getComputedStyle(boxOf('Nothing waiting on you'))
+    renderComponent(<EmptyState variant="dashed" message="Nothing waiting on the user" />)
+    const text = getComputedStyle(screen.getByText('Nothing waiting on the user'))
+    const box = getComputedStyle(boxOf('Nothing waiting on the user'))
 
     expect(box.borderTopStyle).toBe('dashed')
     expect(box.borderTopWidth).toBe('1px')

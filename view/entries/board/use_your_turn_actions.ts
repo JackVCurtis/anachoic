@@ -11,10 +11,10 @@ import type {
 import type { FailedWrite } from './use_board_messages'
 
 /**
- * The actions on the Your turn cards: Mark done, Answer and Park. Each calls
- * its tool through yourActions, and the board is drawn from the result, which
- * also resets the poll timer. Mark done sends the artifact link the step
- * needs, if any. A failure goes to onFailure, and the card keeps its draft.
+ * The actions on the Waiting on user cards: Mark done, Answer and Park. Each
+ * calls its tool through yourActions, and the board is drawn from the result,
+ * which also resets the poll timer. A failure goes to onFailure, and the card
+ * keeps its draft.
  */
 export function useYourTurnActions(
   yourActions: Pick<YourActions, 'completeMyStep' | 'answerQuestion' | 'moveToBacklog'>,
@@ -48,9 +48,9 @@ export function useYourTurnActions(
 
   return {
     yourTurnPending: pending,
-    onCompleteStep: (taskId, note, artifactUrl) =>
+    onCompleteStep: (taskId, note) =>
       void run(taskId, 'complete', ({ task, step }) =>
-        yourActions.completeMyStep(task, step, note, artifactUrl)
+        yourActions.completeMyStep(task, step, note)
       ),
     onAnswer: (taskId, answer) =>
       void run(taskId, 'answer', ({ task, step }) =>

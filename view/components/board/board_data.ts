@@ -23,7 +23,7 @@ export interface BoardTask {
 }
 
 /**
- * A link to what a done step of yours produced.
+ * A link to what a done agent step produced.
  */
 export interface BoardArtifact {
   /** From 1. */
@@ -51,14 +51,17 @@ export interface YourTurnTask {
     number: number
     title: string
     owner: Owner
-    /** An agent's question. Absent for your own step. */
+    /** An agent's question. Absent for a user step. */
     question?: string | null
-    /** What your step must link to when it is marked done. Absent when nothing. */
-    outputFormat?: OutputFormat | null
     /** An instant. */
     waitingSince: string
   }
-  /** The session that asks, or the worker that blocked the step. Absent for your own step. */
+  /**
+   * For a user step, what the step before it produced, which the card links
+   * to. Absent or null when it produced nothing.
+   */
+  input?: BoardArtifact | null
+  /** The session that asks, or the worker that blocked the step. Absent for a user step. */
   sessionName?: string | null
   /**
    * Set when the worker blocked its step: why, and since when. It is
@@ -82,6 +85,8 @@ export interface WorkingTask {
     title: string
     /** The session's latest progress note. */
     note?: string | null
+    /** What the step must produce when it is completed. Absent or null when nothing. */
+    outputFormat?: OutputFormat | null
     /** An instant. */
     runningSince: string
   }

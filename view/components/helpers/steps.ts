@@ -16,7 +16,7 @@ function hasName(name: string | null | undefined): name is string {
 export type OwnerLabelForm = 'generic' | 'named'
 
 /**
- * The word in an owner chip. Your step is always "you". An agent step is
+ * The word in an owner chip. A user step is always "user". An agent step is
  * "agent" in the generic form, and the name of the session that holds it in
  * the named form, or "agent" when no session holds it.
  */
@@ -77,7 +77,7 @@ export type PipStep = {
 }
 
 /**
- * The pips spoken as one sentence: "5 steps: 2 done, 1 waiting on you, 2 not
+ * The pips spoken as one sentence: "5 steps: 2 done, 1 waiting on the user, 2 not
  * started". Each step is counted by its pip's look, so your running step
  * counts as waiting on you. A part whose count is zero is left out.
  */
@@ -174,7 +174,7 @@ export function timelineAppearance(
 }
 
 /**
- * The note beside a chain preview: "3 steps · 1 for you".
+ * The note beside a chain preview: "3 steps · 1 for the user".
  */
 export function chainNote(stepCount: number, yourStepCount: number): string {
   return fillTemplate(taskEntry.chainNote, {

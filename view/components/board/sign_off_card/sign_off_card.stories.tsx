@@ -62,7 +62,7 @@ export const Default: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Finished today 08:05')).toBeVisible()
-    await expect(canvasElement).toHaveTextContent('agent 42m · you 9m · 2 links')
+    await expect(canvasElement).toHaveTextContent('agent 42m · user 9m · 2 links')
     await userEvent.click(canvas.getByRole('button', { name: DONE.flaky.task.title }))
     await expect(args.onOpenTask).toHaveBeenCalledWith(DONE.flaky.task.id)
   },
@@ -72,7 +72,7 @@ export const NoLinks: Story = {
   name: 'No links, finished yesterday',
   args: { task: DONE.noLinks },
   play: async ({ canvasElement }) => {
-    await expect(canvasElement).toHaveTextContent('agent 5m · you — · 0 links')
+    await expect(canvasElement).toHaveTextContent('agent 5m · user — · 0 links')
   },
 }
 

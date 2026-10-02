@@ -63,7 +63,7 @@ describe('BacklogCard', () => {
   test('the meta line reads the id, the steps and how many are yours', () => {
     const { card } = renderCard()
 
-    expect(card).toHaveTextContent('T-003 · 2 steps · 1 for you')
+    expect(card).toHaveTextContent('T-003 · 2 steps · 1 for the user')
   })
 
   test('the arrow is hidden, so the button is named "Queue"', () => {

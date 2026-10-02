@@ -7,7 +7,7 @@ const TITLE = 'Migrate billing webhooks'
 test.each<{ fact: AnnouncementFact; expected: string }>([
   {
     fact: { kind: 'your-step', title: TITLE },
-    expected: '“Migrate billing webhooks” is waiting on you',
+    expected: '“Migrate billing webhooks” is waiting on the user',
   },
   {
     fact: { kind: 'question', title: TITLE, sessionName: 'Session 2' },
@@ -15,7 +15,7 @@ test.each<{ fact: AnnouncementFact; expected: string }>([
   },
   {
     fact: { kind: 'question', title: TITLE },
-    expected: '“Migrate billing webhooks” has a question for you',
+    expected: '“Migrate billing webhooks” has a question for the user',
   },
   {
     fact: { kind: 'sign-off', title: TITLE },
@@ -41,7 +41,7 @@ test('titles sit between curly quotes', () => {
 
 test('a title with braces is announced as written', () => {
   expect(announcement({ kind: 'your-step', title: 'Fix {n} bugs' })).toBe(
-    '“Fix {n} bugs” is waiting on you'
+    '“Fix {n} bugs” is waiting on the user'
   )
   expect(announcement({ kind: 'question', title: 'Fix {n} bugs', sessionName: '{title}' })).toBe(
     '{title} asks about “Fix {n} bugs”'

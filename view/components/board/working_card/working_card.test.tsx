@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
-import { WORKING } from '../../fixtures/board_sections'
+import { OUTPUTS, WORKING } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
@@ -39,6 +39,18 @@ describe('WorkingCard', () => {
     expect(screen.getByText('Step 2 of 4 · Draft the migration')).toBeVisible()
     expect(screen.getByText('billing')).toBeVisible()
     expect(screen.getByText('T-031')).toBeVisible()
+  })
+
+  test('a step with an output format says what it produces, in lower case', () => {
+    renderCard(OUTPUTS.working)
+
+    expect(screen.getByText('Produces a document')).toBeVisible()
+  })
+
+  test('a step with no output format says nothing of what it produces', () => {
+    renderCard(WORKING.fourSteps)
+
+    expect(screen.queryByText(/^Produces/)).toBeNull()
   })
 
   test('a card with no note renders no note element', () => {

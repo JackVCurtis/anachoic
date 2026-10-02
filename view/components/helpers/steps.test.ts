@@ -29,9 +29,9 @@ describe('ownerLabel', () => {
     form: 'generic' | 'named'
     expected: string
   }>([
-    { owner: 'you', sessionName: undefined, form: 'generic', expected: 'you' },
-    { owner: 'you', sessionName: undefined, form: 'named', expected: 'you' },
-    { owner: 'you', sessionName: 'planner', form: 'named', expected: 'you' },
+    { owner: 'you', sessionName: undefined, form: 'generic', expected: 'user' },
+    { owner: 'you', sessionName: undefined, form: 'named', expected: 'user' },
+    { owner: 'you', sessionName: 'planner', form: 'named', expected: 'user' },
     { owner: 'agent', sessionName: 'planner', form: 'generic', expected: 'agent' },
     { owner: 'agent', sessionName: 'planner', form: 'named', expected: 'planner' },
     { owner: 'agent', sessionName: 'This chat', form: 'named', expected: 'This chat' },
@@ -89,7 +89,7 @@ describe('pipTitle', () => {
       owner: 'you',
       sessionName: null,
       title: 'Review the PR and merge',
-      expected: 'you · Review the PR and merge',
+      expected: 'user · Review the PR and merge',
     },
     {
       owner: 'agent',
@@ -115,7 +115,7 @@ describe('pipSummary', () => {
         step('agent', 'pending'),
         step('you', 'pending'),
       ],
-      expected: '5 steps: 2 done, 1 waiting on you, 2 not started',
+      expected: '5 steps: 2 done, 1 waiting on the user, 2 not started',
     },
     {
       name: 'a running agent is included',
@@ -130,7 +130,7 @@ describe('pipSummary', () => {
         step('agent', 'waiting'),
         step('you', 'pending'),
       ],
-      expected: '4 steps: 1 done, 1 running, 1 waiting on you, 1 not started',
+      expected: '4 steps: 1 done, 1 running, 1 waiting on the user, 1 not started',
     },
     {
       name: 'only done steps',
@@ -145,7 +145,7 @@ describe('pipSummary', () => {
     {
       name: 'your running step counts as waiting on you',
       steps: [step('agent', 'done'), step('you', 'running')],
-      expected: '2 steps: 1 done, 1 waiting on you',
+      expected: '2 steps: 1 done, 1 waiting on the user',
     },
   ])('$name', ({ steps, expected }) => {
     expect(pipSummary(steps)).toBe(expected)
@@ -191,7 +191,7 @@ describe('stepStatusLabel', () => {
     {
       name: 'waiting',
       step: { status: 'waiting', waitingSince: before(14 * 60 + 30) },
-      expected: 'Waiting on you · 14m',
+      expected: 'Waiting on user · 14m',
     },
     { name: 'pending', step: { status: 'pending' }, expected: 'Not started' },
   ] as const)('$name gives "$expected"', ({ step, expected }) => {
@@ -272,9 +272,9 @@ describe('timelineAppearance', () => {
 
 describe('chainNote', () => {
   test.each([
-    { steps: 3, yours: 1, expected: '3 steps · 1 for you' },
-    { steps: 1, yours: 0, expected: '1 step · 0 for you' },
-    { steps: 4, yours: 2, expected: '4 steps · 2 for you' },
+    { steps: 3, yours: 1, expected: '3 steps · 1 for the user' },
+    { steps: 1, yours: 0, expected: '1 step · 0 for the user' },
+    { steps: 4, yours: 2, expected: '4 steps · 2 for the user' },
   ])('$steps and $yours gives "$expected"', ({ steps, yours, expected }) => {
     expect(chainNote(steps, yours)).toBe(expected)
   })

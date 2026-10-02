@@ -48,14 +48,14 @@ describe('SectionHeader', () => {
       <>
         <button type="button">Before</button>
         <SectionHeader
-          title="Your turn"
+          title="Waiting on user"
           headingLevel={2}
           headingRef={headingRef}
           trailing={<button type="button">Copy all commands</button>}
         />
       </>
     )
-    const heading = screen.getByRole('heading', { name: 'Your turn' })
+    const heading = screen.getByRole('heading', { name: 'Waiting on user' })
 
     expect(headingRef.current).toBe(heading)
     act(() => headingRef.current?.focus())
@@ -130,13 +130,13 @@ describe('SectionHeader', () => {
           level="label"
           title="Chain preview"
           rule={false}
-          note="4 steps · 2 for you"
+          note="4 steps · 2 for the user"
           noteAccent
         />
       </div>
     )
     const status = screen.getByText('click a step')
-    const chainNote = screen.getByText('4 steps · 2 for you')
+    const chainNote = screen.getByText('4 steps · 2 for the user')
     const row = rootOf('Chain preview')
 
     expect(status.classList.contains('text-status')).toBe(true)

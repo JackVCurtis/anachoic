@@ -78,7 +78,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
-  name: 'Park on a Your turn card, on one row',
+  name: 'Park on a Waiting on user card, on one row',
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const dismiss = canvas.getByRole('button', { name: yourTurn.keepStep })
@@ -90,7 +90,7 @@ export const Default: Story = {
 }
 
 export const ParkStacked: Story = {
-  name: 'Park on a Your turn card, stacked, 600px wide',
+  name: 'Park on a Waiting on user card, stacked, 600px wide',
   args: { layout: 'stack' },
   parameters: NARROW,
 }

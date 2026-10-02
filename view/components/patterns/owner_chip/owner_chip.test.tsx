@@ -49,7 +49,7 @@ describe('OwnerChip', () => {
 
   test('md is heading 400, 11px, 0.12em, in capitals, with 1px by 7px padding', () => {
     renderComponent(<OwnerChip owner="you" size="md" />)
-    const style = getComputedStyle(screen.getByText('you'))
+    const style = getComputedStyle(screen.getByText('user'))
 
     expect(style.fontFamily).toContain('Barlow Condensed')
     expect(style.fontWeight).toBe('400')
@@ -64,8 +64,8 @@ describe('OwnerChip', () => {
     { owner: 'agent', form: 'named', sessionName: 'api-server', expected: 'api-server' },
     { owner: 'agent', form: 'named', sessionName: 'This chat', expected: 'This chat' },
     { owner: 'agent', form: 'named', sessionName: null, expected: 'agent' },
-    { owner: 'you', form: 'named', sessionName: 'api-server', expected: 'you' },
-    { owner: 'you', form: 'generic', sessionName: undefined, expected: 'you' },
+    { owner: 'you', form: 'named', sessionName: 'api-server', expected: 'user' },
+    { owner: 'you', form: 'generic', sessionName: undefined, expected: 'user' },
   ] as const)(
     '$owner, $form, $sessionName reads "$expected"',
     ({ owner, form, sessionName, expected }) => {
