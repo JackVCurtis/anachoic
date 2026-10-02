@@ -6,22 +6,22 @@ summary: >
   Give TaskView's header its two actions on the task as a whole, adapted from anachoic's
   TaskActions: Park, which sends an active task to the Backlog and clears its claim, and Archive,
   which abandons the task. Both confirm in place. The task view gets its own message region for
-  refusals, since an action taken there must be refused there. Each action posts its sentence to
-  the dedicated session.
+  refusals, since an action taken there must be refused there. Nothing is posted to the dedicated
+  session: the action takes effect on the board only.
 requirements:
   - "TaskActions in TaskView's header, at the right of the MetaLine: Button ghost sm 'Park' when the task props' canAct says the task can be parked, and Button ghost sm 'Archive' when it can be archived. An action that is not offered is not drawn."
   - "Each opens an InlineConfirm (UIP-05), row layout, under the header's bottom row: Park with confirm 'Park' and dismiss 'Keep step', Archive with confirm 'Archive' and dismiss 'Keep task'. The questions come from the strings catalogue and say what happens: Park clears the claim and the task goes to the Backlog; Archive takes the task off every list."
   - "One confirmation shows at a time, kept in TaskView and hidden when the view shows another task. While one shows, both buttons are disabled. Focus moves to its dismiss button, and back to the opening button on dismiss. Escape closes the confirmation first, through use_escape_layer."
   - "Only the confirm raises onPark(taskId) or onArchive(taskId). While in flight the confirm button is busy and the dismiss button disabled."
-  - "Both entries call move_to_backlog(task) or archive_task(task) through view/bridge/tools.ts and send 'I moved T-012 to the backlog.' or 'I archived T-012.' through wake.ts. After Park the view stays and shows the task in the Backlog from get_task. After Archive the board's panel returns to the board, with focus on the Backlog or Done section header, and the task entry shows that the task was archived."
+  - "Both entries call move_to_backlog(task) or archive_task(task) through view/bridge/tools.ts and post nothing to the chat. After Park the view stays and shows the task in the Backlog from get_task. After Archive the board's panel returns to the board, with focus on the Backlog or Done section header, and the task entry shows that the task was archived."
   - "TaskView's message region holds error FlashMessages, below the header, filled by the same refusal handler as the board (UIS-13). Dismissing one from the keyboard moves focus to the task title."
   - "Archive is not offered on a signed-off task, and neither action on an archived one (03 refusals)."
 acceptance_criteria:
   - "ui suite (required, anachoic ui/19): Park and Archive report only after their confirmation, with the task id."
   - "ui suite: with a confirmation open, the first Escape closes it and nothing else; dismissing returns focus to the opening button; both buttons are disabled while a confirmation shows."
-  - "ui suite, both entries with a fake App: each action calls its tool and sends its exact sentence once; a refusal shows an error strip in the task view and sends nothing."
+  - "ui suite, both entries with a fake App: each action calls its tool once and sends no message; a refusal shows an error strip in the task view."
   - "Stories: TaskView with both actions, with Park confirming, with Archive confirming and busy, with an error strip, and with neither action; every story passes the axe check."
-  - "Manual desktop check: parking and archiving from the task view in fullscreen post their sentences, and the board reflects them after the turn."
+  - "Manual desktop check: parking and archiving from the task view in fullscreen post nothing to the chat, and the board reflects them at once."
 depends_on:
   - "UIS-15"
   - "UIP-05"

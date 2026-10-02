@@ -1,3 +1,4 @@
+import { createServer } from 'node:net'
 import { DatabaseSync } from 'node:sqlite'
 import { join, resolve } from 'node:path'
 import { Client } from '@modelcontextprotocol/client'
@@ -52,4 +53,23 @@ export function query<T>(dataDir: string, sql: string, ...params: Array<string |
   } finally {
     database.close()
   }
+}
+
+/**
+ * A TCP port on 127.0.0.1 that nothing listens on: the system picks it, and
+ * it is free again once this returns.
+ */
+export function freePort(): Promise<number> {
+  return new Promise((settle, reject) => {
+    const probe = createServer()
+    probe.once('error', reject)
+    probe.listen(0, '127.0.0.1', () => {
+      const address = probe.address()
+      probe.close(() =>
+        typeof address === 'object' && address !== null
+          ? settle(address.port)
+          : reject(new Error('No port was assigned'))
+      )
+    })
+  })
 }

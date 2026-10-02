@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import type { Client } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { INSTRUCTIONS, TOOL_DESCRIPTIONS } from '../../server/instructions.js'
-import { connect, SERVER } from './support/server.js'
+import { connect, freePort, SERVER } from './support/server.js'
 
 let dataDir: string
 const clients: Client[] = []
@@ -112,7 +112,7 @@ test('a client that probes server/discover before initialize still gets its own 
 })
 
 test('over --http, an initialize request is answered with the instructions for its client', async () => {
-  const port = 40000 + Math.floor(Math.random() * 20000)
+  const port = await freePort()
   const child = spawn(process.execPath, [SERVER, '--http'], {
     cwd: '/',
     env: { ANACHOIC_DATA_DIR: dataDir, PORT: String(port) },

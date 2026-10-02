@@ -202,7 +202,7 @@ describe('wait_for_work', () => {
     expect(progress).toEqual(progress.map((_value, index) => index + 1))
   })
 
-  test('a cancelled call stops polling', async () => {
+  test('a cancelled call logs its cancellation', async () => {
     const workLog = () => {
       const logs = join(dataDir, 'logs')
       return readdirSync(logs)
@@ -220,12 +220,12 @@ describe('wait_for_work', () => {
 
     controller.abort()
     expect(await cancelled).toBeInstanceOf(Error)
-    await sleep(POLL_MS * 3)
-    const settled = workLog()
-    await sleep(POLL_MS * 3)
-
-    expect(workLog()).toEqual(settled)
-    expect(settled.at(-1)).toMatchObject({ event: 'work_wait_end', reason: 'cancelled' })
+    await expect
+      .poll(workLog)
+      .toEqual([
+        expect.objectContaining({ event: 'work_wait_start' }),
+        expect.objectContaining({ event: 'work_wait_end', reason: 'cancelled' }),
+      ])
   })
 
   test('is refused for the dedicated session', async () => {

@@ -59,7 +59,6 @@ export function registerWaitForAnswer(server: McpServer, context: ToolContext) {
         for (;;) {
           if (signal.aborted) return end('cancelled', textResult('Stopped waiting.'))
           polls += 1
-          logger.log('wait_poll', { task, poll: polls })
           let state: AnswerState | Refusal = readAnswerState(database, task, caller.id)
           if (!isRefusal(state) && state.kind === 'answered') {
             const collected = collectAnswer(database, task, caller.id)

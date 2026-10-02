@@ -63,9 +63,8 @@ export function useTaskPanel(
     if (!source) {
       return
     }
-    /* Started first: starting bumps the source's generation, which would drop the fetch's refusal. */
-    source.start()
     void source.refresh()
+    source.start()
     return () => source.stop()
   }, [source])
 

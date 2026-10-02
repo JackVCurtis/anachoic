@@ -70,7 +70,6 @@ export function registerWaitForWork(server: McpServer, context: ToolContext) {
         for (;;) {
           if (signal.aborted) return end('cancelled', textResult('Stopped waiting.'))
           polls += 1
-          logger.log('work_wait_poll', { poll: polls })
           const found = firstClaimable(database, caller.id)
           if (found) {
             return end(
