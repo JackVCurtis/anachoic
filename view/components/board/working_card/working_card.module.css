@@ -1,0 +1,51 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+/* Under 600 px the elapsed time wraps below the session name rather than squeezing it */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.elapsed {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.id {
+  color: var(--color-text-subtle);
+}
+
+.stepLine {
+  color: var(--color-text-accent);
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  min-width: 0;
+  opacity: var(--dim-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import { userEvent } from 'vitest/browser'
 import { YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
 import { renderComponent } from '../../testing/render'
@@ -88,7 +89,7 @@ describe('YourTurnCard', () => {
   })
 
   test('the card is inverted, padded --space-4, and does not change on hover', async () => {
-    const { user, card } = renderCard(YOUR_TURN.yourStep)
+    const { card } = renderCard(YOUR_TURN.yourStep)
     const style = getComputedStyle(card)
     const fill = resolvedColor('--color-accent-900')
 
@@ -98,7 +99,7 @@ describe('YourTurnCard', () => {
     expect(style.paddingTop).toBe(
       getComputedStyle(document.documentElement).getPropertyValue('--space-4').trim()
     )
-    await user.hover(screen.getByRole('button', { name: YOUR_TURN.yourStep.task.title }))
+    await userEvent.hover(screen.getByRole('button', { name: YOUR_TURN.yourStep.task.title }))
     expect(getComputedStyle(card).backgroundColor).toBe(fill)
   })
 })

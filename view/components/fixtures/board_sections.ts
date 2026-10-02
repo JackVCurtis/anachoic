@@ -3,11 +3,13 @@ import {
   BUSY_BOARD,
   DOCS,
   LONG_TEXT_BOARD,
+  running,
   taskOf,
   THIS_CHAT,
   WEB_CLIENT,
   yourStep,
   type SessionSample,
+  type WorkingSample,
   type YourTurnSample,
 } from './board.js'
 import { before } from './clock.js'
@@ -161,3 +163,87 @@ export const SESSIONS = {
   ),
   long: LONG_TEXT_BOARD.sessions,
 } as const satisfies Record<string, SessionSample | readonly SessionSample[]>
+
+const [DRAFT_THE_MIGRATION] = BUSY_BOARD.working
+
+/**
+ * Working: one task, several sessions at once, this chat working, no note, a
+ * note of 500 characters, a long title, and twelve cards.
+ */
+export const WORKING = {
+  one: DRAFT_THE_MIGRATION,
+  fourSteps: running(
+    31,
+    'Move the invoices to the new table',
+    [
+      ['agent', 'done', 'Write the new table', 'billing'],
+      ['agent', 'running', 'Draft the migration', 'billing'],
+      ['you', 'pending', 'Review the migration'],
+      ['agent', 'pending', 'Run it on staging'],
+    ],
+    before({ minutes: 6, seconds: 12 }),
+    'Copying the invoice rows in batches of 500.'
+  ),
+  severalSessions: [
+    DRAFT_THE_MIGRATION,
+    running(
+      19,
+      'Upgrade the queue client',
+      [
+        ['you', 'done', 'Choose the version to move to'],
+        ['agent', 'running', 'Upgrade the client and fix the call sites', WEB_CLIENT],
+        ['agent', 'pending', 'Run the load test'],
+      ],
+      before({ minutes: 3, seconds: 40 }),
+      'Fixed 14 of 22 call sites.'
+    ),
+    running(
+      13,
+      'Write the setup guide',
+      [
+        ['agent', 'done', 'Outline the setup guide'],
+        ['agent', 'running', 'Write the troubleshooting section', DOCS],
+        ['you', 'pending', 'Read the guide through'],
+      ],
+      before({ hours: 1, minutes: 4 })
+    ),
+  ],
+  thisChat: running(
+    32,
+    'Write the release notes',
+    [
+      ['agent', 'running', 'Write the release notes', THIS_CHAT],
+      ['you', 'pending', 'Read the release notes'],
+    ],
+    before({ minutes: 2 }),
+    'Listing the changes since the last release.'
+  ),
+  noNote: running(
+    33,
+    'Bump the SDK to the latest minor',
+    [['agent', 'running', 'Bump the SDK', WEB_CLIENT]],
+    before({ seconds: 40 })
+  ),
+  longNote: running(
+    34,
+    'Move the billing consumers to the event bus',
+    [
+      ['agent', 'done', 'Map the consumers', DOCS],
+      ['agent', 'running', 'Move the consumers', DOCS],
+    ],
+    before({ minutes: 25 }),
+    LONG_TEXT.answer.slice(0, 500)
+  ),
+  longTitle: LONG_TEXT_BOARD.working[0],
+  many: Array.from({ length: 12 }, (_, index): WorkingSample =>
+    running(
+      70 + index,
+      `Task for worker ${index + 1}`,
+      [
+        ['agent', 'running', 'Do the work', `worker-${index + 1}`],
+        ['you', 'pending', 'Review it'],
+      ],
+      before({ minutes: 12 - index })
+    )
+  ),
+} as const
