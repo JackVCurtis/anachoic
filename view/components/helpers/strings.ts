@@ -45,6 +45,7 @@ export const taskEntry = {
   detailPlaceholder: 'What whoever does this step needs to know',
   addStep: 'Add step',
   removeStep: 'Remove step {n}',
+  chainPreview: 'Chain preview',
   chainNote: '{n steps} · {h} for you',
   add: 'Add',
   addToQueue: 'Add to queue',

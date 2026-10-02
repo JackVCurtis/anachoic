@@ -1,0 +1,5 @@
+/* Copied from anachoic inertia/components/patterns/status_badge/status_badge.module.css at fd99e0d */
+/* Doubled, so its tracking beats the Tag's label type whichever module loads first. */
+.badge.badge {
+  letter-spacing: 0.1em;
+}

@@ -191,4 +191,6 @@ export type ChainPreviewRow = {
   number: number
   owner: Owner
   title: string
+  /** The session that holds the step. A row with one shows the named chip. */
+  sessionName?: string | null
 }

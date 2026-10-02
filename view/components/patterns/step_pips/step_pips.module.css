@@ -1,0 +1,35 @@
+/* Copied from anachoic inertia/components/patterns/step_pips/step_pips.module.css at fd99e0d */
+.row {
+  display: flex;
+  gap: 2px;
+}
+
+.loose {
+  gap: 4px;
+}
+
+/* Border-box, so the 5px height holds the 1px border. */
+.pip {
+  flex: 1 1 0;
+  min-width: 0;
+  height: var(--size-pip-height);
+  border: var(--border-hairline) solid var(--tone-pip-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.done {
+  background: var(--tone-pip-done);
+}
+
+.running {
+  background: var(--tone-pip-running);
+}
+
+.waiting {
+  background: var(--tone-pip-waiting);
+}
+
+.pending {
+  border-color: var(--tone-pip-border-pending);
+}

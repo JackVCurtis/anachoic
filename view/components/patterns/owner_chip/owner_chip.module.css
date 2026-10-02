@@ -1,0 +1,30 @@
+/* Copied from anachoic inertia/components/patterns/owner_chip/owner_chip.module.css at fd99e0d */
+.chip {
+  display: inline-block;
+  flex: none;
+  border: var(--border-hairline) solid;
+  white-space: nowrap;
+}
+
+.sm {
+  padding: 0 6px;
+}
+
+.md {
+  padding: 1px 7px;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.agent {
+  border-color: var(--tone-chip-agent-border);
+  color: var(--tone-chip-agent-fg);
+}
+
+.you {
+  border-color: var(--tone-chip-you-border);
+  color: var(--tone-chip-you-fg);
+}

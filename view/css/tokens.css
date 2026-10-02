@@ -100,8 +100,8 @@
   --tone-field-caret: var(--color-accent);
   --tone-chip-agent-border: var(--color-accent-700);
   --tone-chip-agent-fg: var(--color-accent-700);
-  --tone-chip-human-border: var(--color-neutral-500);
-  --tone-chip-human-fg: var(--color-neutral-700);
+  --tone-chip-you-border: var(--color-neutral-500);
+  --tone-chip-you-fg: var(--color-neutral-700);
   --tone-pip-done: var(--color-accent);
   --tone-pip-running: var(--color-accent-300);
   --tone-pip-waiting: var(--color-accent-900);
@@ -171,8 +171,8 @@
   --tone-field-caret: var(--color-accent-300);
   --tone-chip-agent-border: var(--inverse-chip-border);
   --tone-chip-agent-fg: var(--inverse-fg);
-  --tone-chip-human-border: var(--inverse-chip-border);
-  --tone-chip-human-fg: var(--inverse-fg);
+  --tone-chip-you-border: var(--inverse-chip-border);
+  --tone-chip-you-fg: var(--inverse-fg);
   --tone-pip-done: var(--color-bg);
   --tone-pip-running: var(--color-accent-300);
   --tone-pip-waiting: var(--color-accent-300);
@@ -200,8 +200,8 @@
   --tone-field-caret: var(--color-accent);
   --tone-chip-agent-border: var(--color-accent-700);
   --tone-chip-agent-fg: var(--color-accent-700);
-  --tone-chip-human-border: var(--color-neutral-500);
-  --tone-chip-human-fg: var(--color-neutral-700);
+  --tone-chip-you-border: var(--color-neutral-500);
+  --tone-chip-you-fg: var(--color-neutral-700);
   --tone-pip-done: var(--color-accent);
   --tone-pip-running: var(--color-accent-300);
   --tone-pip-waiting: var(--color-accent-900);
