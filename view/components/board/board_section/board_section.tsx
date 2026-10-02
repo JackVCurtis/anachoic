@@ -1,4 +1,11 @@
-import { useLayoutEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react'
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type PointerEvent,
+  type ReactNode,
+} from 'react'
 import { FOLD_AFTER } from '../../helpers/constants'
 import { joinClasses } from '../../helpers/join_classes'
 import { fillTemplate, fold } from '../../helpers/strings'
@@ -33,6 +40,8 @@ export interface BoardSectionProps {
   className?: string
   /** Drawn after the cards and their fold, whether or not there are cards. */
   footer?: ReactNode
+  /** A press anywhere in the section, for a section whose cards are dragged. */
+  onPointerDown?: (event: PointerEvent<HTMLElement>) => void
 }
 
 /**
@@ -50,6 +59,7 @@ export function BoardSection({
   cardGap = 'tight',
   className,
   footer,
+  onPointerDown,
 }: BoardSectionProps) {
   const [open, setOpen] = useState(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -91,7 +101,11 @@ export function BoardSection({
   )
 
   return (
-    <section className={joinClasses(styles.section, className)} onFocus={onFocus}>
+    <section
+      className={joinClasses(styles.section, className)}
+      onFocus={onFocus}
+      onPointerDown={onPointerDown}
+    >
       {inverseHeader ? (
         <Frame tone="inverse" className={styles.inverseHeader}>
           {header}

@@ -28,6 +28,11 @@ const DRAG_AND_DROP_PACKAGES = [
   'swapy',
 ]
 
+const DRAG_AND_DROP_RESTRICTION = {
+  group: DRAG_AND_DROP_PACKAGES,
+  message: 'No package is used for drag and drop. Build it on pointer events.',
+}
+
 // Copied from anachoic eslint.config.js at fd99e0d
 /**
  * What code under view/components/ may not import. Components receive data
@@ -47,10 +52,7 @@ const COMPONENT_IMPORT_RESTRICTIONS = [
     regex: String.raw`^(?:\.\./)+(?:shared|server|domain|store)(?:/|$)`,
     message: 'Components never import code from outside view/.',
   },
-  {
-    group: DRAG_AND_DROP_PACKAGES,
-    message: 'No package is used for drag and drop. Build it on pointer events.',
-  },
+  DRAG_AND_DROP_RESTRICTION,
 ]
 
 // Copied from anachoic eslint.config.js at fd99e0d
@@ -139,10 +141,13 @@ export default configApp(
     },
   },
   {
-    name: 'Anachoic lucide-react only in the Icon primitive',
+    name: 'Anachoic lucide-react only in the Icon primitive, and no drag-and-drop package',
     files: VIEW_FILES,
     rules: {
-      'no-restricted-imports': ['error', { patterns: [LUCIDE_RESTRICTION] }],
+      'no-restricted-imports': [
+        'error',
+        { patterns: [LUCIDE_RESTRICTION, DRAG_AND_DROP_RESTRICTION] },
+      ],
     },
   },
   {

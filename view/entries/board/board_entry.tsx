@@ -79,10 +79,12 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
     }
     setReordering(true)
     const outcome = await yourActions.reorderQueue(item.task, position)
-    setReordering(false)
+    /* The new board first, so the queue never shows the old order between the two. */
     if (outcome.ok) {
       source.replace(outcome.props)
-    } else if ('refusal' in outcome) {
+    }
+    setReordering(false)
+    if (!outcome.ok && 'refusal' in outcome) {
       onRefusal(outcome.refusal)
     }
   }

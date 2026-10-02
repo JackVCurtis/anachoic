@@ -373,3 +373,219 @@ describe('moving a card with the keyboard', () => {
     expect(box.top).toBeGreaterThanOrEqual(-1)
   })
 })
+
+describe('moving a card with a pointer', () => {
+  type User = ReturnType<typeof renderMovable>['user']
+
+  function middleOf(element: Element) {
+    const box = element.getBoundingClientRect()
+    return { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+  }
+
+  function itemOf(task: QueueTask): HTMLElement {
+    return cardOf(task).closest('li')!
+  }
+
+  /**
+   * Presses on a card's title, moves the pointer to each point given and,
+   * unless asked not to, releases it there.
+   */
+  async function drag(
+    user: User,
+    task: QueueTask,
+    points: Array<{ clientX: number; clientY: number }>,
+    { release = true } = {}
+  ) {
+    const title = screen.getByRole('button', { name: task.task.title })
+    const start = middleOf(title)
+    await user.pointer({ keys: '[MouseLeft>]', target: title, coords: start })
+    for (const coords of points) {
+      await user.pointer({ target: title, coords })
+    }
+    if (release) {
+      await user.pointer({ keys: '[/MouseLeft]', target: title, coords: points.at(-1) ?? start })
+    }
+  }
+
+  function aboveTheFront() {
+    const box = itemOf(FIRST).getBoundingClientRect()
+    return { clientX: box.left + 20, clientY: box.top + 2 }
+  }
+
+  function rerenderWith(
+    rerender: (ui: React.ReactElement) => void,
+    props: Partial<QueueSectionProps> & { onReorder: QueueSectionProps['onReorder'] }
+  ) {
+    act(() => {
+      rerender(
+        <div style={{ width: 600 }}>
+          <QueueSection tasks={QUEUE.busy} onOpenTask={() => {}} {...props} />
+        </div>
+      )
+    })
+  }
+
+  test('a drag of more than 4 px lifts a card, which shows lifted and silent until the drop', async () => {
+    const { user } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY + 6 }], { release: false })
+
+    expect(handleOf(THIRD)).toHaveTextContent(queue.drop)
+    expect(getComputedStyle(cardOf(THIRD)).backgroundColor).toBe(
+      resolvedColor('--color-accent-100')
+    )
+    expect(moveRegion()).toBeEmptyDOMElement()
+    expect(getComputedStyle(cardOf(SECOND)).cursor).toBe('grabbing')
+    await user.pointer({ keys: '[/MouseLeft]' })
+  })
+
+  test('a press that moves less than 4 px is a click, and opens the task', async () => {
+    const { user, onOpenTask, onReorder } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientX: start.clientX + 2, clientY: start.clientY + 2 }])
+
+    expect(onOpenTask).toHaveBeenCalledExactlyOnceWith(THIRD.task.id)
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+
+  test('the card takes the place nearest the pointer, and the release does not open the task', async () => {
+    const { user, onOpenTask, onReorder } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()])
+
+    expect(onReorder).toHaveBeenCalledExactlyOnceWith(THIRD.task.id, 1)
+    expect(onOpenTask).not.toHaveBeenCalled()
+    expect(titles()).toEqual([THIRD, FIRST, SECOND, FOURTH].map((task) => task.task.title))
+    expect(positions()[0]).toBe('#1 in line')
+    expect(moveRegion()).toHaveTextContent(
+      `“${THIRD.task.title}” dropped at position 1 of ${COUNT}`
+    )
+  })
+
+  test('a drag that begins on the handle moves the card the same way', async () => {
+    const { user, onReorder } = renderMovable()
+    const handle = handleOf(FIRST)
+    const start = middleOf(handle)
+    const below = middleOf(itemOf(SECOND))
+
+    await user.pointer({ keys: '[MouseLeft>]', target: handle, coords: start })
+    await user.pointer({ target: handle, coords: { ...start, clientY: start.clientY + 6 } })
+    await user.pointer({ target: handle, coords: { ...below, clientY: below.clientY + 4 } })
+    await user.pointer({ keys: '[/MouseLeft]', target: handle })
+
+    expect(onReorder).toHaveBeenCalledExactlyOnceWith(FIRST.task.id, 2)
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+  })
+
+  test('Escape during a drag cancels it, and nothing is raised', async () => {
+    const { user, onReorder, onOpenTask } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()], {
+      release: false,
+    })
+    await user.keyboard('{Escape}')
+    await user.pointer({ keys: '[/MouseLeft]' })
+
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(onReorder).not.toHaveBeenCalled()
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('the pointer leaving the document cancels the drag', async () => {
+    const { user, onReorder } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()], {
+      release: false,
+    })
+    act(() => {
+      document.documentElement.dispatchEvent(new PointerEvent('pointerleave'))
+    })
+    await user.pointer({ keys: '[/MouseLeft]' })
+
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+
+  test('no drag begins while busy', async () => {
+    const { user, onReorder } = renderMovable({ busy: true })
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()])
+
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+
+  test('the dropped order is shown until the request ends', async () => {
+    const { user, onReorder, rerender } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+    const made = [THIRD, FIRST, SECOND, FOURTH].map((task) => task.task.title)
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()])
+    expect(titles()).toEqual(made)
+
+    rerenderWith(rerender, { onReorder, busy: true })
+    expect(titles()).toEqual(made)
+    expect(positions()).toEqual(['#1 in line', '#2 in line', '#3 in line', '#4 in line'])
+
+    rerenderWith(rerender, { onReorder, busy: false })
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+  })
+
+  test('the dropped order is shown until a new queue arrives', async () => {
+    const { user, onReorder, rerender } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()])
+    rerenderWith(rerender, { onReorder, busy: true })
+
+    const given = [FIRST, THIRD, SECOND, FOURTH].map((task, index) => ({
+      ...task,
+      position: index + 1,
+    }))
+    rerenderWith(rerender, { onReorder, busy: true, tasks: given })
+    expect(titles()).toEqual(given.map((task) => task.task.title))
+  })
+
+  test('the move ends when the lifted card leaves the queue, with no onReorder and the announcement', async () => {
+    const { user, onReorder, rerender } = renderMovable()
+    const start = middleOf(screen.getByRole('button', { name: THIRD.task.title }))
+
+    await drag(user, THIRD, [{ ...start, clientY: start.clientY - 6 }, aboveTheFront()], {
+      release: false,
+    })
+    rerenderWith(rerender, { onReorder, tasks: [FIRST, SECOND, FOURTH] })
+    await user.pointer({ keys: '[/MouseLeft]' })
+
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+    expect(titles()).toEqual([FIRST, SECOND, FOURTH].map((task) => task.task.title))
+    expect(onReorder).not.toHaveBeenCalled()
+    expect(moveRegion()).toHaveTextContent(`“${THIRD.task.title}” left the queue. Move ended`)
+  })
+
+  test('tasks that arrive or leave under a lifted card leave it in its place among the rest', async () => {
+    const { user, onReorder, rerender } = renderMovable()
+    const [, , , , NEW] = QUEUE.twenty.map((task, index) => ({
+      ...task,
+      task: { ...task.task, id: `new-${index}`, title: `Arrived ${index}` },
+    }))
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}{ArrowUp}')
+    rerenderWith(rerender, { onReorder, tasks: [NEW, FIRST, THIRD, FOURTH] })
+
+    expect(titles()).toEqual([NEW, FIRST, THIRD, FOURTH].map((task) => task.task.title))
+    expect(handleOf(THIRD)).toHaveTextContent(queue.drop)
+    expect(handleOf(THIRD)).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+})

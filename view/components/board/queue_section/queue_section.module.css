@@ -1,0 +1,6 @@
+/* While a card is dragged the pointer reads grabbing everywhere, and no text is selected. */
+.dragging,
+.dragging * {
+  cursor: grabbing;
+  user-select: none;
+}

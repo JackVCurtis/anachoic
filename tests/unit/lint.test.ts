@@ -57,6 +57,16 @@ describe('lint refuses', () => {
     ],
     ['console.log in server/', 'server/example.ts', "console.log('hello')"],
     [
+      'a drag-and-drop package in a component',
+      'view/components/board/queue_section/queue_section.tsx',
+      "import { DndContext } from '@dnd-kit/core'",
+    ],
+    [
+      'a drag-and-drop package in a view entry',
+      'view/entries/board/board_entry.tsx',
+      "import Sortable from 'sortablejs'",
+    ],
+    [
       'updateModelContext in view/',
       'view/bridge/example.ts',
       "app.updateModelContext({ content: [{ type: 'text', text: 'hi' }] })",
