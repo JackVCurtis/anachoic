@@ -42,6 +42,10 @@ const OPERATIONS: Operation[] = [
   ['answer', (s, a, t) => answer(s, ctx(a, t), 'That one')],
   ['completeStep', (s, a, t) => completeStep(s, ctx(a, t), { summary: 'Done' })],
   ['completeMyStep', (s, a, t) => completeMyStep(s, ctx(a, t), { note: 'Checked' })],
+  [
+    'completeMyStep with a URL',
+    (s, a, t) => completeMyStep(s, ctx(a, t), { artifactUrl: 'https://example.com/pr/1' }),
+  ],
   ['park', (s, a, t) => park(s, ctx(a, t))],
   ['moveToBacklog', (s, a, t) => moveToBacklog(s, ctx(a, t))],
   ['release', (s, a, t) => release(s, ctx(a, t))],
@@ -55,6 +59,14 @@ const OPERATIONS: Operation[] = [
     'followUp you',
     (s, a, t) =>
       followUp(s, ctx(a, t), { placement: 'last', steps: [{ title: 'Check', owner: 'you' }] }),
+  ],
+  [
+    'followUp you with a format',
+    (s, a, t) =>
+      followUp(s, ctx(a, t), {
+        placement: 'first',
+        steps: [{ title: 'Review', owner: 'you', outputFormat: 'pull_request' }],
+      }),
   ],
   ['archive', (s, a, t) => archive(s, ctx(a, t))],
   ['unassign', (s, a, t) => unassign(s, ctx(a, t))],
@@ -91,6 +103,8 @@ function shape({ task, steps }: TaskState): string {
       step.claimedBy,
       step.question !== null,
       step.answer !== null,
+      step.outputFormat,
+      step.artifactUrl !== null,
     ]),
   ])
 }
@@ -159,7 +173,7 @@ const LIST_RULES: Record<BoardList, (state: TaskState) => boolean> = {
 }
 
 const AS_YOU: Record<keyof ReturnType<typeof canAct>, (state: TaskState) => Outcome> = {
-  complete: (s) => completeMyStep(s, ctx('you', 999)),
+  complete: (s) => completeMyStep(s, ctx('you', 999), { artifactUrl: 'https://example.com' }),
   answer: (s) => answer(s, ctx('you', 999), 'Yes'),
   park: (s) => park(s, ctx('you', 999)),
   reorder: (s) => reorder(s, ctx('you', 999), 1),

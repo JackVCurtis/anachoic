@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { boardViolations } from '../../../domain/invariants.js'
 import { isRefusal } from '../../../domain/refusal.js'
 import type { Actor, Owner } from '../../../domain/types.js'
+import { OUTPUT_FORMATS } from '../../../shared/output_format.js'
 import { closeDatabase, openDatabase, type Database } from '../../../store/database.js'
 import { readRevision } from '../../../store/queries.js'
 import { read } from '../../../store/read.js'
@@ -66,10 +67,14 @@ describe('Random operations on a real database', () => {
       touchSession(database, { id, kind: 'worker', projectDir: `/w/${id}` }, now(), 1)
 
     const steps = () =>
-      Array.from({ length: 1 + Math.floor(random() * 3) }, (_, index) => ({
-        title: `Step ${index + 1}`,
-        owner: pick<Owner>(['agent', 'agent', 'you']),
-      }))
+      Array.from({ length: 1 + Math.floor(random() * 3) }, (_, index) => {
+        const owner = pick<Owner>(['agent', 'agent', 'you'])
+        return {
+          title: `Step ${index + 1}`,
+          owner,
+          outputFormat: owner === 'you' && chance(0.5) ? pick(OUTPUT_FORMATS) : null,
+        }
+      })
 
     for (let index = 0; index < OPERATIONS; index++) {
       clock += Math.floor(random() * 20)
@@ -183,6 +188,13 @@ describe('Random operations on a real database', () => {
           'completeMyStep',
           () => services.completeMyStep(database, 'you', now(), task, { note: 'Checked' }),
         ],
+        [
+          'completeMyStep with a URL',
+          () =>
+            services.completeMyStep(database, 'you', now(), task, {
+              artifactUrl: pick(['https://example.com/pr/1', 'ftp://example.com/x']),
+            }),
+        ],
         ['moveToBacklog', () => services.moveToBacklog(database, actor, now(), task)],
         ['signOff', () => services.signOff(database, 'you', now(), task)],
         [
@@ -274,6 +286,7 @@ describe('Random operations on a real database', () => {
       'claimStep of an assigned task',
       'collectAnswer',
       'completeMyStep',
+      'completeMyStep with a URL',
       'completeStep',
       'moveToBacklog',
       'queueTask',

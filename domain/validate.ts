@@ -1,4 +1,5 @@
 import { LIMITS, type LimitedField } from '../shared/limits.js'
+import { isOutputFormat, OUTPUT_FORMATS } from '../shared/output_format.js'
 import { invalid, type Refusal } from './refusal.js'
 import type { Link, StepInput } from './types.js'
 
@@ -70,10 +71,19 @@ export function checkSteps(steps: unknown): Refusal | null {
       checkText('title', step.title, `steps[${index}].title`) ??
       (step.detail === undefined || step.detail === null || step.detail === ''
         ? null
-        : checkText('detail', step.detail, `steps[${index}].detail`))
+        : checkText('detail', step.detail, `steps[${index}].detail`)) ??
+      checkOutputFormat(step, index)
     if (refused) return refused
   }
   return null
+}
+
+function checkOutputFormat(step: StepInput, index: number): Refusal | null {
+  if (step.outputFormat === undefined || step.outputFormat === null) return null
+  if (!isOutputFormat(step.outputFormat)) {
+    return invalid(`steps[${index}].outputFormat must be ${OUTPUT_FORMATS.join(', ')} or empty`)
+  }
+  return step.owner === 'you' ? null : invalid('Only your steps can declare an output format')
 }
 
 export function firstRefusal(...checks: Array<Refusal | null>): Refusal | null {

@@ -1,3 +1,4 @@
+import { OUTPUT_FORMAT_WORDS, type OutputFormat } from '../shared/output_format.js'
 import { formatTaskId } from '../shared/task_id.js'
 import type { TaskStatus } from './types.js'
 
@@ -129,6 +130,14 @@ export function archived(taskId: number): Refusal {
 
 export function invalid(sentence: string): Refusal {
   return refusal('invalid', sentence)
+}
+
+export function needsArtifact(taskId: number, stepNumber: number, format: OutputFormat): Refusal {
+  return invalid(`${stepOf(taskId, stepNumber)} needs ${OUTPUT_FORMAT_WORDS[format].needed}`)
+}
+
+export function notAWebAddress(): Refusal {
+  return invalid('That is not a web address')
 }
 
 export const BUSY: Refusal = refusal('busy', 'The board is busy. Try again.')

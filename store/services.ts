@@ -278,7 +278,7 @@ export function completeMyStep(
   actor: Actor,
   now: Instant,
   task: TaskRef,
-  input: { note?: string | null } = {}
+  input: transitions.CompleteMyStepInput = {}
 ): ServiceResult {
   const note = input.note === '' ? null : input.note
   return act(
@@ -286,7 +286,8 @@ export function completeMyStep(
     actor,
     now,
     task,
-    (state, ctx) => transitions.completeMyStep(state, ctx, { note }),
+    (state, ctx) =>
+      transitions.completeMyStep(state, ctx, { note, artifactUrl: input.artifactUrl }),
     checkOptionalText('note', note)
   )
 }

@@ -79,6 +79,8 @@ function stateOf(
     note: null,
     summary: null,
     links: [],
+    outputFormat: null,
+    artifactUrl: null,
     startedAt: pip.status === 'pending' ? null : board.now,
     runningSince: pip.status === 'running' ? (facts.runningSince ?? null) : null,
     waitingSince: pip.status === 'waiting' ? (facts.waitingSince ?? null) : null,

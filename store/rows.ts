@@ -47,6 +47,8 @@ export function stepFromRow(row: Row): Step {
     note: row.note as string | null,
     summary: row.summary as string | null,
     links: JSON.parse(row.links_json as string) as Link[],
+    outputFormat: row.output_format as Step['outputFormat'],
+    artifactUrl: row.artifact_url as string | null,
     startedAt: row.started_at as string | null,
     runningSince: row.running_since as string | null,
     waitingSince: row.waiting_since as string | null,
@@ -127,13 +129,16 @@ function writeStep(sqlite: DatabaseSync, step: Step) {
   sqlite
     .prepare(
       `INSERT INTO steps (id, task_id, number, owner, title, detail, status, origin, claimed_by, question, answer,
-         note, summary, links_json, started_at, running_since, waiting_since, finished_at, elapsed_seconds, waited_seconds)
+         note, summary, links_json, output_format, artifact_url, started_at, running_since, waiting_since, finished_at,
+         elapsed_seconds, waited_seconds)
        VALUES (:id, :task_id, :number, :owner, :title, :detail, :status, :origin, :claimed_by, :question, :answer,
-         :note, :summary, :links_json, :started_at, :running_since, :waiting_since, :finished_at, :elapsed_seconds, :waited_seconds)
+         :note, :summary, :links_json, :output_format, :artifact_url, :started_at, :running_since, :waiting_since, :finished_at,
+         :elapsed_seconds, :waited_seconds)
        ON CONFLICT (id) DO UPDATE SET
          status = excluded.status, claimed_by = excluded.claimed_by, question = excluded.question,
          answer = excluded.answer, note = excluded.note, summary = excluded.summary,
-         links_json = excluded.links_json, started_at = excluded.started_at,
+         links_json = excluded.links_json, artifact_url = excluded.artifact_url,
+         started_at = excluded.started_at,
          running_since = excluded.running_since, waiting_since = excluded.waiting_since,
          finished_at = excluded.finished_at, elapsed_seconds = excluded.elapsed_seconds,
          waited_seconds = excluded.waited_seconds`
@@ -153,6 +158,8 @@ function writeStep(sqlite: DatabaseSync, step: Step) {
       note: step.note,
       summary: step.summary,
       links_json: JSON.stringify(step.links),
+      output_format: step.outputFormat,
+      artifact_url: step.artifactUrl,
       started_at: step.startedAt,
       running_since: step.runningSince,
       waiting_since: step.waitingSince,

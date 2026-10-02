@@ -57,6 +57,10 @@ export function taskViolations({ task, steps }: TaskState): string[] {
     if ((step.runningSince !== null) !== (step.status === 'running')) {
       broken('time', `${name} is ${step.status} with runningSince ${step.runningSince ?? 'empty'}`)
     }
+    if (step.artifactUrl !== null && !(step.status === 'done' && step.outputFormat !== null)) {
+      const format = step.outputFormat === null ? ' with no output format' : ''
+      broken('artifact', `${name} has an artifact while ${step.status}${format}`)
+    }
     if ((step.waitingSince !== null) !== (step.status === 'waiting')) {
       broken('time', `${name} is ${step.status} with waitingSince ${step.waitingSince ?? 'empty'}`)
     }

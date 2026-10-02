@@ -4,6 +4,10 @@
  * `now` as an argument.
  */
 
+import type { OutputFormat } from '../shared/output_format.js'
+
+export type { OutputFormat }
+
 export type Instant = string
 
 export type TaskStatus = 'backlog' | 'queue' | 'active' | 'done'
@@ -90,6 +94,8 @@ export interface Step {
   note: string | null
   summary: string | null
   links: Link[]
+  outputFormat: OutputFormat | null
+  artifactUrl: string | null
   startedAt: Instant | null
   runningSince: Instant | null
   waitingSince: Instant | null
@@ -133,4 +139,6 @@ export interface StepInput {
   title: string
   owner: Owner
   detail?: string | null
+  /** Your steps only. */
+  outputFormat?: OutputFormat | null
 }

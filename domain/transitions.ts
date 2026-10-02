@@ -1,3 +1,4 @@
+import { isWebAddress } from '../shared/output_format.js'
 import { stepId } from '../shared/step_id.js'
 import { formatTaskId } from '../shared/task_id.js'
 import { currentStepIndex } from './chain.js'
@@ -9,6 +10,8 @@ import {
   claimedByAnother,
   invalid,
   isRefusal,
+  needsArtifact,
+  notAWebAddress,
   onlyASession,
   onlyYou,
   signedOff,
@@ -158,6 +161,8 @@ function newSteps(
     note: null,
     summary: null,
     links: [],
+    outputFormat: input.outputFormat ?? null,
+    artifactUrl: null,
     startedAt: null,
     runningSince: null,
     waitingSince: null,
@@ -651,21 +656,41 @@ export function completeStep(state: TaskState, ctx: Context, input: CompleteInpu
   )
 }
 
+export interface CompleteMyStepInput {
+  note?: string | null
+  /** Required when the step has an output format, and ignored when it has none. */
+  artifactUrl?: string | null
+}
+
 /**
- * You mark your waiting step done, with an optional note.
+ * The artifact URL a step stores when it is marked done, or the refusal.
+ */
+function artifactOf(state: TaskState, step: Step, given: string | null | undefined) {
+  if (step.outputFormat === null) return null
+  const url = given?.trim() ?? ''
+  if (url === '') return needsArtifact(state.task.id, step.number, step.outputFormat)
+  return isWebAddress(url) ? url : notAWebAddress()
+}
+
+/**
+ * You mark your waiting step done, with an optional note, and the artifact's
+ * URL when the step has an output format.
  */
 export function completeMyStep(
   state: TaskState,
   ctx: Context,
-  input: { note?: string | null } = {}
+  input: CompleteMyStepInput = {}
 ): Outcome {
   const refused = preconditions.completeMyStep(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
+  const artifactUrl = artifactOf(state, step, input.artifactUrl)
+  if (isRefusal(artifactUrl)) return artifactUrl
   const done: Step = {
     ...closeInterval(step, ctx.now),
     status: 'done',
     note: input.note ?? step.note,
+    artifactUrl,
     finishedAt: ctx.now,
   }
   return advance(
