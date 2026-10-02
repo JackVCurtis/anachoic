@@ -113,7 +113,7 @@ The clock (`use_now`) takes `timeZone` from the host context, so times are shown
 - exact symbols
 - no full stops except in confirmations and announcements
 - plurals that agree with their number
-- never "user" or "human" on screen
+- the person using the board is "the user", never "you" (changed on 2026-10-02, [11](11-assignment-and-outputs.md#words-on-screen-and-for-claude)), and never "human"
 - buttons that are verbs
 - "Cancel" only for closing something
 
