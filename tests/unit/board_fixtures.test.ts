@@ -14,6 +14,7 @@ interface ItemFacts {
   finishedAt?: string
   signedOffAt?: string
   question?: string
+  blocked?: { reason: string; since: string } | null
   runningSince?: string
   waitingSince?: string
 }
@@ -82,8 +83,8 @@ function stateOf(
     links: [],
     outputFormat: null,
     artifactUrl: null,
-    blockedReason: null,
-    blockedAt: null,
+    blockedReason: pip.status === 'waiting' ? (facts.blocked?.reason ?? null) : null,
+    blockedAt: pip.status === 'waiting' ? (facts.blocked?.since ?? null) : null,
     startedAt: pip.status === 'pending' ? null : board.now,
     runningSince: pip.status === 'running' ? (facts.runningSince ?? null) : null,
     waitingSince: pip.status === 'waiting' ? (facts.waitingSince ?? null) : null,
@@ -107,6 +108,7 @@ function entriesOf(board: BoardProps): Entry[] {
       list: 'yourTurn' as const,
       state: stateOf(board, 'yourTurn', item.task, item.steps, {
         question: item.step.question,
+        blocked: item.blocked,
         waitingSince: item.step.waitingSince,
       }),
       canAct: item.canAct,

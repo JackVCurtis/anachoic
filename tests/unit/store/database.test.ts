@@ -113,7 +113,9 @@ describe('Writing', () => {
   test('a write runs its change, bumps the revision and returns both', () => {
     const database = open()
     const result = write(database, (sqlite) => {
-      sqlite.exec("INSERT INTO sessions VALUES ('s', 'worker', 'api', NULL, 1, 'now', 'now', NULL)")
+      sqlite.exec(
+        "INSERT INTO sessions (id, kind, name, pid, first_seen_at, last_seen_at) VALUES ('s', 'worker', 'api', 1, 'now', 'now')"
+      )
       return 'done'
     })
     expect(result).toEqual({ value: 'done', revision: 1 })
@@ -125,7 +127,7 @@ describe('Writing', () => {
     expect(() =>
       write(database, (sqlite) => {
         sqlite.exec(
-          "INSERT INTO sessions VALUES ('s', 'worker', 'api', NULL, 1, 'now', 'now', NULL)"
+          "INSERT INTO sessions (id, kind, name, pid, first_seen_at, last_seen_at) VALUES ('s', 'worker', 'api', 1, 'now', 'now')"
         )
         throw new Error('boom')
       })
@@ -139,7 +141,9 @@ describe('Writing', () => {
     const database = open()
     const refusal = { code: 'invalid' as const, sentence: 'No' }
     const result = write(database, (sqlite) => {
-      sqlite.exec("INSERT INTO sessions VALUES ('s', 'worker', 'api', NULL, 1, 'now', 'now', NULL)")
+      sqlite.exec(
+        "INSERT INTO sessions (id, kind, name, pid, first_seen_at, last_seen_at) VALUES ('s', 'worker', 'api', 1, 'now', 'now')"
+      )
       return refusal
     })
     expect(result).toEqual(refusal)
@@ -152,7 +156,7 @@ describe('Writing', () => {
     expect(() =>
       write(database, async (sqlite) => {
         sqlite.exec(
-          "INSERT INTO sessions VALUES ('s', 'worker', 'api', NULL, 1, 'now', 'now', NULL)"
+          "INSERT INTO sessions (id, kind, name, pid, first_seen_at, last_seen_at) VALUES ('s', 'worker', 'api', 1, 'now', 'now')"
         )
       })
     ).toThrow(TypeError)

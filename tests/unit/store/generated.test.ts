@@ -11,7 +11,7 @@ import { readRevision } from '../../../store/queries.js'
 import { read } from '../../../store/read.js'
 import * as services from '../../../store/services.js'
 import { sessionFromRow } from '../../../store/rows.js'
-import { registerLiveness, touchSession } from '../../../store/sessions.js'
+import { registerLiveness, removeSession, touchSession } from '../../../store/sessions.js'
 import { at } from '../support/domain.js'
 import { allTaskStates } from '../support/store.js'
 
@@ -312,6 +312,7 @@ describe('Random operations on a real database', () => {
           ],
           ['archiveTask', () => services.archiveTask(database, actor, now(), task)],
           ['collectAnswer', () => services.collectAnswer(database, task, session)],
+          ['removeSession', () => removeSession(database, pick([...SESSIONS, 'dedicated']), now())],
           [
             'time passes',
             () => {
@@ -332,6 +333,18 @@ describe('Random operations on a real database', () => {
               sqlite.prepare("SELECT count(*) AS n FROM events WHERE kind = 'unassigned'").get()
             ) as { n: number }
           ).n
+        // Every tool call touches its session first, which revives a removed one.
+        const sessionRow = read(database, (sqlite) =>
+          sqlite.prepare('SELECT removed_at FROM sessions WHERE id = ?').get(session)
+        ) as { removed_at: string | null } | undefined
+        if (sessionRow?.removed_at && name !== 'removeSession') {
+          touchSession(
+            database,
+            { id: session, kind: 'worker', projectDir: `/w/${session}` },
+            now(),
+            1
+          )
+        }
         // The worker a task is assigned to is usually live: it has just been
         // seen. So is a worker completing a step, as every tool call touches it.
         if ((name === 'addTask assigned' || name === 'completeStep') && chance(0.8)) {
@@ -376,6 +389,11 @@ describe('Random operations on a real database', () => {
           }
         }
         if (unassignedEvents() > unassignedBefore) succeeded.add('release with unassign')
+        if (name === 'removeSession' && !isRefusal(result)) {
+          if ((result.value as { tasks: number[] }).tasks.length > 0) {
+            succeeded.add('remove a session holding work')
+          }
+        }
         for (const { id } of blockedBefore) {
           const released = read(database, (sqlite) =>
             sqlite
@@ -446,6 +464,8 @@ describe('Random operations on a real database', () => {
       'queueTask',
       'release of a blocked step',
       'release with unassign',
+      'remove a session holding work',
+      'removeSession',
       'reorderQueue',
       'signOff',
       'time passes',

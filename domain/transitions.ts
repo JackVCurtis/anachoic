@@ -821,10 +821,21 @@ export function moveToBacklog(state: TaskState, ctx: Context): Outcome {
 }
 
 /**
- * Release: automatic, when the session that claimed the current step is found
- * dead. `ctx.actor` is that session. The task goes to the front of the queue.
+ * Why a session's claims and assignments end: it stopped responding, or it
+ * was removed from the board.
  */
-export function release(state: TaskState, ctx: Context): Outcome {
+export type Departure = 'dead' | 'removed'
+
+function departed(ctx: Context, why: Departure) {
+  return `${nameOf(ctx, ctx.actor)} ${why === 'dead' ? 'stopped responding' : 'left the board'}`
+}
+
+/**
+ * Release: automatic, when the session that claimed the current step is found
+ * dead or is removed. `ctx.actor` is that session. The task goes to the front
+ * of the queue.
+ */
+export function release(state: TaskState, ctx: Context, why: Departure = 'dead'): Outcome {
   const refused = preconditions.release(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
@@ -833,23 +844,16 @@ export function release(state: TaskState, ctx: Context): Outcome {
     task: { ...state.task, status: 'queue', resumeWith: null },
     steps: withStep(state.steps, index, released),
     queue: JOIN_FIRST,
-    events: [
-      event(
-        ctx,
-        state.task.id,
-        released,
-        'released',
-        `Released: ${nameOf(ctx, ctx.actor)} stopped responding`
-      ),
-    ],
+    events: [event(ctx, state.task.id, released, 'released', `Released: ${departed(ctx, why)}`)],
   }
 }
 
 /**
- * Unassign: automatic, when the worker the task is assigned to is found dead.
- * `ctx.actor` is that worker. Nothing else about the task changes.
+ * Unassign: automatic, when the worker the task is assigned to is found dead
+ * or is removed. `ctx.actor` is that worker. Nothing else about the task
+ * changes.
  */
-export function unassign(state: TaskState, ctx: Context): Outcome {
+export function unassign(state: TaskState, ctx: Context, why: Departure = 'dead'): Outcome {
   if (state.task.assignedTo === null || state.task.assignedTo !== ctx.actor) {
     return invalid(`${formatTaskId(state.task.id)} is not assigned to ${nameOf(ctx, ctx.actor)}`)
   }
@@ -857,15 +861,7 @@ export function unassign(state: TaskState, ctx: Context): Outcome {
     task: { ...state.task, assignedTo: null },
     steps: state.steps,
     queue: NONE,
-    events: [
-      event(
-        ctx,
-        state.task.id,
-        null,
-        'unassigned',
-        `Unassigned: ${nameOf(ctx, ctx.actor)} stopped responding`
-      ),
-    ],
+    events: [event(ctx, state.task.id, null, 'unassigned', `Unassigned: ${departed(ctx, why)}`)],
   }
 }
 

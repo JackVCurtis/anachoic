@@ -71,6 +71,7 @@ export function sessionFromRow(row: Row): Session {
     firstSeenAt: row.first_seen_at as string,
     lastSeenAt: row.last_seen_at as string,
     endedAt: row.ended_at as string | null,
+    removedAt: row.removed_at as string | null,
   }
 }
 

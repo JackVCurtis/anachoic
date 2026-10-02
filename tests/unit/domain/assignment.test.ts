@@ -45,6 +45,7 @@ function session(id: string, overrides: Partial<Session> = {}): Session {
     firstSeenAt: at(0),
     lastSeenAt: at(0),
     endedAt: null,
+    removedAt: null,
     ...overrides,
   }
 }

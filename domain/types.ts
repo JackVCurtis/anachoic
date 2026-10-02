@@ -41,6 +41,7 @@ export const EVENT_KINDS = [
   'unassigned',
   'blocked',
   'unblocked',
+  'removed',
 ] as const
 
 export type EventKind = (typeof EVENT_KINDS)[number]
@@ -127,6 +128,11 @@ export interface Session {
   firstSeenAt: Instant
   lastSeenAt: Instant
   endedAt: Instant | null
+  /**
+   * Set when the session was removed: by its SessionEnd hook, by Remove on
+   * the board or by leave_board. A removed session is never listed.
+   */
+  removedAt: Instant | null
 }
 
 export interface Event {

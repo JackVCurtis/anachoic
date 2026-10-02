@@ -138,17 +138,46 @@ export function assignmentViolations(
 }
 
 /**
+ * The invariant of 13: a removed session holds no claim, assignment or
+ * resumeWith.
+ */
+export function removedViolations(
+  states: readonly TaskState[],
+  sessions: readonly Session[]
+): string[] {
+  const removed = new Set(
+    sessions.filter((session) => session.removedAt !== null).map(({ id }) => id)
+  )
+  const found: string[] = []
+  for (const { task, steps } of states) {
+    if (task.archivedAt !== null) continue
+    const id = formatTaskId(task.id)
+    if (task.assignedTo !== null && removed.has(task.assignedTo))
+      found.push(`${id}: removed: assigned to removed ${task.assignedTo}`)
+    if (task.resumeWith !== null && removed.has(task.resumeWith))
+      found.push(`${id}: removed: resumes with removed ${task.resumeWith}`)
+    for (const step of steps) {
+      if (step.claimedBy !== null && removed.has(step.claimedBy))
+        found.push(`${id}: removed: step ${step.number} claimed by removed ${step.claimedBy}`)
+    }
+  }
+  return found
+}
+
+/**
  * Every task's invariants, and invariant 9 over the queue: a task has a queue
  * position exactly when it is queued and not archived, and the positions run
  * from 1 to n with no gap and no repeat. With the sessions, the assignment
- * invariant too.
+ * invariant and the invariant on removed sessions too.
  */
 export function boardViolations(
   states: readonly TaskState[],
   sessions?: readonly Session[]
 ): string[] {
   const found = states.flatMap(taskViolations)
-  if (sessions) found.push(...assignmentViolations(states, sessions))
+  if (sessions) {
+    found.push(...assignmentViolations(states, sessions), ...removedViolations(states, sessions))
+  }
   const positions: number[] = []
   for (const { task } of states) {
     const queued = task.status === 'queue' && task.archivedAt === null

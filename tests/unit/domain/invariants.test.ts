@@ -105,6 +105,7 @@ describe('Derived facts', () => {
     firstSeenAt: at(0),
     lastSeenAt: at(lastSeen),
     endedAt,
+    removedAt: null,
   })
 
   test('a session is live until its last sighting is more than 2 minutes old, or it ended', () => {

@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { DEAD_WINDOW_MS, isLive } from '../domain/derived.js'
 import { invalid, isRefusal, refusal, type Refusal } from '../domain/refusal.js'
-import { release, unassign } from '../domain/transitions.js'
+import { release, unassign, type Departure } from '../domain/transitions.js'
 import {
   DEDICATED_SESSION_ID,
   type Instant,
@@ -11,7 +11,7 @@ import {
 import { LIMITS } from '../shared/limits.js'
 import type { Database } from './database.js'
 import { read } from './read.js'
-import { applyChange, loadSession, loadTaskState, sessionFromRow } from './rows.js'
+import { appendEvents, applyChange, loadSession, loadTaskState, sessionFromRow } from './rows.js'
 import { write, type Written } from './write.js'
 
 export const DEDICATED_NAME = 'This chat'
@@ -47,8 +47,8 @@ export interface Touched {
 
 /**
  * Creates the session's row on first sight, or refreshes when it was last
- * seen and by which process. A session that had ended is live again; the
- * claims released when it ended stay released.
+ * seen and by which process. A session that had ended, or had been removed,
+ * is live again; the claims released when it ended stay released.
  */
 export function touchSessionRow(
   sqlite: DatabaseSync,
@@ -66,7 +66,9 @@ export function touchSessionRow(
       .run(identity.id, identity.kind, defaultName(identity), identity.projectDir, pid, now, now)
   } else {
     sqlite
-      .prepare('UPDATE sessions SET last_seen_at = ?, pid = ?, ended_at = NULL WHERE id = ?')
+      .prepare(
+        'UPDATE sessions SET last_seen_at = ?, pid = ?, ended_at = NULL, removed_at = NULL WHERE id = ?'
+      )
       .run(now, pid, identity.id)
   }
   return {
@@ -156,11 +158,67 @@ export interface LivenessOptions {
 }
 
 /**
- * Ends every session not seen within the dead window, releases each step it
- * claimed to the front of the queue with a released event, clears its
- * assignment from every task assigned to it with an unassigned event, and
- * clears every resumeWith that names it. Returns true when it ended any
- * session.
+ * What ending a session changed: the tasks whose claim, assignment or
+ * resumeWith named it, by number.
+ */
+export interface Ended {
+  tasks: number[]
+}
+
+/**
+ * Ends one session in the caller's transaction: releases each step it
+ * claimed to the front of the queue with a released event, blocked steps
+ * included; clears its assignment from every task assigned to it with an
+ * unassigned event; and clears every resumeWith that names it.
+ */
+function endSessionRow(
+  sqlite: DatabaseSync,
+  session: Session,
+  now: Instant,
+  why: Departure
+): Ended {
+  const names = new Map(
+    (
+      sqlite.prepare('SELECT id, name FROM sessions').all() as Array<{ id: string; name: string }>
+    ).map((row) => [row.id, row.name])
+  )
+  const ctx = { actor: session.id, now, nameOf: (id: string) => names.get(id) }
+  const affected = new Set<number>()
+  sqlite
+    .prepare('UPDATE sessions SET ended_at = coalesce(ended_at, ?) WHERE id = ?')
+    .run(now, session.id)
+  const claimed = sqlite.prepare(
+    "SELECT DISTINCT task_id FROM steps WHERE claimed_by = ? AND status IN ('running', 'waiting') ORDER BY task_id DESC"
+  )
+  // Released tasks each join the front, so the lowest task number ends up first.
+  for (const { task_id: taskId } of claimed.all(session.id) as Array<{ task_id: number }>) {
+    const outcome = release(loadTaskState(sqlite, taskId)!, ctx, why)
+    if (!isRefusal(outcome)) {
+      applyChange(sqlite, outcome)
+      affected.add(taskId)
+    }
+  }
+  const assigned = sqlite.prepare('SELECT id FROM tasks WHERE assigned_to = ? ORDER BY id')
+  for (const { id: taskId } of assigned.all(session.id) as Array<{ id: number }>) {
+    const outcome = unassign(loadTaskState(sqlite, taskId)!, ctx, why)
+    if (!isRefusal(outcome)) {
+      applyChange(sqlite, outcome)
+      affected.add(taskId)
+    }
+  }
+  const resumed = sqlite
+    .prepare('SELECT id FROM tasks WHERE resume_with = ?')
+    .all(session.id) as Array<{
+    id: number
+  }>
+  for (const { id } of resumed) affected.add(id)
+  sqlite.prepare('UPDATE tasks SET resume_with = NULL WHERE resume_with = ?').run(session.id)
+  return { tasks: [...affected].sort((a, b) => a - b) }
+}
+
+/**
+ * Ends every session not seen within the dead window, as endSessionRow does.
+ * Returns true when it ended any session.
  */
 export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptions): boolean {
   const now = options.now()
@@ -170,34 +228,55 @@ export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptio
     .all(cutoff)
     .map(sessionFromRow)
     .filter((session) => !options.servedHere?.(session.id))
-  if (dead.length === 0) return false
+  for (const session of dead) endSessionRow(sqlite, session, now, 'dead')
+  return dead.length > 0
+}
 
-  const names = new Map(
-    (
-      sqlite.prepare('SELECT id, name FROM sessions').all() as Array<{ id: string; name: string }>
-    ).map((row) => [row.id, row.name])
+export interface Removed {
+  session: Session
+  /** False when the session had already been removed, and nothing changed. */
+  removed: boolean
+  /** The tasks whose claim, assignment or resumeWith named the session. */
+  tasks: number[]
+}
+
+/**
+ * Ends and removes a worker session in one write, whichever way it left: its
+ * SessionEnd hook, Remove on the board, or leave_board. Its claims go back
+ * to the queue, blocked steps included; its assignments and resumeWith are
+ * cleared; endedAt and removedAt are set; and each affected task records a
+ * removed event. The dedicated session is refused, as is an unknown id.
+ * Removing a removed session changes nothing.
+ */
+export function removeSession(
+  database: Database,
+  id: string,
+  now: Instant
+): Written<Removed> | Refusal {
+  return write(
+    database,
+    (sqlite): Removed | Refusal => {
+      const session = loadSession(sqlite, id)
+      if (!session) return refusal('not_found', `Session ${id} does not exist`)
+      if (session.kind === 'dedicated') return invalid(`${session.name} cannot be removed`)
+      if (session.removedAt !== null) return { session, removed: false, tasks: [] }
+      const { tasks } = endSessionRow(sqlite, session, now, 'removed')
+      sqlite.prepare('UPDATE sessions SET removed_at = ? WHERE id = ?').run(now, id)
+      appendEvents(
+        sqlite,
+        tasks.map((taskId) => ({
+          taskId,
+          stepId: null,
+          sessionId: id,
+          kind: 'removed' as const,
+          detail: `${session.name} was removed from the board`,
+          at: now,
+        }))
+      )
+      return { session: loadSession(sqlite, id)!, removed: true, tasks }
+    },
+    { keepRevision: (result) => !result.removed }
   )
-  const claimed = sqlite.prepare(
-    "SELECT DISTINCT task_id FROM steps WHERE claimed_by = ? AND status IN ('running', 'waiting') ORDER BY task_id DESC"
-  )
-  const assigned = sqlite.prepare('SELECT id FROM tasks WHERE assigned_to = ? ORDER BY id')
-  const resumed = sqlite.prepare('UPDATE tasks SET resume_with = NULL WHERE resume_with = ?')
-  for (const session of dead) {
-    sqlite.prepare('UPDATE sessions SET ended_at = ? WHERE id = ?').run(now, session.id)
-    // Released tasks each join the front, so the lowest task number ends up first.
-    for (const { task_id: taskId } of claimed.all(session.id) as Array<{ task_id: number }>) {
-      const state = loadTaskState(sqlite, taskId)!
-      const outcome = release(state, { actor: session.id, now, nameOf: (id) => names.get(id) })
-      if (!isRefusal(outcome)) applyChange(sqlite, outcome)
-    }
-    for (const { id: taskId } of assigned.all(session.id) as Array<{ id: number }>) {
-      const state = loadTaskState(sqlite, taskId)!
-      const outcome = unassign(state, { actor: session.id, now, nameOf: (id) => names.get(id) })
-      if (!isRefusal(outcome)) applyChange(sqlite, outcome)
-    }
-    resumed.run(session.id)
-  }
-  return true
 }
 
 /**
@@ -224,7 +303,7 @@ export function listSessionRows(
   const since = new Date(Date.parse(now) - RECENTLY_ENDED_MS).toISOString()
   const sessions = sqlite
     .prepare(
-      'SELECT * FROM sessions WHERE ended_at IS NULL OR ended_at >= ? ORDER BY first_seen_at, id'
+      'SELECT * FROM sessions WHERE removed_at IS NULL AND (ended_at IS NULL OR ended_at >= ?) ORDER BY first_seen_at, id'
     )
     .all(since)
     .map(sessionFromRow)
@@ -244,7 +323,7 @@ export function listSessionRows(
 
 /**
  * The sessions not ended, and those ended in the last 10 minutes with the
- * tasks released when they ended.
+ * tasks released when they ended. A removed session is never listed.
  */
 export function listSessions(
   database: Database,
