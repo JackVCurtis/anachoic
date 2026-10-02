@@ -1,0 +1,29 @@
+id: DOM-09
+title: "Output formats and artifact URLs on your steps in the domain and store"
+area: DOM
+phase: "2"
+summary: >
+  Add outputFormat and artifactUrl to steps, with a migration. A step you own may declare one of four
+  output formats when it is created; marking it done then requires a valid http(s) URL, stored as its
+  artifact. Agent steps cannot declare a format.
+requirements:
+  - "A new migration adds steps.output_format (pull_request, ticket, document, link or null, with a check) and steps.artifact_url (nullable)"
+  - "Add, Add to queue and Follow-up accept an output format per step. A format on an agent step is refused with invalid and \"Only your steps can declare an output format\""
+  - "Mark done on a step with an output format is refused with invalid and \"Step 2 of T-012 needs a <format> link\" without a URL, and \"That is not a web address\" when the URL is not an absolute http: or https: URL or is longer than 2,000 characters"
+  - "A valid URL is stored as artifact_url in the same transaction as completing the step. A URL given for a step with no output format is ignored"
+  - "The invariant from 11 (artifactUrl only on a done step with an outputFormat) is added to the invariant checker and the generated tests"
+  - "Task reads used by props and texts return outputFormat and artifactUrl for every step"
+acceptance_criteria:
+  - "Unit suite: each refusal with its code and sentence; a valid URL completes the step and is stored; an ignored URL on a plain step leaves artifact_url empty"
+  - "Unit suite: URLs with ftp:, a relative path, javascript: and 2,001 characters are refused; http and https are accepted"
+  - "Unit suite: the invariants hold across the random-operations test with formatted steps"
+depends_on:
+  - "DOM-06"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#output-formats-on-your-steps"
+  - "11-assignment-and-outputs.md#formats"
+  - "11-assignment-and-outputs.md#domain-1"
+  - "03-domain-model.md#step"
+  - "03-domain-model.md#refusals"
+  - "04-persistence.md#migrations"

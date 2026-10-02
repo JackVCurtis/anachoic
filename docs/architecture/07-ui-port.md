@@ -31,6 +31,8 @@ These are specified in anachoic but not yet built there, so they are written her
 
 ## What is new
 
+[11](11-assignment-and-outputs.md) adds the Worker and Output fields to TaskEntry, the artifact field to YourTurnCard, and artifact links and the assigned worker to the cards.
+
 | Component | Layer | Is |
 |---|---|---|
 | BoardView | `board/` | The one board view. It replaces anachoic's BoardView, SignOffView and CompletedView ([layout](#layout)). |

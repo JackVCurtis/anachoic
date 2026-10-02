@@ -26,6 +26,7 @@ There is one board. Every task belongs to it, and every session reads and writes
 | finishedAt | Instant or empty | When the last step was completed |
 | signedOffAt | Instant or empty | Empty until you sign off |
 | archivedAt | Instant or empty | Set when the task is abandoned |
+| assignedTo | Session id, or empty | The worker that alone may claim the task's agent steps ([11](11-assignment-and-outputs.md#assigning-a-task-to-a-worker)) |
 
 **A task cannot be edited.** Its title is fixed when it is created. Its chain changes only by a follow-up. Its place can change: it can be queued, reordered, parked, signed off and archived.
 
@@ -46,6 +47,8 @@ There is one board. Every task belongs to it, and every session reads and writes
 | note | Text or empty | The latest progress note from the agent, or your note when you mark your step done |
 | summary | Text or empty | What the agent reported when it completed the step |
 | links | List of `{label, url}`, up to 10 | Pull requests, files or pages the step produced. Recorded on completion or with a note. |
+| outputFormat | `pull_request`, `ticket`, `document`, `link`, or empty | Steps you own only. The artifact that completing the step requires ([11](11-assignment-and-outputs.md#output-formats-on-your-steps)). |
+| artifactUrl | URL, or empty | Set when a step with an output format is marked done |
 | startedAt, runningSince, waitingSince, finishedAt | Instant or empty | |
 | elapsedSeconds | Whole number | Closed intervals of work. For an agent step, time `running`. For your step, time `waiting` on you. |
 | waitedSeconds | Whole number | Agent steps. Closed intervals spent `waiting` on you. |
@@ -79,6 +82,8 @@ As in anachoic: **the current step is the first step that is not done. If every 
 Nothing adds a step to a chain except a follow-up, and a step's number never changes. An agent that cannot go on asks you a question and waits where it is. It never inserts a step.
 
 ## Invariants
+
+[11](11-assignment-and-outputs.md) adds two invariants: one for assignment and one for artifacts.
 
 These hold after every transaction for every task that is not archived. An archived task keeps the status it had, but is held only to invariant 8. A test checks them after every operation in the domain's test suite.
 

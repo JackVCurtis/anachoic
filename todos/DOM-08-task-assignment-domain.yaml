@@ -1,0 +1,33 @@
+id: DOM-08
+title: "Task assignment in the domain and store - assignedTo, exclusive claims and clearing on release"
+area: DOM
+phase: "2"
+summary: >
+  Add the assignedTo field to tasks, with a migration, and enforce it in the domain: only the assigned
+  worker may claim the task's agent steps, claim_step with no task prefers tasks assigned to the
+  caller and never takes one assigned to someone else, and release and archive clear the assignment.
+  Add a store query that finds the first queued task a session may claim, which wait_for_work polls.
+requirements:
+  - "A new migration adds tasks.assigned_to, a nullable session id referencing sessions, and the event kinds assigned and unassigned"
+  - "Add and Add to queue take an optional worker. The service refuses with invalid and the sentence \"<name> is not a live worker\" when that session is not a live worker (kind worker, ended_at empty), and records an assigned event when it is"
+  - "Claim of a named task is refused with not_yours and \"T-012 is assigned to <name>\" when the task is assigned to another session, the dedicated session included"
+  - "Claim with no task takes the first queued task (by position) whose current step is an agent step and that is assigned to the caller; failing that the first such task that is unassigned; never one assigned to another session; else nothing_to_claim"
+  - "Release of a dead session clears assigned_to on every task assigned to it, in the same transaction as releasing its claims, with one unassigned event per task"
+  - "Archive clears assigned_to. A follow-up keeps it"
+  - "The invariant from 11 (assignedTo names a worker whose ended_at is empty) is added to the invariant checker, and the generated and random-operation tests include assigned tasks"
+  - "store/ gains firstClaimable(sessionId) returning the task a claim with no task would take, as a read only"
+acceptance_criteria:
+  - "Unit suite: every rule in the 11 transitions table, allowed and refused, with codes and sentences, and rows and revision unchanged after a refusal"
+  - "Unit suite: the random-operations test with assignment reaches assigned claims, refused claims and release-with-unassign, and the invariants hold after every operation"
+  - "Unit suite: a killed worker process's assigned tasks become unassigned within the dead window, observed from another process"
+  - "Unit suite: firstClaimable prefers assigned over unassigned and never returns a task assigned to another session"
+depends_on:
+  - "DOM-06"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#assigning-a-task-to-a-worker"
+  - "11-assignment-and-outputs.md#domain"
+  - "03-domain-model.md#the-task-state-machine"
+  - "03-domain-model.md#invariants"
+  - "05-sessions.md#liveness"
+  - "04-persistence.md#migrations"

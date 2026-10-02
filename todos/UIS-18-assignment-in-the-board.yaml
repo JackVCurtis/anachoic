@@ -1,0 +1,28 @@
+id: UIS-18
+title: "Assign a task to a worker from TaskEntry, and show assignments on the cards"
+area: UIS
+phase: "2"
+summary: >
+  TaskEntry gains a Worker field listing the live workers, and the board shows which worker a task is
+  assigned to on its Queue, Backlog and Working cards.
+requirements:
+  - "TaskEntry gains a labelled native select \"Worker\" after the title, with \"Any worker\" first and then each live worker by name from the board props; it is drawn only when at least one worker is live"
+  - "The chosen worker is sent as assignTo with add_task_from_view; \"Any worker\" sends nothing. The field resets to \"Any worker\" after each add"
+  - "A worker who ends while selected disappears from the list on the next poll and the field falls back to \"Any worker\""
+  - "QueueCard, BacklogCard and WorkingCard add \"Assigned to <name>\" to their meta line when the task is assigned"
+  - "The wake sentence for an assigned add is \"I added T-015, “Add retries”, to the queue for api-server.\" (or \"…to the backlog for api-server.\"), added to wake.ts and 06"
+  - "New strings in the catalogue follow the content rules; the strings test passes"
+acceptance_criteria:
+  - "ui suite: the select lists live workers, is absent with none, sends assignTo, and resets after add"
+  - "ui suite: the meta line shows the assignment on the three cards and nothing when unassigned"
+  - "Stories: TaskEntry with workers, a board with assigned tasks; every story passes the axe check at 735 and 600 px"
+  - "Manual desktop check: assign a task to a running worker that is in wait_for_work; it picks the task up and the board shows it working"
+depends_on:
+  - "UIS-08"
+  - "MCP-15"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#board"
+  - "07-ui-port.md#what-is-new"
+  - "anachoic:ui/17-content-rules.md#rules"
+  - "06-tools-and-views.md#waking-the-dedicated-session"

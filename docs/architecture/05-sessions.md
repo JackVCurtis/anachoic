@@ -36,6 +36,8 @@ The board shows each live session, with its name, kind and current step. It also
 
 ## Claiming
 
+A task assigned to a worker can be claimed only by that worker. `claim_step()` prefers tasks assigned to the caller, and an idle worker waits in `wait_for_work` ([11](11-assignment-and-outputs.md#assigning-a-task-to-a-worker)).
+
 Only the claiming session may report on, ask about, or complete an agent step.
 
 - **`claim_step()`** claims the current agent step of the task at queue position 1. It is the usual call.

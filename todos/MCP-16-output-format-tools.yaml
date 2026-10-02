@@ -1,0 +1,30 @@
+id: MCP-16
+title: "Output formats in the tools - declaring them on steps and the artifact URL on complete_my_step"
+area: MCP
+phase: "2"
+summary: >
+  Let the tools that add steps take an output format per step, and let complete_my_step take the
+  artifact URL that a formatted step requires. Props carry each step's format and artifact, and each
+  task's artifact links; the texts that workers read name earlier steps' artifacts.
+requirements:
+  - "add_task, add_follow_up and their view versions accept output_format (outputFormat in the view tools) on each step; the domain refusal for agent steps comes back as an isError result"
+  - "complete_my_step gains optional artifactUrl; the domain refusals come back with their sentences"
+  - "shared/props.ts: steps carry outputFormat and artifactUrl; yourTurn items carry the current step's outputFormat; working, queue, backlog and toSignOff items carry artifacts [{stepNumber, format, url}] from their done steps; all backward compatible"
+  - "claim_step and open_task texts list each earlier step's artifact as \"Step 2 (you): Pull request https://…\"; the board summary shows a task's artifact links after it"
+  - "view/bridge: the typed caller for complete_my_step takes artifactUrl, and wake.ts builds \"I finished step 2 of T-012, “Review the PR”: https://…\" with \" Note: …\" appended when a note was written"
+  - "Tool descriptions say only the person's steps may declare an output format, and list the four values"
+acceptance_criteria:
+  - "Integration suite: adding a task with a formatted step you own succeeds; on an agent step it is refused with the sentence"
+  - "Integration suite: complete_my_step without a URL, with an invalid URL, and with a valid one; a worker's claim_step on the next step reads the artifact in its text"
+  - "ui suite (bridge): the wake sentence with a URL, with and without a note, sent once only after success"
+depends_on:
+  - "DOM-09"
+  - "MCP-10"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#output-formats-on-your-steps"
+  - "11-assignment-and-outputs.md#tools-1"
+  - "11-assignment-and-outputs.md#board-1"
+  - "06-tools-and-views.md#app-only-tools"
+  - "06-tools-and-views.md#waking-the-dedicated-session"
+  - "06-tools-and-views.md#text-results"

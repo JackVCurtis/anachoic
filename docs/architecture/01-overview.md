@@ -81,5 +81,6 @@ This keeps anachoic's seam. The server computes domain facts, and the view compu
 | [08-packaging-and-hosts.md](08-packaging-and-hosts.md) | The `.mcpb`, installing for worker sessions, and the development loop |
 | [09-testing-and-build-order.md](09-testing-and-build-order.md) | Test suites and the phases |
 | [10-open-questions.md](10-open-questions.md) | Decisions, open questions, and what the spikes verified |
+| [11-assignment-and-outputs.md](11-assignment-and-outputs.md) | Assigning a task to a worker, and output formats with artifact links on your steps |
 
 The evidence behind the host behaviour these documents rely on is in [../spikes/mcp-apps/notes.md](../spikes/mcp-apps/notes.md).

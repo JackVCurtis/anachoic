@@ -2,6 +2,8 @@
 
 ## Kinds of tool
 
+[11](11-assignment-and-outputs.md) adds `wait_for_work`, assignment on the tools that add tasks, output formats on steps, and an artifact URL on `complete_my_step`. Its tables extend the ones below.
+
 | Kind | Visible to | Declared with | Used by |
 |---|---|---|---|
 | **View tools** | The model and the view | `registerAppTool` with `_meta.ui.resourceUri` | The dedicated session, to show the board or a task. Workers get the same tool with a text result only. |
