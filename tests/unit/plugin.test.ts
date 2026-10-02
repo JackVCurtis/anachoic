@@ -57,7 +57,6 @@ test('the plugin declares the MCP server and the SessionEnd hook, both on the se
     anachoic: {
       command: 'node',
       args: ['${CLAUDE_PLUGIN_ROOT}/server/server.js'],
-      env: { ANACHOIC_DATA_DIR: '${HOME}/Library/Application Support/Anachoic MCP' },
     },
   })
   for (const arg of manifest.mcpServers.anachoic.args) {

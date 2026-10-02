@@ -15,10 +15,13 @@ function shellDataDir(manifest) {
 /**
  * The plugin's manifest: the MCP server and the SessionEnd hook that removes
  * the worker from the board when its session ends, both running the server
- * bundled in the plugin against the extension's data directory.
+ * bundled in the plugin against the extension's data directory. The MCP
+ * server is given no ANACHOIC_DATA_DIR: whether Claude Code expands ${HOME}
+ * in a plugin server's env is not documented, and the server's own default
+ * is the extension's directory. The hook command runs in a shell, which
+ * expands $HOME.
  */
 export function pluginManifest({ manifest, version }) {
-  const dataDir = manifest.server.mcp_config.env.ANACHOIC_DATA_DIR
   return {
     name: PLUGIN_NAME,
     displayName: 'Anachoic worker',
@@ -30,7 +33,6 @@ export function pluginManifest({ manifest, version }) {
       [manifest.name]: {
         command: 'node',
         args: ['${CLAUDE_PLUGIN_ROOT}/server/server.js'],
-        env: { ANACHOIC_DATA_DIR: dataDir },
       },
     },
     hooks: {
