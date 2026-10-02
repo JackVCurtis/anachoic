@@ -84,6 +84,8 @@ To sign off (1): T-006 "Fix flaky login test"
 Sessions: This chat · api-server (live) · web-client (live, idle) · docs (ended 4m ago, released T-013)
 ```
 
+Every list line is present, with its count, even when it is empty: "Queue (0)". The Sessions line reads "Sessions: none" when no session is live and none ended in the last 10 minutes.
+
 `open_task` returns the whole task. It is the one result that can be long, and it is still capped at 8,000 tokens by truncating the oldest events first.
 
 ### Errors

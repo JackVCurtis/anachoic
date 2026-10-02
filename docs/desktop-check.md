@@ -54,4 +54,4 @@ Do each action in the board, and check that a user message with the sentence fro
 
 | Date | Claude desktop | Phase | Result |
 |---|---|---|---|
-| | | 0 | Not yet run |
+| 2026-10-02 | Installed `anachoic.mcpb` 0.0.0 | 0 | Passed, reported by the user |

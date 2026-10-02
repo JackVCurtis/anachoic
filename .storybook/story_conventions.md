@@ -54,7 +54,7 @@ Hover, pressed and focus are not stories. An interaction test covers them.
 
 ## Imports
 
-- Stories never import from `view/entries/` or `view/bridge/`.
+- Component stories never import from `view/entries/` or `view/bridge/`. Entry stories live beside their entry in `view/entries/<view>/`, may import the entry, its fixtures and a fake `App`, and are the only stories that exercise the bridge.
 - Sample data comes only from `view/components/fixtures/`.
 - `view/components/testing/` is the shared setup for stories and tests:
   `renderComponent` and `renderInTone` (Testing Library under the fixed clock,
