@@ -61,6 +61,39 @@ afterEach(() => {
 })
 
 describe('the board source', () => {
+  test('keeps the sentence of a poll refusal while polls repeat it, and clears it once one succeeds', async () => {
+    const refused = (text: string): CallToolResult => ({
+      content: [{ type: 'text', text }],
+      isError: true,
+    })
+    const app = queuedApp(
+      refused('No.'),
+      refused('No.'),
+      new Error('Gone'),
+      refused('Busy.'),
+      unchanged(4)
+    )
+    const source = createBoardSource(app, board(4))
+    source.start()
+
+    await vi.advanceTimersByTimeAsync(POLL_MS)
+    const first = source.getSnapshot()
+    expect(first).toMatchObject({ unreachable: true, refusal: 'No.' })
+
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[0])
+    expect(source.getSnapshot()).toBe(first)
+
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[1])
+    expect(source.getSnapshot()).toBe(first)
+
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[2])
+    expect(source.getSnapshot()).toMatchObject({ unreachable: true, refusal: 'Busy.' })
+
+    await vi.advanceTimersByTimeAsync(BACKOFF_MS[2])
+    expect(source.getSnapshot()).toMatchObject({ unreachable: false, refusal: null })
+    source.stop()
+  })
+
   test('fetches the board without a revision', async () => {
     const app = queuedApp(boardResult(board(4)))
     const source = await openBoardSource(app)

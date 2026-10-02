@@ -377,23 +377,17 @@ describe('reordering the queue', () => {
     ])
   })
 
-  test('a refusal goes to onRefusal and the queue keeps the order the props give', async () => {
+  test('a refusal is shown as an error and the queue keeps the order the props give', async () => {
     const app = reorderApp({
       content: [{ type: 'text', text: 'T-019 is in the backlog, not the queue' }],
       isError: true,
     })
-    const onRefusal = vi.fn()
-    const { connection, source } = await loadBoard({ app })
-    render(
-      <ViewFrame>
-        <BoardEntry connection={connection} source={source} onRefusal={onRefusal} />
-      </ViewFrame>
-    )
+    await renderEntry(app)
 
     await dropThirdAtFront()
     await advance(0)
 
-    expect(onRefusal).toHaveBeenCalledExactlyOnceWith('T-019 is in the backlog, not the queue')
+    expect(screen.getByRole('alert')).toHaveTextContent('T-019 is in the backlog, not the queue')
     expect(queueTitles()).toEqual([
       'Upgrade the queue client',
       'Add retries',

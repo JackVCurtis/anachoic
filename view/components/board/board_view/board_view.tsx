@@ -1,7 +1,10 @@
-import type { CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
+import type { FollowUpInput } from '../../helpers/follow_up'
 import { assistive } from '../../helpers/strings'
+import type { FlashMessageData } from '../../patterns/flash_message/flash_message'
+import { FlashMessages } from '../../patterns/flash_message/flash_messages'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
-import type { BoardData } from '../board_data'
+import type { BoardData, PendingCardAction } from '../board_data'
 import { BacklogSection } from '../backlog_section/backlog_section'
 import { BoardHeader } from '../board_header/board_header'
 import { DoneSection } from '../done_section/done_section'
@@ -25,6 +28,16 @@ export interface BoardViewActions {
   selectedTaskId?: string | null
   /** Task entry, below the messages. Without it the board offers no "Add task". */
   taskEntry?: TaskEntryProps
+  /** "Move to backlog" on a Queue card. Without it no Queue card offers the button. */
+  onMoveToBacklog?: (taskId: string) => void
+  /** "Sign off" on a Done card. Without it no Done card offers the button. */
+  onSignOff?: (taskId: string) => void
+  /** "Append & queue" in a follow-up composer. Without it no Done card offers "Follow up". */
+  onFollowUp?: (taskId: string, followUp: FollowUpInput) => void
+  /** A confirmed "Archive" on a Backlog or Done card. Without it no card offers the button. */
+  onArchive?: (taskId: string) => void
+  /** The card action in flight, if any. */
+  pending?: PendingCardAction | null
 }
 
 /**
@@ -40,7 +53,16 @@ export interface BoardViewAnnouncement {
   announcement?: BoardAnnouncement | null
 }
 
-export type BoardViewProps = BoardData & BoardViewActions & BoardViewAnnouncement
+export interface BoardViewMessages {
+  /** What went wrong with your last actions: none, or one of each kind. */
+  messages?: readonly FlashMessageData[]
+  onDismissMessage?: (id: string) => void
+}
+
+export type BoardViewProps = BoardData &
+  BoardViewActions &
+  BoardViewAnnouncement &
+  BoardViewMessages
 
 function ignore() {}
 
@@ -82,13 +104,26 @@ export function BoardView({
   reordering = false,
   selectedTaskId = null,
   taskEntry,
+  onMoveToBacklog,
+  onSignOff,
+  onFollowUp,
+  onArchive,
+  pending = null,
   announcement = null,
+  messages = [],
+  onDismissMessage = ignore,
 }: BoardViewProps) {
+  const heading = useRef<HTMLHeadingElement>(null)
+
   return (
     <div className={styles.board} style={insetStyle(safeAreaInsets)}>
-      <VisuallyHidden element="h1">{assistive.boardTitle}</VisuallyHidden>
+      <VisuallyHidden element="h1" ref={heading} tabIndex={-1}>
+        {assistive.boardTitle}
+      </VisuallyHidden>
       <BoardHeader counts={counts} updatedAt={updatedAt} unreachable={unreachable} />
-      <section aria-label={assistive.landmarkMessages} className={styles.messages} />
+      <section aria-label={assistive.landmarkMessages} className={styles.messages}>
+        <FlashMessages messages={messages} onDismiss={onDismissMessage} focusTarget={heading} />
+      </section>
       <div className={styles.entry}>{taskEntry && <TaskEntry {...taskEntry} />}</div>
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
@@ -99,14 +134,26 @@ export function BoardView({
         selectedTaskId={selectedTaskId}
         onOpenTask={onOpenTask}
         onReorder={onReorder}
+        onMoveToBacklog={onMoveToBacklog}
+        pending={pending}
       />
       <BacklogSection
         tasks={backlogTasks}
         selectedTaskId={selectedTaskId}
         onOpenTask={onOpenTask}
         onQueueTask={onQueueTask}
+        onArchive={onArchive}
+        pending={pending}
       />
-      <DoneSection toSignOff={toSignOff} signedOff={signedOff} onOpenTask={onOpenTask} />
+      <DoneSection
+        toSignOff={toSignOff}
+        signedOff={signedOff}
+        onOpenTask={onOpenTask}
+        onSignOff={onSignOff}
+        onFollowUp={onFollowUp}
+        onArchive={onArchive}
+        pending={pending}
+      />
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">
         {announcement && <span key={announcement.key}>{announcement.text}</span>}
       </VisuallyHidden>

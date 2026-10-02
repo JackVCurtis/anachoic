@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { BUSY_BOARD, LONG_TEXT_BOARD, MANY_BOARD } from '../../fixtures/board'
 import { EMPTY_BOARD_VIEW, numberedTasks } from '../../fixtures/empty_views'
+import { MESSAGES } from '../../fixtures/messages'
 import { assistive, done, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { BoardView } from './board_view'
@@ -143,4 +144,34 @@ export const LongTextNarrow: Story = {
   name: 'Long titles and names in every section, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
+}
+
+export const WithError: Story = {
+  name: 'With an error strip',
+  args: { messages: [MESSAGES.error] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const region = canvas.getByRole('region', { name: assistive.landmarkMessages })
+    const strip = within(region).getByRole('alert')
+    await expect(strip).toHaveTextContent(MESSAGES.error.text)
+    const header = canvas.getByRole('list', { name: 'Counts' })
+    await expect(strip.getBoundingClientRect().top).toBeGreaterThan(
+      header.getBoundingClientRect().bottom
+    )
+    await expect(
+      canvas.getByText(yourTurn.nothingWaiting).getBoundingClientRect().top
+    ).toBeGreaterThan(strip.getBoundingClientRect().bottom)
+  },
+}
+
+export const WithLongErrorNarrow: Story = {
+  name: 'With a long refusal that wraps, narrow',
+  args: { messages: [MESSAGES.long] },
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+  play: async ({ canvasElement }) => {
+    const strip = within(canvasElement).getByRole('alert')
+    await expect(strip.getBoundingClientRect().height).toBeGreaterThan(40)
+    await expectNoSidewaysScroll()
+  },
 }

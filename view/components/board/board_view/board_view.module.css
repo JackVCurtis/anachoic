@@ -11,6 +11,13 @@
   background: var(--color-bg);
 }
 
+/* An error strip is drawn above any other, each pushing the board down by its height */
+.messages {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 /* Empty, they take no room in the column; the message region stays in the accessibility tree */
 .messages:empty {
   display: contents;

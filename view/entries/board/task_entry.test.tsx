@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import type { CallToolResult } from '@modelcontextprotocol/client'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import type { ActionResult, BacklogItem, BoardProps } from '../../../shared/props'
 import { boardResult, emptyBoardProps } from '../../bridge/testing/board_props'
 import { FakeApp } from '../../bridge/testing/fake_app'
@@ -50,14 +50,14 @@ function fakeApp(first: BoardProps, answers: Record<string, CallToolResult>) {
   })
 }
 
-async function renderBoard(app: FakeApp, onRefusal = vi.fn()) {
+async function renderBoard(app: FakeApp) {
   const { connection, source } = await loadBoard({ app })
   render(
     <ViewFrame>
-      <BoardEntry connection={connection} source={source} onRefusal={onRefusal} />
+      <BoardEntry connection={connection} source={source} />
     </ViewFrame>
   )
-  return { onRefusal, user: userEvent.setup() }
+  return { user: userEvent.setup() }
 }
 
 async function fillTask(user: ReturnType<typeof userEvent.setup>) {
@@ -127,7 +127,7 @@ describe('adding a task from the board', () => {
   test('an invalid refusal is shown under the field it names, and the draft is kept', async () => {
     const text = 'steps[1].title must be 1 to 200 characters'
     const app = fakeApp(emptyBoardProps(3), { add_task_from_view: refusal(text) })
-    const { user, onRefusal } = await renderBoard(app)
+    const { user } = await renderBoard(app)
 
     await fillTask(user)
     await user.click(screen.getByRole('button', { name: taskEntry.add }))
@@ -135,19 +135,19 @@ describe('adding a task from the board', () => {
     const field = screen.getByRole('textbox', { name: 'Title of step 2' })
     expect(field).toHaveAccessibleDescription(text)
     expect(field).toHaveValue('Review it')
-    expect(onRefusal).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alert')).toBeNull()
     expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('any other refusal goes to the refusal handler', async () => {
+  test('any other refusal is shown in the message region', async () => {
     const text = 'The board is busy. Try again.'
     const app = fakeApp(emptyBoardProps(3), { add_task_from_view: refusal(text) })
-    const { user, onRefusal } = await renderBoard(app)
+    const { user } = await renderBoard(app)
 
     await fillTask(user)
     await user.click(screen.getByRole('button', { name: taskEntry.add }))
 
-    expect(onRefusal).toHaveBeenCalledExactlyOnceWith(text)
+    expect(screen.getByRole('alert')).toHaveTextContent(text)
     expect(screen.getByRole('textbox', { name: taskEntry.title })).toHaveValue('Add retries')
   })
 })

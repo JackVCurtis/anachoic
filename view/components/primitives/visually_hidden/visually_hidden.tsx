@@ -1,5 +1,5 @@
 // Copied from anachoic inertia/components/primitives/visually_hidden/visually_hidden.tsx at fd99e0d
-import type { HTMLAttributes, ReactNode } from 'react'
+import type { HTMLAttributes, ReactNode, Ref } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
 import styles from './visually_hidden.module.css'
 
@@ -17,6 +17,8 @@ export interface VisuallyHiddenProps extends Omit<
   element?: VisuallyHiddenElement
   /** Placement only. */
   className?: string
+  /** The element, for a script that sends focus to a hidden heading. */
+  ref?: Ref<HTMLHeadingElement>
 }
 
 /**

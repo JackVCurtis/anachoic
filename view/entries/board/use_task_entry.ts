@@ -11,16 +11,18 @@ import {
   type TaskEntryFieldError,
 } from '../../components/helpers/task_entry'
 import { taskEntryFieldOf } from './task_entry_refusal'
+import type { FailedWrite } from './use_board_messages'
 
 /**
  * Task entry's draft, open state and submission, held by the board entry.
  * None of it outlives the view: a rebuild starts with an empty draft.
- * A refusal about one field is shown under it; any other goes to onRefusal.
+ * A refusal about one field is shown under it; any other failure goes to
+ * onFailure.
  */
 export function useTaskEntry(
   yourActions: Pick<YourActions, 'addTask'>,
   source: Pick<BoardSource, 'replace'>,
-  onRefusal: (sentence: string) => void
+  onFailure: (failure: FailedWrite) => void
 ): TaskEntryProps {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(emptyTaskEntryDraft)
@@ -41,14 +43,11 @@ export function useTaskEntry(
       setOpen(false)
       return
     }
-    if (!('refusal' in outcome)) {
-      return
-    }
-    const field = taskEntryFieldOf(outcome.refusal)
-    if (field) {
+    const field = 'refusal' in outcome ? taskEntryFieldOf(outcome.refusal) : null
+    if (field && 'refusal' in outcome) {
       setFieldError({ field, text: outcome.refusal })
     } else {
-      onRefusal(outcome.refusal)
+      onFailure(outcome)
     }
   }
 

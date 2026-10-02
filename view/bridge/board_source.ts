@@ -15,6 +15,12 @@ export interface BoardSnapshot {
   updatedAt: string | null
   /** From the first failed poll until one succeeds. */
   unreachable: boolean
+  /**
+   * The sentence of the last refusal get_board gave while polling, such as an
+   * unreadable database. It stays the same while polls keep giving it, and is
+   * null once a poll succeeds.
+   */
+  refusal: string | null
   /** The Your turn items the latest poll to bring any brought, which were not there before. */
   arrived: readonly YourTurnItem[]
   /** Counts the polls that brought Your turn items, so the same items arriving again differ. */
@@ -55,6 +61,7 @@ export function createBoardSource(
     board: initial,
     updatedAt: null,
     unreachable: false,
+    refusal: null,
     arrived: [],
     arrivals: 0,
   }
@@ -107,8 +114,9 @@ export function createBoardSource(
     if (!outcome.ok) {
       if (current) {
         failures += 1
-        if (!snapshot.unreachable) {
-          set({ unreachable: true })
+        const refusal = 'refusal' in outcome ? outcome.refusal : snapshot.refusal
+        if (!snapshot.unreachable || refusal !== snapshot.refusal) {
+          set({ unreachable: true, refusal })
         }
         schedule(BACKOFF_MS[Math.min(failures, BACKOFF_MS.length) - 1])
       }
@@ -118,7 +126,7 @@ export function createBoardSource(
     const change = 'changed' in outcome.props ? null : take(outcome.props, true)
     if (current) {
       failures = 0
-      const reachable = snapshot.unreachable ? { unreachable: false } : null
+      const reachable = snapshot.unreachable ? { unreachable: false, refusal: null } : null
       if (change || reachable) {
         set({ ...change, ...reachable })
       }
@@ -153,7 +161,7 @@ export function createBoardSource(
       generation += 1
       failures = 0
       const change = take(props, false)
-      const reachable = snapshot.unreachable ? { unreachable: false } : null
+      const reachable = snapshot.unreachable ? { unreachable: false, refusal: null } : null
       if (change || reachable) {
         set({ ...change, ...reachable })
       }

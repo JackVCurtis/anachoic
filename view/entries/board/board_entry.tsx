@@ -11,6 +11,7 @@ import { createYourActions } from '../../bridge/wake'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
+import { useBoardMessages } from './use_board_messages'
 import { useTaskEntry } from './use_task_entry'
 
 export interface LoadedBoard {
@@ -53,10 +54,9 @@ function arrivalAnnouncement(
 interface LiveBoardProps {
   app: HostConnection['app']
   source: BoardSource
-  onRefusal: (sentence: string) => void
 }
 
-function Board({ app, source, onRefusal }: LiveBoardProps) {
+function Board({ app, source }: LiveBoardProps) {
   const { safeAreaInsets } = useHostContext()
   const yourActions = useMemo(() => createYourActions(app), [app])
   const [reordering, setReordering] = useState(false)
@@ -70,7 +70,8 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
     return () => source.stop()
   }, [source])
 
-  const taskEntry = useTaskEntry(yourActions, source, onRefusal)
+  const { messages, dismiss, reportFailure } = useBoardMessages(source)
+  const taskEntry = useTaskEntry(yourActions, source, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
@@ -86,8 +87,8 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
       source.replace(outcome.props)
     }
     setReordering(false)
-    if (!outcome.ok && 'refusal' in outcome) {
-      onRefusal(outcome.refusal)
+    if (!outcome.ok) {
+      reportFailure(outcome)
     }
   }
 
@@ -99,8 +100,8 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
     const outcome = await yourActions.queueTask(item.task)
     if (outcome.ok) {
       source.replace(outcome.props)
-    } else if ('refusal' in outcome) {
-      onRefusal(outcome.refusal)
+    } else {
+      reportFailure(outcome)
     }
   }
 
@@ -115,30 +116,28 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
       reordering={reordering}
       onQueueTask={(taskId) => void queueTask(taskId)}
       taskEntry={taskEntry}
+      messages={messages}
+      onDismissMessage={dismiss}
     />
   )
 }
 
-function ignore() {}
-
 /**
  * The live board: drawn from the source, which polls while it is mounted.
  * Your actions call their app-only tools, the board is redrawn from each
- * result, and each success is posted to the dedicated session. A refusal's
- * sentence goes to onRefusal.
+ * result, and each success is posted to the dedicated session. Each failure
+ * is shown in the message region.
  */
 export function BoardEntry({
   connection,
   source,
-  onRefusal = ignore,
 }: {
   connection: HostConnection
   source: BoardSource
-  onRefusal?: (sentence: string) => void
 }) {
   return (
     <HostContextProvider store={connection.hostContext}>
-      <Board app={connection.app} source={source} onRefusal={onRefusal} />
+      <Board app={connection.app} source={source} />
     </HostContextProvider>
   )
 }
