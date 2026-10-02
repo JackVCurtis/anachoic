@@ -22,6 +22,7 @@ import type { ToolContext } from './tools/context.js'
 import { registerJoinBoard } from './tools/join_board.js'
 import { registerLeaveBoard } from './tools/leave_board.js'
 import { registerModelTools } from './tools/model.js'
+import { registerTaskTools } from './tools/task.js'
 import { registerViewActions } from './tools/view_actions.js'
 import { registerWaitForAnswer } from './tools/wait_for_answer.js'
 import { registerWaitForWork } from './tools/wait_for_work.js'
@@ -56,6 +57,7 @@ function createServer(shared: Shared, kind: SessionKind) {
   registerViews(server, shared.views, VIEWS_DIRECTORY, logger)
   describeTools(kind, {
     ...registerBoardTools(server, context),
+    ...registerTaskTools(server, context),
     join_board: registerJoinBoard(server, context),
     ...registerModelTools(server, context),
     wait_for_answer: registerWaitForAnswer(server, context),

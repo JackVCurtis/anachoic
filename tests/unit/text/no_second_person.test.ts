@@ -25,6 +25,7 @@ import {
 import type { Actor, Owner, TaskState } from '../../../domain/types.js'
 import { INSTRUCTIONS, TOOL_DESCRIPTIONS } from '../../../server/instructions.js'
 import { emptyBoard } from '../../../server/props/empty_board.js'
+import { taskProps } from '../../../server/props/task.js'
 import { boardSummary } from '../../../server/text/board_summary.js'
 import { joinBoardText } from '../../../server/text/join_board.js'
 import {
@@ -38,6 +39,7 @@ import {
   unblockStepText,
   updateStepText,
 } from '../../../server/text/model_tools.js'
+import { openTaskText } from '../../../server/text/open_task.js'
 import { viewActionText } from '../../../server/text/view_actions.js'
 import { LEFT_THE_BOARD } from '../../../server/tools/leave_board.js'
 import { DEDICATED_ASK } from '../../../server/tools/model.js'
@@ -179,6 +181,19 @@ function templates(): string[] {
     LEFT_THE_BOARD,
     DEDICATED_ASK,
     joinBoardText({ id: A, kind: 'worker', name: 'api-server', minted: true }),
+    ...[waiting, resumed, second, active].map((state) =>
+      openTaskText(
+        taskProps(
+          {
+            revision: 1,
+            state,
+            events: handed.events.map((event, id) => ({ ...event, id })),
+            sessions: [],
+          },
+          '2026-10-01T12:00:00.000Z'
+        )
+      )
+    ),
     viewActionText.addTask(active),
     viewActionText.completeMyStep(resumed, []),
     boardSummary({

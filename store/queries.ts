@@ -1,9 +1,16 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { DEAD_WINDOW_MS } from '../domain/derived.js'
-import type { Instant, SessionId, Step, Task, TaskState } from '../domain/types.js'
+import type { Instant, Session, SessionId, Step, Task, TaskState } from '../domain/types.js'
 import type { Database } from './database.js'
 import { read } from './read.js'
-import { eventFromRow, loadTaskState, stepFromRow, taskFromRow, type StoredEvent } from './rows.js'
+import {
+  eventFromRow,
+  loadSession,
+  loadTaskState,
+  stepFromRow,
+  taskFromRow,
+  type StoredEvent,
+} from './rows.js'
 import { listSessionRows, type ListedSession } from './sessions.js'
 
 /**
@@ -74,10 +81,12 @@ export interface TaskSnapshot {
   state: TaskState
   /** The task's events, oldest first. */
   events: StoredEvent[]
+  /** Every session the task, its steps or its events name, removed ones included. */
+  sessions: Session[]
 }
 
 /**
- * One task with its chain and its events, or null when there is no such task.
+ * One task with its chain, its events and the sessions they name, or null when there is no such task.
  */
 export function readTask(database: Database, taskId: number): TaskSnapshot | null {
   return read(database, (sqlite) => {
@@ -87,7 +96,17 @@ export function readTask(database: Database, taskId: number): TaskSnapshot | nul
       .prepare('SELECT * FROM events WHERE task_id = ? ORDER BY id')
       .all(taskId)
       .map(eventFromRow)
-    return { revision: revisionOf(sqlite), state, events }
+    const named = new Set<string>()
+    for (const id of [state.task.createdBy, state.task.assignedTo, state.task.resumeWith]) {
+      if (id !== null) named.add(id)
+    }
+    for (const step of state.steps) if (step.claimedBy !== null) named.add(step.claimedBy)
+    for (const event of events) named.add(event.sessionId)
+    const sessions = [...named].flatMap((id) => {
+      const session = loadSession(sqlite, id)
+      return session ? [session] : []
+    })
+    return { revision: revisionOf(sqlite), state, events, sessions }
   })
 }
 

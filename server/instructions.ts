@@ -11,7 +11,13 @@ import type { ModelTool } from './tools/model.js'
  */
 
 export type DescribedTool =
-  ModelTool | 'join_board' | 'show_board' | 'wait_for_answer' | 'wait_for_work' | 'leave_board'
+  | ModelTool
+  | 'join_board'
+  | 'show_board'
+  | 'open_task'
+  | 'wait_for_answer'
+  | 'wait_for_work'
+  | 'leave_board'
 export type ToolDescriptions = Record<DescribedTool, string>
 
 const DEDICATED_INSTRUCTIONS = `You are the dedicated session of Anachoic, a board of tasks shared between the user and Claude sessions. Worker sessions in Claude Code take agent steps from the board; this chat plans the work, shows the board and keeps the user informed.
@@ -60,6 +66,8 @@ const CLAIMED_ONLY = 'Acts only on a step this session claimed.'
 const WORKER_DESCRIPTIONS: ToolDescriptions = {
   show_board:
     'Shows the Anachoic board: what waits on the user, what is running, the queue, the backlog, what is ready to sign off, and the sessions. No input. Returns a compact summary: a revision line, then one line each for Waiting on user, Working, Queue, Backlog, To sign off and Sessions.',
+  open_task:
+    'Shows one task of the Anachoic board in full (task: T-012 or 12). Returns its place on the board, who created it, its assignment and times; every step with its status, session, input, detail, artifact, blocks past and present, question, answer, note, summary and links; and the last 10 events. Long texts drop the oldest events first. A task that does not exist is refused: "T-012 does not exist".',
   join_board:
     'Joins the Anachoic board as this session and optionally sets its display name (name: 1–40 characters, short and fitting the project). Returns the session’s id, kind and name. When it says to pass a session id, pass it as session on every later call.',
   add_task:
@@ -85,6 +93,8 @@ const DEDICATED_DESCRIPTIONS: ToolDescriptions = {
   ...WORKER_DESCRIPTIONS,
   show_board:
     'Shows the Anachoic board in this chat: what waits on the user, what is running, the queue, the backlog, what is ready to sign off, and the sessions. No input. Call it whenever the user asks about work. Returns a compact summary: a revision line, then one line each for Waiting on user, Working, Queue, Backlog, To sign off and Sessions.',
+  open_task:
+    'Shows one task of the Anachoic board in full in this chat (task: T-012 or 12), inline or in full screen. Call it when the user asks about one task. Returns its place on the board, who created it, its assignment and times; every step with its status, session, input, detail, artifact, blocks past and present, question, answer, note, summary and links; and the last 10 events. Long texts drop the oldest events first. A task that does not exist is refused: "T-012 does not exist".',
   join_board:
     'Joins the Anachoic board as this chat, the dedicated session, and optionally sets its display name (name: 1–40 characters). Returns the session’s id, kind and name. This chat is on the board without it.',
   ask_you: `For worker sessions only. A worker asks the user a question (1–2,000 characters) about the current step of a task it claimed; this chat asks the user directly in this chat instead, never with this tool. ${CLAIMED_ONLY} Returns "Ask in this chat instead" as an error.`,

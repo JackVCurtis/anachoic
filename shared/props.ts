@@ -198,6 +198,99 @@ export const unchangedSchema = z.object({
 
 export const getBoardResultSchema = z.union([unchangedSchema, boardPropsSchema])
 
+/**
+ * A session the task view names, with whether it is live now. A session that
+ * was removed keeps its name here.
+ */
+export const taskSessionSchema = z.object({ id: z.string(), name: z.string(), live: z.boolean() })
+
+/**
+ * One step of the task in full. `session` is the session holding the step
+ * while it runs or waits, and for a done agent step the session that
+ * completed it; null otherwise and on user steps.
+ */
+export const taskStepSchema = z.object({
+  id: z.string(),
+  number: z.number().int().positive(),
+  owner: ownerSchema,
+  title: z.string(),
+  detail: z.string().nullable(),
+  status: stepStatusSchema,
+  origin: z.enum(['chain', 'follow_up']),
+  /** The task's current step: the first not done, else the last. */
+  current: z.boolean(),
+  session: taskSessionSchema.nullable(),
+  /** An agent's question, while the step waits on it. */
+  question: z.string().nullable(),
+  /** The user's answer to the latest question, until the agent collects it. */
+  answer: z.string().nullable(),
+  note: z.string().nullable(),
+  summary: z.string().nullable(),
+  links: z.array(z.object({ label: z.string(), url: z.string() })),
+  outputFormat: outputFormatSchema.nullable(),
+  artifactUrl: z.string().nullable(),
+  /** The previous step's artifact, which this step takes as its input, or null. */
+  input: artifactSchema.nullable(),
+  /** Set while the step's worker has blocked it: why, and since when. */
+  blocked: z.object({ reason: z.string(), since: instant }).nullable(),
+  startedAt: instant.nullable(),
+  /** The start of the open running interval, while the step runs. */
+  runningSince: instant.nullable(),
+  /** The start of the open waiting interval, while the step waits. */
+  waitingSince: instant.nullable(),
+  finishedAt: instant.nullable(),
+  /** Closed intervals of work: running, for an agent step; waiting on the user, for a user step. */
+  elapsedSeconds: z.number().int().nonnegative(),
+  /** Agent steps: closed intervals spent waiting on the user. */
+  waitedSeconds: z.number().int().nonnegative(),
+})
+
+/**
+ * One entry of the task's event log. `by` is 'you' when the user acted, else
+ * the session that did.
+ */
+export const taskEventSchema = z.object({
+  id: z.number().int(),
+  at: instant,
+  kind: z.string(),
+  /** The step the event names, by number, or null for the whole task. */
+  stepNumber: z.number().int().positive().nullable(),
+  by: z.union([z.literal('you'), taskSessionSchema]),
+  detail: z.string(),
+})
+
+/**
+ * One task in full, for the task view and the board's task panel.
+ */
+export const taskPropsSchema = z.object({
+  revision: z.number().int().nonnegative(),
+  now: instant,
+  task: taskRefSchema.extend({
+    status: z.enum(['backlog', 'queue', 'active', 'done']),
+    /** The board list the task is in, or null once archived. */
+    list: z.enum(['yourTurn', 'working', 'queue', 'backlog', 'toSignOff', 'signedOff']).nullable(),
+    queuePosition: z.number().int().positive().nullable(),
+    createdBy: z.union([z.literal('you'), taskSessionSchema]),
+    createdAt: instant,
+    finishedAt: instant.nullable(),
+    signedOffAt: instant.nullable(),
+    archivedAt: instant.nullable(),
+    /** The worker that handed the task to the user and gets it back. */
+    resumeWith: workerSchema.nullable(),
+  }),
+  steps: z.array(taskStepSchema),
+  /** Closed intervals on the agent's steps, and the user's: as the board's toSignOff items. */
+  agentSeconds: z.number().int().nonnegative(),
+  yourSeconds: z.number().int().nonnegative(),
+  artifacts: z.array(artifactSchema),
+  /** Every event of the task, oldest first. */
+  events: z.array(taskEventSchema),
+  /** For each action the task view offers, whether the domain would accept it now. */
+  canAct: z.object({ archive: z.boolean(), park: z.boolean() }),
+})
+
+export const getTaskResultSchema = z.union([unchangedSchema, taskPropsSchema])
+
 export type OutputFormat = z.infer<typeof outputFormatSchema>
 export type Artifact = z.infer<typeof artifactSchema>
 export type Worker = z.infer<typeof workerSchema>
@@ -216,3 +309,8 @@ export type Acted = z.infer<typeof actedSchema>
 export type ActionResult = z.infer<typeof actionResultSchema>
 export type Unchanged = z.infer<typeof unchangedSchema>
 export type GetBoardResult = z.infer<typeof getBoardResultSchema>
+export type TaskSession = z.infer<typeof taskSessionSchema>
+export type TaskStep = z.infer<typeof taskStepSchema>
+export type TaskEvent = z.infer<typeof taskEventSchema>
+export type TaskProps = z.infer<typeof taskPropsSchema>
+export type GetTaskResult = z.infer<typeof getTaskResultSchema>
