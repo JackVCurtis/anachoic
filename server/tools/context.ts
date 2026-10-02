@@ -1,5 +1,5 @@
 import type { CallToolResult, ServerContext } from '@modelcontextprotocol/server'
-import { isRefusal } from '../../domain/refusal.js'
+import { isRefusal, type Refusal } from '../../domain/refusal.js'
 import type { Instant } from '../../domain/types.js'
 import type { Database } from '../../store/database.js'
 import type { Caller, Callers } from '../callers.js'
@@ -22,6 +22,25 @@ export interface ToolContext {
   wait: WaitTimings
   /** Each view's ui:// address, which changes whenever the view's HTML does. */
   views: ViewUris
+  /**
+   * Set when the board's database cannot be read: every tool returns it, and
+   * none touches the database.
+   */
+  unreadable?: Refusal
+}
+
+/**
+ * Wraps a tool's handler: refuses every call while the database cannot be
+ * read, and turns an unexpected exception into the fixed sentence.
+ */
+export function asTool<Args extends unknown[]>(
+  context: Pick<ToolContext, 'logger' | 'unreadable'>,
+  tool: string,
+  handler: (...args: Args) => CallToolResult | Promise<CallToolResult>
+): (...args: Args) => Promise<CallToolResult> {
+  return guarded(context.logger, tool, (...args: Args) =>
+    context.unreadable ? refusalResult(context.unreadable) : handler(...args)
+  )
 }
 
 /**
@@ -38,7 +57,7 @@ export function asCaller<Args extends { session?: string }>(
     request: ServerContext
   ) => CallToolResult | Promise<CallToolResult>
 ): (args: Args, request: ServerContext) => Promise<CallToolResult> {
-  return guarded(context.logger, tool, (args: Args, request: ServerContext) => {
+  return asTool(context, tool, (args: Args, request: ServerContext) => {
     const caller = context.callers.enter(context.client(), args.session)
     if (isRefusal(caller)) return refusalResult(caller)
     return handler(args, caller, request)

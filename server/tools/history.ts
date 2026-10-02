@@ -9,9 +9,8 @@ import {
 import { readRevision } from '../../store/queries.js'
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { readHistoryProps } from '../props/history.js'
-import { guarded } from '../results.js'
 import { historyText } from '../text/history.js'
-import { asCaller, type ToolContext } from './context.js'
+import { asCaller, asTool, type ToolContext } from './context.js'
 import { sessionInput } from './session_input.js'
 
 const filterInput = z
@@ -59,7 +58,7 @@ export function registerHistoryTools(server: McpServer, context: ToolContext) {
       outputSchema: getHistoryResultSchema,
       _meta: { ui: { visibility: ['app'] } },
     },
-    guarded(context.logger, 'get_history', ({ page, filter, sinceRevision }) => {
+    asTool(context, 'get_history', ({ page, filter, sinceRevision }) => {
       if (sinceRevision !== undefined) {
         const revision = readRevision(context.database)
         if (sinceRevision === revision) {

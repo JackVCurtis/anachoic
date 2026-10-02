@@ -1,6 +1,7 @@
 import { claim } from '../../../domain/transitions.js'
 import { closeDatabase, openDatabase } from '../../../store/database.js'
 import { startHeartbeat } from '../../../store/heartbeat.js'
+import { runRetention } from '../../../store/retention.js'
 import { addTask, claimStep } from '../../../store/services.js'
 import { touchSession } from '../../../store/sessions.js'
 import { isWritten, write } from '../../../store/write.js'
@@ -38,6 +39,15 @@ if (role === 'open') {
     else busy++
   }
   await send({ revisions, busy })
+  closeDatabase(database)
+} else if (role === 'retain') {
+  const database = openDatabase(file)
+  const result = runRetention(database, rest[0])
+  await send(
+    isWritten(result)
+      ? { revisions: result.value.sessions > 0 ? [result.revision] : [], busy: 0 }
+      : { revisions: [], busy: 1 }
+  )
   closeDatabase(database)
 } else if (role === 'claim') {
   const [sessionId, task] = rest

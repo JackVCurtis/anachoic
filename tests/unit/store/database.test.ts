@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import {
   closeDatabase,
   DatabaseTooNewError,
+  DatabaseUnreadableError,
   latestVersion,
   openDatabase,
   type Database,
@@ -58,7 +59,7 @@ describe('Opening', () => {
       .map((row) => row.name)
     expect(tables).toEqual(['board', 'events', 'sessions', 'steps', 'tasks'])
     expect(sqlite.prepare('SELECT * FROM board').all()).toEqual([
-      { id: 1, revision: 0, next_task_number: 1 },
+      { id: 1, revision: 0, next_task_number: 1, retained_on: null },
     ])
   })
 
@@ -86,9 +87,36 @@ describe('Opening', () => {
     expect(() => openDatabase(file)).toThrow(/A newer version of the server owns the database/)
   })
 
+  test('a file that is not a database is unreadable, and is left byte for byte', () => {
+    const junk = Buffer.from('This is not a database, only some text in its place.\n'.repeat(200))
+    writeFileSync(file, junk)
+    expect(() => openDatabase(file)).toThrow(DatabaseUnreadableError)
+    expect(() => openDatabase(file)).toThrow(`The board's database at ${file} can't be read`)
+    expect(readFileSync(file).equals(junk)).toBe(true)
+  })
+
+  test('a file that fails its quick_check is unreadable', () => {
+    const database = open()
+    database.sqlite.exec('CREATE TABLE filler (text TEXT)')
+    const insert = database.sqlite.prepare('INSERT INTO filler VALUES (?)')
+    for (let index = 0; index < 2000; index++) insert.run(`row ${index} `.repeat(20))
+    database.sqlite.exec('PRAGMA wal_checkpoint(TRUNCATE)')
+    closeDatabase(database)
+    const bytes = readFileSync(file)
+    const pageSize = bytes.readUInt16BE(16)
+    for (let page = 2; page < bytes.length / pageSize; page += 3) {
+      bytes.fill(0xa5, page * pageSize, page * pageSize + 64)
+    }
+    writeFileSync(file, bytes)
+    expect(() => openDatabase(file)).toThrow(DatabaseUnreadableError)
+    expect(readFileSync(file).equals(bytes)).toBe(true)
+  })
+
   test('the constraints refuse a second board row and an unknown status', () => {
     const { sqlite } = open()
-    expect(() => sqlite.exec('INSERT INTO board VALUES (2, 0, 1)')).toThrow()
+    expect(() =>
+      sqlite.exec('INSERT INTO board (id, revision, next_task_number) VALUES (2, 0, 1)')
+    ).toThrow()
     expect(() =>
       sqlite.exec(
         "INSERT INTO tasks (id, title, status, created_by, created_at) VALUES (1, 'x', 'lost', 'you', 'now')"

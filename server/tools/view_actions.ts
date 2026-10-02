@@ -20,10 +20,10 @@ import {
 } from '../../store/services.js'
 import { removeSession } from '../../store/sessions.js'
 import { readBoardProps, taskRef } from '../props/board.js'
-import { guarded, refusalResult } from '../results.js'
+import { refusalResult } from '../results.js'
 import { formatTaskId } from '../../shared/task_id.js'
 import { viewActionText } from '../text/view_actions.js'
-import type { ToolContext } from './context.js'
+import { asTool, type ToolContext } from './context.js'
 import { fromViewSteps, taskInput, titleInput, viewStepsInput } from './inputs.js'
 
 export const VIEW_ACTION_TOOLS = [
@@ -46,7 +46,7 @@ export type ViewActionTool = (typeof VIEW_ACTION_TOOLS)[number]
  * the view redraws from the result.
  */
 export function registerViewActions(server: McpServer, context: ToolContext) {
-  const { database, now, logger } = context
+  const { database, now } = context
 
   function register<Shape extends z.ZodRawShape>(
     name: ViewActionTool,
@@ -66,7 +66,7 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
         outputSchema: actionResultSchema,
         _meta: { ui: { visibility: ['app'] } },
       },
-      guarded(logger, name, (args: z.infer<z.ZodObject<Shape>>): CallToolResult => {
+      asTool(context, name, (args: z.infer<z.ZodObject<Shape>>): CallToolResult => {
         const at = now()
         const result = act(args, at)
         if (isRefusal(result)) return refusalResult(result)
@@ -100,7 +100,7 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
       outputSchema: boardPropsSchema,
       _meta: { ui: { visibility: ['app'] } },
     },
-    guarded(logger, 'remove_session', ({ session }): CallToolResult => {
+    asTool(context, 'remove_session', ({ session }): CallToolResult => {
       const at = now()
       const result = removeSession(database, session, at)
       if (isRefusal(result)) return refusalResult(result)

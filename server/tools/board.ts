@@ -5,9 +5,8 @@ import { boardPropsSchema, getBoardResultSchema, type GetBoardResult } from '../
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { readRevision } from '../../store/queries.js'
 import { readBoardProps } from '../props/board.js'
-import { guarded } from '../results.js'
 import { boardSummary } from '../text/board_summary.js'
-import { asCaller, type ToolContext } from './context.js'
+import { asCaller, asTool, type ToolContext } from './context.js'
 import { sessionInput } from './session_input.js'
 
 /**
@@ -49,7 +48,7 @@ export function registerBoardTools(server: McpServer, context: ToolContext) {
       outputSchema: getBoardResultSchema,
       _meta: { ui: { visibility: ['app'] } },
     },
-    guarded(context.logger, 'get_board', ({ sinceRevision }) => {
+    asTool(context, 'get_board', ({ sinceRevision }) => {
       const revision = readRevision(context.database)
       if (sinceRevision === revision) {
         const unchanged: GetBoardResult = { changed: false, revision }

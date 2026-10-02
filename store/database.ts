@@ -21,11 +21,17 @@ export interface Database {
    * earlier open, already had.
    */
   readonly applied: number
+  /**
+   * For tests only: how long every write that bumps the revision keeps the
+   * write lock before it commits, so a test can kill the process holding it.
+   */
+  readonly holdWriteMs: number
 }
 
 export interface OpenOptions {
   busyTimeoutMs?: number
   writeHooks?: WriteHook[]
+  holdWriteMs?: number
 }
 
 export const BUSY_TIMEOUT_MS = 5000
@@ -44,6 +50,21 @@ export class DatabaseTooNewError extends Error {
   }
 }
 
+/**
+ * The file cannot be opened, or fails PRAGMA quick_check. The file is left as
+ * it is, never replaced.
+ */
+export class DatabaseUnreadableError extends Error {
+  name = 'DatabaseUnreadableError'
+
+  constructor(
+    readonly file: string,
+    readonly reason: string
+  ) {
+    super(`The board's database at ${file} can't be read: ${reason}`)
+  }
+}
+
 const SQLITE_BUSY = 5
 
 /**
@@ -54,7 +75,7 @@ export function isBusy(error: unknown): boolean {
   return typeof errcode === 'number' && (errcode & 0xff) === SQLITE_BUSY
 }
 
-function pause(milliseconds: number) {
+export function pause(milliseconds: number) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds)
 }
 
@@ -74,6 +95,16 @@ function useWal(sqlite: DatabaseSync, timeoutMs: number) {
       pause(5)
     }
   }
+}
+
+/**
+ * PRAGMA quick_check returns one row, "ok", for a sound file, and otherwise a
+ * row per problem it found.
+ */
+function quickCheck(sqlite: DatabaseSync): string | undefined {
+  const rows = sqlite.prepare('PRAGMA quick_check').all() as Array<{ quick_check: string }>
+  const problems = rows.map((row) => row.quick_check).filter((result) => result !== 'ok')
+  return problems.length === 0 ? undefined : problems.join('; ')
 }
 
 function userVersion(sqlite: DatabaseSync): number {
@@ -109,25 +140,70 @@ function migrate(sqlite: DatabaseSync, file: string): number {
 }
 
 /**
- * Opens the database at `file`, sets the pragmas every connection needs, and
- * migrates it. The caller resolves the path; the store never reads the
- * environment.
+ * Sets the pragmas every connection needs and checks the file. Any failure
+ * but a lock timeout means the file cannot be read.
  */
-export function openDatabase(file: string, options: OpenOptions = {}): Database {
-  const sqlite = new DatabaseSync(file)
-  let applied: number
+function prepare(sqlite: DatabaseSync, file: string, busyTimeoutMs: number) {
   try {
-    const busyTimeoutMs = Math.trunc(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS)
     sqlite.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`)
     useWal(sqlite, busyTimeoutMs)
     sqlite.exec('PRAGMA synchronous = NORMAL')
     sqlite.exec('PRAGMA foreign_keys = ON')
+  } catch (error) {
+    if (isBusy(error)) throw error
+    throw new DatabaseUnreadableError(file, (error as Error).message)
+  }
+  let problems: string | undefined
+  try {
+    problems = quickCheck(sqlite)
+  } catch (error) {
+    if (isBusy(error)) throw error
+    throw new DatabaseUnreadableError(file, (error as Error).message)
+  }
+  if (problems !== undefined) throw new DatabaseUnreadableError(file, problems)
+}
+
+/**
+ * Opens the database at `file`, sets the pragmas every connection needs,
+ * checks it and migrates it. The caller resolves the path; the store never
+ * reads the environment.
+ */
+export function openDatabase(file: string, options: OpenOptions = {}): Database {
+  let sqlite: DatabaseSync
+  try {
+    sqlite = new DatabaseSync(file)
+  } catch (error) {
+    throw new DatabaseUnreadableError(file, (error as Error).message)
+  }
+  let applied: number
+  try {
+    prepare(sqlite, file, Math.trunc(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS))
     applied = migrate(sqlite, file)
   } catch (error) {
     sqlite.close()
     throw error
   }
-  return { sqlite, file, writeHooks: [...(options.writeHooks ?? [])], applied }
+  return {
+    sqlite,
+    file,
+    writeHooks: [...(options.writeHooks ?? [])],
+    applied,
+    holdWriteMs: Math.max(0, Math.trunc(options.holdWriteMs ?? 0)),
+  }
+}
+
+/**
+ * A database that was never opened, for a process whose file cannot be read:
+ * it keeps the file's path, and any query on it throws.
+ */
+export function unopenedDatabase(file: string): Database {
+  return {
+    sqlite: new DatabaseSync(file, { open: false }),
+    file,
+    writeHooks: [],
+    applied: 0,
+    holdWriteMs: 0,
+  }
 }
 
 /**

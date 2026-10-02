@@ -2,9 +2,18 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
+import { unreadable, type Refusal } from '../domain/refusal.js'
 import type { SessionKind } from '../domain/types.js'
-import { closeDatabase, openDatabase } from '../store/database.js'
-import { startHeartbeat } from '../store/heartbeat.js'
+import {
+  closeDatabase,
+  DatabaseUnreadableError,
+  openDatabase,
+  unopenedDatabase,
+  type Database,
+} from '../store/database.js'
+import { startHeartbeat, type Heartbeat } from '../store/heartbeat.js'
+import { runRetention } from '../store/retention.js'
+import { isWritten } from '../store/write.js'
 import {
   homeFromUserDatabase,
   prepareDataDirectory,
@@ -165,17 +174,39 @@ logger.log('start', {
 })
 
 const databaseFile = join(directory, 'board.sqlite')
-let database: ReturnType<typeof openDatabase>
+const holdWriteMs = Number(process.env.ANACHOIC_TEST_HOLD_WRITE_MS)
+let database: Database
+let unreadableFile: Refusal | undefined
 try {
-  database = openDatabase(databaseFile)
+  database = openDatabase(databaseFile, {
+    holdWriteMs: Number.isSafeInteger(holdWriteMs) && holdWriteMs > 0 ? holdWriteMs : 0,
+  })
 } catch (error) {
-  logger.log('database_failed', { file: databaseFile, ...describeError(error) })
-  process.stderr.write(`Anachoic MCP cannot start: ${(error as Error).message}\n`)
-  process.exit(1)
+  if (!(error instanceof DatabaseUnreadableError)) {
+    logger.log('database_failed', { file: databaseFile, ...describeError(error) })
+    process.stderr.write(`Anachoic MCP cannot start: ${(error as Error).message}\n`)
+    process.exit(1)
+  }
+  // The file is left exactly as it is: every tool refuses, and nothing else runs.
+  logger.log('database_unreadable', { file: databaseFile, reason: error.reason })
+  database = unopenedDatabase(databaseFile)
+  unreadableFile = unreadable(databaseFile)
 }
-const heartbeat = startHeartbeat(database, {
-  onError: (error) => logger.log('heartbeat_failed', describeError(error)),
-})
+
+let heartbeat: Pick<Heartbeat, 'serve' | 'stop'> = { serve: () => {}, stop: () => {} }
+if (!unreadableFile) {
+  try {
+    const retained = runRetention(database, new Date().toISOString())
+    if (isWritten(retained) && retained.value.sessions > 0) {
+      logger.log('retention', { sessions: retained.value.sessions })
+    }
+  } catch (error) {
+    logger.log('retention_failed', describeError(error))
+  }
+  heartbeat = startHeartbeat(database, {
+    onError: (error) => logger.log('heartbeat_failed', describeError(error)),
+  })
+}
 lifecycle.onStop(() => {
   heartbeat.stop()
   closeDatabase(database)
@@ -201,6 +232,7 @@ const shared: Shared = {
   now: () => new Date().toISOString(),
   wait: waitTimings(process.env),
   views: viewUris(VIEWS_DIRECTORY),
+  unreadable: unreadableFile,
 }
 
 if (transport === 'http') {

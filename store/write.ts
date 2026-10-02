@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { BUSY, isRefusal, type Refusal } from '../domain/refusal.js'
-import { isBusy, type Database } from './database.js'
+import { isBusy, pause, type Database } from './database.js'
 
 export interface Written<T> {
   value: T
@@ -76,6 +76,7 @@ export function write<T>(
         : (options.keepRevision ?? false)
     if (!keep || hooked) {
       sqlite.prepare('UPDATE board SET revision = revision + 1 WHERE id = 1').run()
+      if (database.holdWriteMs > 0) pause(database.holdWriteMs)
     }
   } catch (error) {
     rollback(sqlite)

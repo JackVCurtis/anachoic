@@ -17,6 +17,7 @@ export type RefusalCode =
   | 'archived'
   | 'invalid'
   | 'busy'
+  | 'unreadable'
 
 export interface Refusal {
   readonly code: RefusalCode
@@ -158,3 +159,11 @@ export function notAWebAddress(): Refusal {
 }
 
 export const BUSY: Refusal = refusal('busy', 'The board is busy. Try again.')
+
+/**
+ * The board's database cannot be opened or fails its check. `file` is its
+ * full path.
+ */
+export function unreadable(file: string): Refusal {
+  return refusal('unreadable', `The board's database at ${file} can't be read`)
+}

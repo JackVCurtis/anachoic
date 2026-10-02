@@ -4,6 +4,7 @@ import outputFormats from './migrations/003_output_formats.sql'
 import resumeWith from './migrations/004_resume_with.sql'
 import blockedSteps from './migrations/005_blocked_steps.sql'
 import removedSessions from './migrations/006_removed_sessions.sql'
+import retention from './migrations/007_retention.sql'
 
 /**
  * Every migration, in order. A migration's number is its place in this list,
@@ -16,4 +17,5 @@ export const MIGRATIONS: readonly string[] = [
   resumeWith,
   blockedSteps,
   removedSessions,
+  retention,
 ]

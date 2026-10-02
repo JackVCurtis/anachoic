@@ -7,10 +7,10 @@ import { InvalidTaskIdError, toTaskNumber } from '../../shared/task_id.js'
 import { readRevision, readTask, type TaskSnapshot } from '../../store/queries.js'
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { taskProps } from '../props/task.js'
-import { guarded, refusalResult } from '../results.js'
+import { refusalResult } from '../results.js'
 import { blockHistory } from '../text/model_tools.js'
 import { openTaskText } from '../text/open_task.js'
-import { asCaller, type ToolContext } from './context.js'
+import { asCaller, asTool, type ToolContext } from './context.js'
 import { taskInput } from './inputs.js'
 import { sessionInput } from './session_input.js'
 
@@ -76,7 +76,7 @@ export function registerTaskTools(server: McpServer, context: ToolContext) {
       outputSchema: getTaskResultSchema,
       _meta: { ui: { visibility: ['app'] } },
     },
-    guarded(context.logger, 'get_task', ({ task, sinceRevision }) => {
+    asTool(context, 'get_task', ({ task, sinceRevision }) => {
       const id = taskNumber(task)
       if (isRefusal(id)) return refusalResult(id)
       if (sinceRevision !== undefined) {
