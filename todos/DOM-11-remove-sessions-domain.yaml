@@ -1,0 +1,30 @@
+id: DOM-11
+title: "Ending and removing a session in one transaction, and hiding removed sessions"
+area: DOM
+phase: "2"
+summary: >
+  Add removedAt to sessions and one service that ends and removes a worker: it releases the session's
+  claims (blocked steps included), clears its assignments and resumeWith, sets endedAt and removedAt
+  and records removed events. Removed sessions are never listed, the heartbeat never revives them, and
+  a later tool call from the same id revives the session afresh.
+requirements:
+  - "A new migration (store/migrations/006_removed_sessions.sql) adds sessions.removed_at and the event kind removed"
+  - "removeSession(id) runs in one transaction: releases every claim as Release does, clears assigned_to and resume_with naming the session, sets ended_at and removed_at, records a removed event per affected task"
+  - "It refuses the dedicated session with invalid and an unknown id with not_found; removing an already removed session changes nothing and is not refused"
+  - "The heartbeat does not clear ended_at or removed_at for a removed session; touchKnownSession on a later tool call clears both and records the session as live again"
+  - "listSessions omits removed sessions; sessions ended but not removed keep the 10-minute listing"
+  - "The invariants are extended: a removed session holds no claim, assignment or resumeWith"
+acceptance_criteria:
+  - "Unit suite: removing a worker holding a running, a waiting and a blocked step returns all three to the queue with the session cleared, with events, in one revision"
+  - "Unit suite: a removed session's process heartbeat does not revive it; its next tool call does"
+  - "Unit suite: refusals for the dedicated session and an unknown id; removing twice is harmless"
+depends_on:
+  - "DOM-10"
+  - "MCP-17"
+external_dependencies: []
+docs:
+  - "13-ending-sessions.md#domain"
+  - "13-ending-sessions.md#three-ways-a-worker-leaves-the-list"
+  - "05-sessions.md#liveness"
+  - "03-domain-model.md#the-task-state-machine"
+  - "04-persistence.md#migrations"

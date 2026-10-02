@@ -83,5 +83,6 @@ This keeps anachoic's seam. The server computes domain facts, and the view compu
 | [10-open-questions.md](10-open-questions.md) | Decisions, open questions, and what the spikes verified |
 | [11-assignment-and-outputs.md](11-assignment-and-outputs.md) | Assigning a task to a worker, and output formats with artifact links on your steps |
 | [12-blocked-steps.md](12-blocked-steps.md) | A worker declaring a step blocked, shown on the board and unblocked in the worker's session |
+| [13-ending-sessions.md](13-ending-sessions.md) | Removing a worker when its session ends, through a SessionEnd hook, and by hand |
 
 The evidence behind the host behaviour these documents rely on is in [../spikes/mcp-apps/notes.md](../spikes/mcp-apps/notes.md).

@@ -16,6 +16,7 @@ The product owner made these decisions while planning, on 2026-10-01.
 | Agent waiting on you | A free-text question and a free-text answer | [03](03-domain-model.md#what-you-can-do-with-a-waiting-step) |
 | Claiming | Workers claim agent steps. Neither you nor the dedicated session assigns them. **Changed on 2026-10-02:** a task may be assigned to one worker when it is created, and only that worker may then claim it. | [05](05-sessions.md#claiming), [11](11-assignment-and-outputs.md#assigning-a-task-to-a-worker) |
 | Blocked steps | A worker may declare a step blocked. The board shows the worker, the step and the reason, and offers no action on it. You unblock it in the worker's session. | [12](12-blocked-steps.md) |
+| Removing workers | A SessionEnd hook removes a worker at once. Liveness remains the safety net. Remove on the board and `leave_board` deregister by hand. | [13](13-ending-sessions.md) |
 | Output formats | A step you own may declare a pull request, ticket, document or link. Completing it requires an http(s) URL, shown on the cards. Agent steps cannot declare one. | [11](11-assignment-and-outputs.md#output-formats-on-your-steps) |
 | Suggestion chips | Asked to remove them. Desktop drew them under the replies to the view's posted messages, so they go away with those messages. | [11](11-assignment-and-outputs.md#suggestion-chips) |
 | Creating tasks | Any session may create tasks, even when the dedicated session is not open | [06](06-tools-and-views.md#every-session) |

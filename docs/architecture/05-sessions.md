@@ -21,6 +21,8 @@ A session row is created, or touched, on the first tool call from that identity.
 
 ## Liveness
 
+A worker can also leave at once: through a `SessionEnd` hook, through Remove on the board, or by calling `leave_board` ([13](13-ending-sessions.md)). The heartbeat below is the safety net for every other case.
+
 A session is **live** while its server process is alive. A Claude Code session keeps its process for exactly as long as the session runs, so the process's own heartbeat measures the session.
 
 - **Heartbeat.** Every server process updates `last_seen_at` and `pid` on the session rows it serves, every 30 s, in one short transaction. The desktop process does this for `dedicated`. A worker's process does it for its one session.

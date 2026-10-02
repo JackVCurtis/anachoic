@@ -1,0 +1,34 @@
+id: MCP-20
+title: "SessionEnd hook, the anachoic-worker plugin, leave_board and remove_session"
+area: MCP
+phase: "2"
+summary: >
+  Remove a worker from the board when its Claude Code session ends: a --session-ended mode of the
+  server for a SessionEnd hook, shipped in a local Claude Code plugin that installs the MCP server and
+  the hook together, with a settings snippet as the alternative. Add leave_board for workers and the
+  app-only remove_session for the board.
+requirements:
+  - "server.js --session-ended reads the hook JSON from stdin, opens the data directory from ANACHOIC_DATA_DIR, calls removeSession(session_id), logs the outcome (never the hook JSON's other fields), and always exits 0 within the 1.5 s budget; it starts no MCP server"
+  - "pnpm run pack also builds a local marketplace folder, plugin/ (git-ignored), holding .claude-plugin/marketplace.json named anachoic and a plugin anachoic-worker whose manifest declares the MCP server (node ${CLAUDE_PLUGIN_ROOT}/server/server.js with ANACHOIC_DATA_DIR) and a SessionEnd hook running node ${CLAUDE_PLUGIN_ROOT}/server/server.js --session-ended with timeout 5"
+  - "pnpm print-worker-command --hook prints the hooks.SessionEnd settings entry for an install without the plugin; no script ever edits ~/.claude/settings.json"
+  - "leave_board: a worker tool with no input, calls removeSession for the caller and returns 'Left the board. Your claims went back to the queue.'; refused for the dedicated session"
+  - "remove_session(session): an app-only tool returning the fresh board props; refusals from DOM-11 come back with their sentences"
+  - "server/instructions.ts: workers call leave_board before a session is closed on purpose"
+  - "docs/architecture/08-packaging-and-hosts.md and the README describe installing the plugin as the preferred worker install, and the snippet as the alternative"
+  - "Record in docs/architecture/13-ending-sessions.md whether the hook's session_id matched CLAUDE_CODE_SESSION_ID, and whether deleting or archiving a desktop Code-tab session fired the hook, once checked by hand"
+acceptance_criteria:
+  - "Integration suite: --session-ended with a worker's id removes it from get_board and returns its step to the queue; with garbage on stdin it exits 0 and logs the failure"
+  - "Integration suite: leave_board and remove_session do what DOM-11 says, and remove_session is absent from the model's tools/list"
+  - "Unit suite: the plugin manifest and marketplace JSON built by pack are valid and point at files that exist in plugin/"
+  - "Manual check in Claude Code: install the plugin, start a worker, exit with /exit; the board drops it within one poll"
+depends_on:
+  - "DOM-11"
+  - "PKG-02"
+external_dependencies:
+  - "Claude Code with plugin support, for the manual check"
+docs:
+  - "13-ending-sessions.md#the-hook"
+  - "13-ending-sessions.md#how-it-is-installed"
+  - "13-ending-sessions.md#tools-and-board"
+  - "13-ending-sessions.md#what-claude-code-offers"
+  - "08-packaging-and-hosts.md#worker-sessions"

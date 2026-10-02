@@ -60,11 +60,14 @@ order,id,title,area,phase,depends_on,file
 59,DOM-10,"Blocked steps in the domain and store - block, unblock and their refusals",DOM,2,DOM-06,DOM-10-blocked-steps-domain.yaml
 60,MCP-19,"block_step and unblock_step, with blocked steps in the props, texts and instructions",MCP,2,DOM-10;MCP-17;MCP-18,MCP-19-block-and-unblock-tools.yaml
 61,UIS-20,"The blocked card in Your turn, and blocked workers in Sessions",UIS,2,UIS-09;MCP-19,UIS-20-blocked-card.yaml
-62,UIS-14,"ChainTimeline, TimelineStep and EventList",UIS,3,UIP-04;MCP-08,UIS-14-chain-timeline.yaml
-63,UIS-15,TaskView and the task panel inside the board,UIS,3,UIS-14;UIF-05,UIS-15-task-view.yaml
-64,MCP-13,"open_task and get_task, fullscreen and links",MCP,3,MCP-08;UIS-15,MCP-13-open-task-and-get-task.yaml
-65,UIS-16,Archive and park from the task view,UIS,3,UIS-15;UIP-05;MCP-10,UIS-16-task-view-actions.yaml
-66,DOM-07,"Retention and recovery - prune old rows, refuse an unreadable database, survive kills",DOM,4,DOM-04,DOM-07-retention-and-recovery.yaml
-67,PKG-04,"Release-quality package - icon, data directory setting, versioning and README",PKG,4,PKG-02;MCP-13,PKG-04-release-package.yaml
-68,MCP-14,End-to-end tests across processes and in the reference host,MCP,4,MCP-13;MCP-11;PKG-03,MCP-14-end-to-end-tests.yaml
-69,UIS-17,"Conformance sweep - accessibility, content rules and token use across both views",UIS,4,UIS-16;UIS-13,UIS-17-conformance-sweep.yaml
+62,DOM-11,"Ending and removing a session in one transaction, and hiding removed sessions",DOM,2,DOM-10;MCP-17,DOM-11-remove-sessions-domain.yaml
+63,MCP-20,"SessionEnd hook, the anachoic-worker plugin, leave_board and remove_session",MCP,2,DOM-11;PKG-02,MCP-20-session-end-hook-and-leave-board.yaml
+64,UIS-21,Remove a worker from the Sessions section,UIS,2,UIS-03;UIP-05;MCP-20,UIS-21-remove-worker-from-the-board.yaml
+65,UIS-14,"ChainTimeline, TimelineStep and EventList",UIS,3,UIP-04;MCP-08,UIS-14-chain-timeline.yaml
+66,UIS-15,TaskView and the task panel inside the board,UIS,3,UIS-14;UIF-05,UIS-15-task-view.yaml
+67,MCP-13,"open_task and get_task, fullscreen and links",MCP,3,MCP-08;UIS-15,MCP-13-open-task-and-get-task.yaml
+68,UIS-16,Archive and park from the task view,UIS,3,UIS-15;UIP-05;MCP-10,UIS-16-task-view-actions.yaml
+69,DOM-07,"Retention and recovery - prune old rows, refuse an unreadable database, survive kills",DOM,4,DOM-04,DOM-07-retention-and-recovery.yaml
+70,PKG-04,"Release-quality package - icon, data directory setting, versioning and README",PKG,4,PKG-02;MCP-13,PKG-04-release-package.yaml
+71,MCP-14,End-to-end tests across processes and in the reference host,MCP,4,MCP-13;MCP-11;PKG-03,MCP-14-end-to-end-tests.yaml
+72,UIS-17,"Conformance sweep - accessibility, content rules and token use across both views",UIS,4,UIS-16;UIS-13,UIS-17-conformance-sweep.yaml

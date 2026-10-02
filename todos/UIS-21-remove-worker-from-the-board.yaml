@@ -1,0 +1,26 @@
+id: UIS-21
+title: "Remove a worker from the Sessions section"
+area: UIS
+phase: "2"
+summary: >
+  Give every worker card in Sessions a Remove button, behind an InlineConfirm when the worker holds a
+  step, calling the app-only remove_session and redrawing from its result.
+requirements:
+  - "SessionCard gains a ghost 'Remove' button on worker cards only, live or ended; the dedicated session's card has none"
+  - "On a worker holding a step, Remove opens an InlineConfirm with 'Remove api-server? Its step on T-012 goes back to the queue.', confirm 'Remove', dismiss 'Keep worker'; on a worker holding nothing, Remove acts at once"
+  - "The entry calls remove_session through view/bridge/tools.ts, redraws from the result, and passes a refusal to the message region; nothing is posted to the chat"
+  - "Focus after removal moves to the Sessions section header"
+  - "New strings follow the content rules; the strings test passes"
+acceptance_criteria:
+  - "ui suite: Remove appears on worker cards only; the confirm appears only when a step is held; confirm calls remove_session once; dismiss returns focus to Remove"
+  - "Stories: a live worker with a step, confirming; an ended worker; every story passes the axe check at 735 and 600 px"
+  - "Manual desktop check: removing a live worker returns its step to the queue and the card disappears"
+depends_on:
+  - "UIS-03"
+  - "UIP-05"
+  - "MCP-20"
+external_dependencies: []
+docs:
+  - "13-ending-sessions.md#tools-and-board"
+  - "07-ui-port.md#what-is-new"
+  - "anachoic:ui/17-content-rules.md#rules"
