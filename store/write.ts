@@ -7,12 +7,13 @@ export interface Written<T> {
   revision: number
 }
 
-export interface WriteOptions {
+export interface WriteOptions<T> {
   /**
-   * Leaves the revision as it was unless a write hook changed the board. Only
-   * the plain heartbeat writes this way, because the board does not show it.
+   * Leaves the revision as it was unless a write hook changed the board: for
+   * a write the board does not show, such as the plain heartbeat. A function
+   * decides from the change's result.
    */
-  keepRevision?: boolean
+  keepRevision?: boolean | ((value: T) => boolean)
 }
 
 function isThenable(value: unknown): boolean {
@@ -44,7 +45,7 @@ function readRevision(sqlite: DatabaseSync): number {
 export function write<T>(
   database: Database,
   change: (sqlite: DatabaseSync) => T | Refusal,
-  options: WriteOptions = {}
+  options: WriteOptions<T> = {}
 ): Written<T> | Refusal {
   const { sqlite } = database
   try {
@@ -69,7 +70,11 @@ export function write<T>(
       return result
     }
     value = result
-    if (!options.keepRevision || hooked) {
+    const keep =
+      typeof options.keepRevision === 'function'
+        ? options.keepRevision(value)
+        : (options.keepRevision ?? false)
+    if (!keep || hooked) {
       sqlite.prepare('UPDATE board SET revision = revision + 1 WHERE id = 1').run()
     }
   } catch (error) {
