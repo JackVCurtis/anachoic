@@ -95,3 +95,16 @@ export const actions = {
   archiveTask: (app: App, task: TaskArg) =>
     callAppTool<ActionResult>(app, 'archive_task', { task }),
 }
+
+/**
+ * Asks the host to open a web address in the browser, since the sandboxed
+ * view cannot navigate. False when the host refused or could not be reached.
+ */
+export async function openLink(app: Pick<HostApp, 'openLink'>, url: string): Promise<boolean> {
+  try {
+    const result = await app.openLink({ url })
+    return !('isError' in result && result.isError)
+  } catch {
+    return false
+  }
+}

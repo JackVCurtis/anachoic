@@ -5,6 +5,7 @@ import type { HostApp, HostContext } from '../connect'
 type CallParams = Parameters<HostApp['callServerTool']>[0]
 type MessageParams = Parameters<App['sendMessage']>[0]
 type DisplayModeParams = Parameters<HostApp['requestDisplayMode']>[0]
+type OpenLinkParams = Parameters<HostApp['openLink']>[0]
 type ToolResultHandler = NonNullable<HostApp['ontoolresult']>
 type HostContextHandler = NonNullable<HostApp['onhostcontextchanged']>
 
@@ -37,6 +38,7 @@ export class FakeApp implements HostApp {
     callServerTool: [] as CallParams[],
     sendMessage: [] as MessageParams[],
     requestDisplayMode: [] as DisplayModeParams[],
+    openLink: [] as OpenLinkParams[],
   }
 
   #hostContext: HostContext
@@ -82,6 +84,11 @@ export class FakeApp implements HostApp {
   async requestDisplayMode(params: DisplayModeParams) {
     this.calls.requestDisplayMode.push(params)
     return { mode: params.mode }
+  }
+
+  async openLink(params: OpenLinkParams) {
+    this.calls.openLink.push(params)
+    return {}
   }
 
   /** Sends a partial host context change, as the host does. */

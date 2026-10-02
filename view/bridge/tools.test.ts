@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { FakeApp } from './testing/fake_app'
-import { actions, callAppTool } from './tools'
+import { actions, callAppTool, openLink } from './tools'
 
 describe('callAppTool', () => {
   test('returns the structuredContent of a result as props', async () => {
@@ -56,5 +56,26 @@ describe('actions.completeMyStep', () => {
         arguments: { task: 'T-012', artifactUrl: 'https://github.com/acme/api/pull/12' },
       },
     ])
+  })
+})
+
+describe('openLink', () => {
+  test('asks the host to open the address', async () => {
+    const app = new FakeApp()
+
+    expect(await openLink(app, 'https://github.com/o/r/pull/7')).toBe(true)
+    expect(app.calls.openLink).toEqual([{ url: 'https://github.com/o/r/pull/7' }])
+  })
+
+  test('is false when the host refuses or cannot be reached', async () => {
+    const refusing = { openLink: async () => ({ isError: true }) }
+    const failing = {
+      openLink: async () => {
+        throw new Error('Gone')
+      },
+    }
+
+    expect(await openLink(refusing, 'https://example.com')).toBe(false)
+    expect(await openLink(failing, 'https://example.com')).toBe(false)
   })
 })
