@@ -14,6 +14,7 @@ const OPTIONS = {
   target: 'node24',
   outfile: resolve(ROOT, 'dist/server.js'),
   logLevel: 'warning',
+  loader: { '.sql': 'text' },
   define: { ANACHOIC_VERSION: JSON.stringify(version) },
   banner: {
     js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",

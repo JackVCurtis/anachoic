@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
+import { closeDatabase, openDatabase } from '../store/database.js'
 import {
   homeFromUserDatabase,
   prepareDataDirectory,
@@ -92,6 +93,17 @@ logger.log('start', {
   transport,
   dataDirectory: directory,
 })
+
+const databaseFile = join(directory, 'board.sqlite')
+let database: ReturnType<typeof openDatabase>
+try {
+  database = openDatabase(databaseFile)
+} catch (error) {
+  logger.log('database_failed', { file: databaseFile, ...describeError(error) })
+  process.stderr.write(`Anachoic MCP cannot start: ${(error as Error).message}\n`)
+  process.exit(1)
+}
+lifecycle.onStop(() => closeDatabase(database))
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => void lifecycle.stop(signal))

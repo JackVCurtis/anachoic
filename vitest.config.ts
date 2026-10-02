@@ -4,6 +4,7 @@ import { mkdtemp, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
+import type { Plugin } from 'vite'
 import type { BrowserCommand } from 'vitest/node'
 import { configDefaults, defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
@@ -72,6 +73,19 @@ function chromium(timeZone = TIME_ZONE, locale = LOCALE) {
 }
 
 /**
+ * The store imports its migrations as text, as esbuild's text loader does in
+ * the server build.
+ */
+const sqlAsText: Plugin = {
+  name: 'sql-as-text',
+  transform(code, id) {
+    return id.endsWith('.sql')
+      ? { code: `export default ${JSON.stringify(code)}`, map: null }
+      : null
+  },
+}
+
+/**
  * `unit` is domain/, store/ and the server's pure parts in Node, and
  * `integration` the built server driven through an MCP client, also in Node.
  * The browser projects extend the configuration Storybook uses and run in
@@ -83,6 +97,7 @@ export default defineConfig({
     passWithNoTests: true,
     projects: [
       {
+        plugins: [sqlAsText],
         test: {
           name: 'unit',
           environment: 'node',
