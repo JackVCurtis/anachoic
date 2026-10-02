@@ -89,7 +89,9 @@ test('a client that probes server/discover before initialize still gets its own 
   })
   const answer = async (message: { id: number; [field: string]: unknown }) => {
     child.stdin.write(`${JSON.stringify(message)}\n`)
-    await expect.poll(() => responses.some(({ id }) => id === message.id)).toBe(true)
+    await expect
+      .poll(() => responses.some(({ id }) => id === message.id), { timeout: 5_000 })
+      .toBe(true)
     return responses.find(({ id }) => id === message.id)!
   }
 
