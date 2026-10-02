@@ -11,11 +11,12 @@ requirements:
   - "complete_my_step gains optional artifactUrl; the domain refusals come back with their sentences"
   - "shared/props.ts: steps carry outputFormat and artifactUrl; yourTurn items carry the current step's outputFormat; working, queue, backlog and toSignOff items carry artifacts [{stepNumber, format, url}] from their done steps; all backward compatible"
   - "claim_step and open_task texts list each earlier step's artifact as \"Step 2 (you): Pull request https://…\"; the board summary shows a task's artifact links after it"
-  - "view/bridge: the typed caller for complete_my_step takes artifactUrl, and wake.ts builds \"I finished step 2 of T-012, “Review the PR”: https://…\" with \" Note: …\" appended when a note was written"
+  - "view/bridge: the typed caller for complete_my_step takes artifactUrl"
   - "Tool descriptions say only the person's steps may declare an output format, and list the four values"
 acceptance_criteria:
   - "Integration suite: adding a task with a formatted step you own succeeds; on an agent step it is refused with the sentence"
   - "Integration suite: complete_my_step without a URL, with an invalid URL, and with a valid one; a worker's claim_step on the next step reads the artifact in its text"
+  - "Unit suite: the board summary shows a task's artifact links after it and stays within its token budget"
 depends_on:
   - "DOM-09"
   - "MCP-10"
