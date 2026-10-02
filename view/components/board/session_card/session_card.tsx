@@ -120,9 +120,7 @@ function Header({ state, session, label }: HeaderProps) {
     <div className={styles.header}>
       <StatusSquare state={state} />
       <span className={joinClasses('text-name', styles.name)}>{session.name}</span>
-      <Tag variant="neutral">
-        {session.kind === 'dedicated' ? sessions.kindDedicated : sessions.kindWorker}
-      </Tag>
+      {session.kind === 'worker' && <Tag variant="neutral">{sessions.kindWorker}</Tag>}
       {label !== '' && <span className={joinClasses('text-status', styles.state)}>{label}</span>}
     </div>
   )

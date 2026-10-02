@@ -31,10 +31,11 @@ describe('SessionCard', () => {
     expect(container.querySelector('article')).not.toBeNull()
   })
 
-  test('this chat is named "This chat" and tagged as the dedicated session', () => {
+  test('this chat is named "This chat" once, with no kind tag', () => {
     renderCard(SESSIONS.thisChat)
 
-    expect(screen.getAllByText('This chat')).toHaveLength(2)
+    expect(screen.getAllByText('This chat')).toHaveLength(1)
+    expect(screen.queryByText('Worker')).toBeNull()
     expect(screen.getByText('Step 2 · Choose the cache key')).toBeVisible()
   })
 

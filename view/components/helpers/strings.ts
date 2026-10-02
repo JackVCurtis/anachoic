@@ -78,7 +78,6 @@ export const sessions = {
   title: 'Sessions',
   session: 'Session',
   thisChat: 'This chat',
-  kindDedicated: 'This chat',
   kindWorker: 'Worker',
   claimedBy: 'Claimed by',
   unclaimed: 'Unclaimed',
