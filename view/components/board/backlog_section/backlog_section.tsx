@@ -1,6 +1,6 @@
 // Copied from anachoic inertia/components/board/backlog_section/backlog_section.tsx at fd99e0d
 import { backlog } from '../../helpers/strings'
-import type { BacklogTask } from '../board_data'
+import type { BacklogTask, PendingCardAction } from '../board_data'
 import { BacklogCard } from '../backlog_card/backlog_card'
 import { BoardSection } from '../board_section/board_section'
 import styles from './backlog_section.module.css'
@@ -13,6 +13,10 @@ export interface BacklogSectionProps {
   onOpenTask: (taskId: string) => void
   /** Sends a task to the Queue. Without it no card offers "Queue →". */
   onQueueTask?: (taskId: string) => void
+  /** Archives a task once confirmed. Without it no card offers "Archive". */
+  onArchive?: (taskId: string) => void
+  /** The card action in flight, if any. */
+  pending?: PendingCardAction | null
 }
 
 /**
@@ -24,6 +28,8 @@ export function BacklogSection({
   selectedTaskId = null,
   onOpenTask,
   onQueueTask,
+  onArchive,
+  pending = null,
 }: BacklogSectionProps) {
   return (
     <BoardSection
@@ -39,6 +45,8 @@ export function BacklogSection({
             selected={task.task.id === selectedTaskId}
             onOpenTask={onOpenTask}
             onQueueTask={onQueueTask}
+            onArchive={onArchive}
+            pending={pending?.taskId === task.task.id ? pending.action : null}
           />
         ),
       }))}

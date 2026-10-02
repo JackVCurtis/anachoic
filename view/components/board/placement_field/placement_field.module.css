@@ -1,0 +1,66 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Native radios drawn as two segments in a hairline box on the ground color */
+.options {
+  display: inline-flex;
+  align-self: flex-start;
+  border: var(--border-hairline) solid var(--color-divider);
+  background-color: var(--color-bg);
+}
+
+.field:disabled .options {
+  opacity: var(--opacity-disabled);
+}
+
+.option {
+  position: relative;
+  display: inline-flex;
+}
+
+.option + .option {
+  border-left: var(--border-hairline) solid var(--color-divider);
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.field:disabled .input {
+  cursor: not-allowed;
+}
+
+.label {
+  padding: 5px 12px;
+  color: var(--color-text);
+}
+
+.option:not(:has(:checked, :disabled)):hover .label {
+  background-color: var(--tint-hover);
+}
+
+.input:checked + .label {
+  background-color: var(--color-accent);
+  color: var(--color-text-on-fill);
+}
+
+.input:focus-visible + .label {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* An accent ring cannot be seen on the accent fill */
+.input:checked:focus-visible + .label {
+  outline-color: var(--color-bg);
+}

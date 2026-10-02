@@ -82,6 +82,18 @@ export interface SignOffTask {
   canAct: { signOff: boolean; followUp: boolean; archive: boolean }
 }
 
+/**
+ * An action pressed on a card that waits for the server: sign off, follow-up,
+ * archive, or move to the backlog.
+ */
+export type CardAction = 'signOff' | 'followUp' | 'archive' | 'backlog'
+
+/** The card action in flight, and the task it acts on. */
+export interface PendingCardAction {
+  taskId: string
+  action: CardAction
+}
+
 export interface SignedOffTask {
   task: BoardTask
   /** An instant. */

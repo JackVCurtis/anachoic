@@ -1,5 +1,5 @@
 // Copied from anachoic inertia/components/board/backlog_card/backlog_card.test.tsx at fd99e0d
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import { BACKLOG } from '../../fixtures/board_sections'
@@ -90,5 +90,62 @@ describe('BacklogCard', () => {
     expect(style.rowGap).toBe(space('--space-2'))
     await userEvent.hover(title)
     expect(getComputedStyle(card).backgroundColor).toBe(resolvedColor('--color-accent-100'))
+  })
+})
+
+describe('BacklogCard Archive', () => {
+  function renderArchivable(props: Partial<BacklogCardProps> = {}) {
+    const onArchive = vi.fn()
+    return { ...renderCard({ onArchive, ...props }), onArchive }
+  }
+
+  test('a ghost "Archive" asks first and reports only after the confirmation', async () => {
+    const { user, onArchive, onOpenTask } = renderArchivable()
+
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+    expect(onArchive).not.toHaveBeenCalled()
+    const group = screen.getByRole('group', {
+      name: `Archive “${RENAME.task.title}”? It leaves every list.`,
+    })
+    expect(document.activeElement).toBe(within(group).getByRole('button', { name: 'Keep task' }))
+    expect(screen.queryByRole('button', { name: 'Queue' })).toBeNull()
+
+    await user.click(within(group).getByRole('button', { name: 'Archive' }))
+    expect(onArchive).toHaveBeenCalledExactlyOnceWith(RENAME.task.id)
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('Keep task reports nothing and returns focus to Archive', async () => {
+    const { user, onArchive } = renderArchivable()
+
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+    await user.click(screen.getByRole('button', { name: 'Keep task' }))
+
+    expect(onArchive).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Archive' }))
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeVisible()
+  })
+
+  test('a task that cannot be archived has no "Archive"', () => {
+    renderArchivable({ task: { ...RENAME, canAct: { ...RENAME.canAct, archive: false } } })
+
+    expect(screen.queryByRole('button', { name: 'Archive' })).toBeNull()
+  })
+
+  test('while the archive is in flight its confirm is busy and Keep task disabled', async () => {
+    const { user, rerender, onArchive } = renderArchivable()
+    await user.click(screen.getByRole('button', { name: 'Archive' }))
+
+    rerender(
+      <div style={{ width: 600 }}>
+        <BacklogCard task={RENAME} onOpenTask={() => {}} onArchive={onArchive} pending="archive" />
+      </div>
+    )
+
+    const group = screen.getByRole('group')
+    expect(within(group).getByRole('button', { name: 'Archive' }).getAttribute('aria-busy')).toBe(
+      'true'
+    )
+    expect(within(group).getByRole('button', { name: 'Keep task' })).toBeDisabled()
   })
 })

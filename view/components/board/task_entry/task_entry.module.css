@@ -16,106 +16,6 @@
   min-width: 0;
 }
 
-.steps {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-/* Lines the number up with the middle of the one-line controls beside it */
-.number {
-  flex: none;
-  min-width: 2ch;
-  line-height: var(--size-control);
-  color: var(--color-text-subtle);
-}
-
-.stepBody {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-/* Under 600 px the owner and the step's buttons wrap below its title */
-.stepRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.stepTitle {
-  flex: 1 1 16rem;
-  width: auto;
-  min-width: 0;
-}
-
-/* Native radios drawn as two segments in a hairline box, one tab stop for the pair */
-.owner {
-  display: inline-flex;
-  flex: none;
-  margin: 0;
-  padding: 0;
-  border: var(--border-hairline) solid var(--color-divider);
-}
-
-.ownerOption {
-  position: relative;
-  display: inline-flex;
-}
-
-.ownerOption + .ownerOption {
-  border-left: var(--border-hairline) solid var(--color-divider);
-}
-
-.ownerInput {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.ownerLabel {
-  padding: 5px 12px;
-  color: var(--color-text);
-}
-
-.ownerOption:hover .ownerLabel {
-  background-color: var(--tint-hover);
-}
-
-.ownerInput:checked + .ownerLabel {
-  background-color: var(--color-accent);
-  color: var(--color-text-on-fill);
-}
-
-.ownerInput:focus-visible + .ownerLabel {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
-}
-
-.ownerInput:checked:focus-visible + .ownerLabel {
-  outline-color: var(--color-bg);
-}
-
-.addStep {
-  align-self: flex-start;
-}
-
 .submitRow {
   display: flex;
   flex-wrap: wrap;
@@ -126,10 +26,4 @@
 .hint {
   margin-left: auto;
   color: var(--color-text-faint);
-}
-
-/* A message from the server about a field, in place of the hint */
-.error {
-  color: var(--color-text);
-  overflow-wrap: anywhere;
 }

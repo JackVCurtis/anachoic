@@ -589,3 +589,50 @@ describe('moving a card with a pointer', () => {
     expect(onReorder).not.toHaveBeenCalled()
   })
 })
+
+describe('Move to backlog', () => {
+  test('each card that can go back has a ghost "Move to backlog", which reports its task and opens nothing', async () => {
+    const onMoveToBacklog = vi.fn()
+    const { user, section, onOpenTask } = renderQueue({ onMoveToBacklog })
+
+    expect(within(section).getAllByRole('button', { name: queue.toBacklog })).toHaveLength(
+      QUEUE.busy.filter((task) => task.canAct.backlog).length
+    )
+    await user.click(within(cardOf(SECOND)).getByRole('button', { name: queue.toBacklog }))
+
+    expect(onMoveToBacklog).toHaveBeenCalledExactlyOnceWith(SECOND.task.id)
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('a card that cannot go back, or a section without the handler, offers no button', () => {
+    const tasks = [{ ...FIRST, canAct: { ...FIRST.canAct, backlog: false } }, SECOND]
+    const { section, rerender } = renderQueue({ tasks, onMoveToBacklog: vi.fn() })
+
+    expect(within(cardOf(FIRST)).queryByRole('button', { name: queue.toBacklog })).toBeNull()
+    expect(within(cardOf(SECOND)).getByRole('button', { name: queue.toBacklog })).toBeVisible()
+
+    rerender(
+      <div style={{ width: 600 }}>
+        <QueueSection tasks={tasks} onOpenTask={() => {}} />
+      </div>
+    )
+    expect(within(section).queryByRole('button', { name: queue.toBacklog })).toBeNull()
+  })
+
+  test('while it is in flight the button is busy and the card cannot be moved', async () => {
+    const onMoveToBacklog = vi.fn()
+    const { user } = renderQueue({
+      onMoveToBacklog,
+      onReorder: vi.fn(),
+      pending: { taskId: SECOND.task.id, action: 'backlog' },
+    })
+    const button = within(cardOf(SECOND)).getByRole('button', { name: queue.toBacklog })
+
+    expect(button.getAttribute('aria-busy')).toBe('true')
+    expect(within(cardOf(SECOND)).getByRole('button', { name: queue.move })).toBeDisabled()
+    expect(within(cardOf(THIRD)).getByRole('button', { name: queue.move })).toBeEnabled()
+    await user.click(button)
+    expect(onMoveToBacklog).not.toHaveBeenCalled()
+    expect(within(cardOf(THIRD)).getByRole('button', { name: queue.toBacklog })).toBeEnabled()
+  })
+})

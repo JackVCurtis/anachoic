@@ -12,6 +12,7 @@ import { BoardView, type BoardAnnouncement } from '../../components/board/board_
 import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
+import { useCardActions } from './use_card_actions'
 import { useTaskEntry } from './use_task_entry'
 import { useYourTurnActions } from './use_your_turn_actions'
 
@@ -74,6 +75,7 @@ function Board({ app, source }: LiveBoardProps) {
   const { messages, dismiss, reportFailure } = useBoardMessages(source)
   const taskEntry = useTaskEntry(yourActions, source, reportFailure)
   const yourTurnActions = useYourTurnActions(yourActions, source, board, reportFailure)
+  const cardActions = useCardActions(yourActions, source, board, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
@@ -119,6 +121,7 @@ function Board({ app, source }: LiveBoardProps) {
       onQueueTask={(taskId) => void queueTask(taskId)}
       taskEntry={taskEntry}
       {...yourTurnActions}
+      {...cardActions}
       messages={messages}
       onDismissMessage={dismiss}
     />

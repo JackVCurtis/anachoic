@@ -102,3 +102,27 @@ export const LongTitleNarrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
 }
+
+export const ArchiveConfirming: Story = {
+  name: 'Archive, confirming',
+  args: { onArchive: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Archive' }))
+    const group = canvas.getByRole('group')
+    await expect(within(group).getByRole('button', { name: 'Keep task' })).toHaveFocus()
+    await userEvent.click(within(group).getByRole('button', { name: 'Archive' }))
+    await expect(args.onArchive).toHaveBeenCalledWith(RENAME.task.id)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+  },
+}
+
+export const Archiving: Story = {
+  name: 'Archiving',
+  args: { onArchive: fn(), pending: 'archive' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'Archive' })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: 'Queue' })).toBeDisabled()
+  },
+}

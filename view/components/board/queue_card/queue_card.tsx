@@ -8,7 +8,8 @@ import { joinFacts, splitFacts } from '../../helpers/words'
 import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
-import type { BoardStep, QueueTask } from '../board_data'
+import { Button } from '../../primitives/button/button'
+import type { BoardStep, CardAction, QueueTask } from '../board_data'
 import { MoveHandle, type HandleMove } from '../move_handle/move_handle'
 import { pipsOf } from '../pips'
 import styles from './queue_card.module.css'
@@ -23,6 +24,8 @@ export interface QueueCardProps {
   movable: boolean
   /** A change of order is in flight, so the handle is disabled. */
   busy?: boolean
+  /** The action in flight on this card, whose button is busy while the others are disabled. */
+  pending?: CardAction | null
   /** The id of the section's hidden instructions for moving a card. */
   instructionsId: string
   onOpenTask: (taskId: string) => void
@@ -30,6 +33,8 @@ export interface QueueCardProps {
   onDrop?: (taskId: string) => void
   onMove?: (taskId: string, move: HandleMove) => void
   onCancelMove?: (taskId: string) => void
+  /** Sends the task back to the Backlog. Without it the card offers no "Move to backlog". */
+  onMoveToBacklog?: (taskId: string) => void
 }
 
 /**
@@ -60,12 +65,14 @@ export function QueueCard({
   lifted = false,
   movable,
   busy = false,
+  pending = null,
   instructionsId,
   onOpenTask,
   onLift,
   onDrop,
   onMove,
   onCancelMove,
+  onMoveToBacklog,
 }: QueueCardProps) {
   const titleId = useId()
   const handle = useRef<HTMLButtonElement>(null)
@@ -104,7 +111,7 @@ export function QueueCard({
             <MoveHandle
               ref={handle}
               lifted={lifted}
-              disabled={busy}
+              disabled={busy || pending !== null}
               describedBy={`${titleId} ${instructionsId}`}
               onLift={() => onLift?.(task.task.id)}
               onDrop={() => onDrop?.(task.task.id)}
@@ -116,10 +123,26 @@ export function QueueCard({
       }
     >
       {task.steps.length > 0 && <StepPips steps={pipsOf(task.steps)} />}
-      <MetaLine
-        tone="meta"
-        facts={[task.task.displayId, ...splitFacts(resumeLine(task.steps, task.nextOwner))]}
-      />
+      <div className={styles.row}>
+        <MetaLine
+          tone="meta"
+          facts={[task.task.displayId, ...splitFacts(resumeLine(task.steps, task.nextOwner))]}
+          className={styles.meta}
+        />
+        {task.canAct.backlog && onMoveToBacklog && (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-describedby={titleId}
+            busy={pending === 'backlog'}
+            disabled={busy || (pending !== null && pending !== 'backlog')}
+            onPress={() => onMoveToBacklog(task.task.id)}
+            className={styles.toBacklog}
+          >
+            {queue.toBacklog}
+          </Button>
+        )}
+      </div>
     </ActionCard>
   )
 }

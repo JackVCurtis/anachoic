@@ -12,7 +12,7 @@ import { DRAG_START_PX } from '../../helpers/constants'
 import { moveAnnouncement, movedOrder, type MoveMoment, type QueueMove } from '../../helpers/queue'
 import { assistive, queue } from '../../helpers/strings'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
-import type { QueueTask } from '../board_data'
+import type { PendingCardAction, QueueTask } from '../board_data'
 import { BoardSection } from '../board_section/board_section'
 import { QueueCard } from '../queue_card/queue_card'
 import styles from './queue_section.module.css'
@@ -27,6 +27,10 @@ export interface QueueSectionProps {
   onOpenTask: (taskId: string) => void
   /** Moves a task to a position counted from 1. Without it no card has a Move handle. */
   onReorder?: (taskId: string, position: number) => void
+  /** Sends a task back to the Backlog. Without it no card offers "Move to backlog". */
+  onMoveToBacklog?: (taskId: string) => void
+  /** The card action in flight, if any. */
+  pending?: PendingCardAction | null
 }
 
 /**
@@ -119,6 +123,8 @@ export function QueueSection({
   selectedTaskId = null,
   onOpenTask,
   onReorder,
+  onMoveToBacklog,
+  pending = null,
 }: QueueSectionProps) {
   const instructionsId = useId()
   const [lift, setLift] = useState<Lift | null>(null)
@@ -174,7 +180,7 @@ export function QueueSection({
 
   function startLift(taskId: string, byPointer: boolean) {
     const task = byId.get(taskId)
-    if (busy || lift || !reorderable || !task?.canAct.reorder) {
+    if (busy || lift || !reorderable || !task?.canAct.reorder || pending?.taskId === taskId) {
       return false
     }
     const order = shown.map((item) => item.task.id)
@@ -390,12 +396,14 @@ export function QueueSection({
             lifted={task.task.id === lift?.taskId}
             movable={reorderable && task.canAct.reorder}
             busy={busy}
+            pending={pending?.taskId === task.task.id ? pending.action : null}
             instructionsId={instructionsId}
             onOpenTask={onOpenTask}
             onLift={(taskId) => startLift(taskId, false)}
             onDrop={handleDrop}
             onMove={handleMove}
             onCancelMove={handleCancel}
+            onMoveToBacklog={onMoveToBacklog}
           />
         ),
       }))}

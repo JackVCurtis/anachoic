@@ -1,5 +1,5 @@
 // Copied from anachoic inertia/components/sign_off/sign_off_view/sign_off_view.test.tsx at fd99e0d
-import { screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { DONE } from '../../fixtures/board_sections'
 import { done } from '../../helpers/strings'
@@ -94,5 +94,181 @@ describe('DoneSection', () => {
     await user.click(screen.getByRole('button', { name: DONE.flaky.task.title }))
 
     expect(onOpenTask).toHaveBeenCalledExactlyOnceWith(DONE.flaky.task.id)
+  })
+})
+
+describe('DoneSection follow-up composer', () => {
+  const [FLAKY, RETRY] = DONE.two
+
+  function renderComposing(props: Partial<DoneSectionProps> = {}) {
+    const onFollowUp = vi.fn()
+    const onSignOff = vi.fn()
+    const rendered = renderSection({ onFollowUp, onSignOff, onArchive: vi.fn(), ...props })
+    const cardOf = (title: string) =>
+      screen.getByRole('button', { name: title }).closest('article') as HTMLElement
+    return { ...rendered, onFollowUp, onSignOff, cardOf }
+  }
+
+  test('Follow up opens the composer in place of the actions, with Back chosen and focus in the first step title', async () => {
+    const { user, cardOf } = renderComposing()
+    const card = cardOf(FLAKY.task.title)
+
+    await user.click(within(card).getByRole('button', { name: 'Follow up' }))
+
+    const form = within(card).getByRole('form', { name: 'Follow-up task' })
+    expect(within(card).queryByRole('button', { name: 'Sign off' })).toBeNull()
+    expect(within(form).getByRole('radio', { name: 'Back' })).toBeChecked()
+    expect(within(form).getByRole('radio', { name: 'Front' })).not.toBeChecked()
+    expect(within(form).getByRole('group', { name: 'Place in queue' })).toBeVisible()
+    const first = FLAKY.steps.length + 1
+    expect(document.activeElement).toBe(
+      within(form).getByRole('textbox', { name: `Title of step ${first}` })
+    )
+  })
+
+  test('Append & queue is disabled until every step has a title, then reports the steps and the placement', async () => {
+    const { user, cardOf, onFollowUp } = renderComposing()
+    const card = cardOf(FLAKY.task.title)
+    await user.click(within(card).getByRole('button', { name: 'Follow up' }))
+    const form = within(card).getByRole('form')
+    const append = within(form).getByRole('button', { name: 'Append & queue' })
+    const first = FLAKY.steps.length + 1
+
+    expect(append).toBeDisabled()
+    expect(form).toHaveTextContent('A step needs a title')
+
+    await user.keyboard('Fix the flake')
+    await user.click(within(form).getByRole('button', { name: 'Add step' }))
+    expect(append).toBeDisabled()
+    await user.keyboard('Check the run')
+    await user.click(
+      within(form)
+        .getByRole('group', { name: `Owner of step ${first + 1}` })
+        .querySelector('input[value="you"]')!
+    )
+    await user.click(within(form).getByRole('radio', { name: 'Front' }))
+
+    expect(append).toBeEnabled()
+    expect(form).toHaveTextContent('Extends the chain · re-enters the queue')
+    await user.click(append)
+
+    expect(onFollowUp).toHaveBeenCalledExactlyOnceWith(FLAKY.task.id, {
+      steps: [
+        { title: 'Fix the flake', owner: 'agent' },
+        { title: 'Check the run', owner: 'you' },
+      ],
+      placement: 'first',
+    })
+  })
+
+  test.each(['Cancel', 'Escape'])(
+    '%s closes the composer and returns focus to Follow up',
+    async (how) => {
+      const { user, cardOf, onFollowUp } = renderComposing()
+      const card = cardOf(FLAKY.task.title)
+      await user.click(within(card).getByRole('button', { name: 'Follow up' }))
+      await user.keyboard('Half written')
+
+      if (how === 'Cancel') {
+        await user.click(within(card).getByRole('button', { name: 'Cancel' }))
+      } else {
+        await user.keyboard('{Escape}')
+      }
+
+      expect(within(card).queryByRole('form')).toBeNull()
+      expect(document.activeElement).toBe(within(card).getByRole('button', { name: 'Follow up' }))
+      expect(onFollowUp).not.toHaveBeenCalled()
+    }
+  )
+
+  test('each time a composer opens it starts empty, with Back chosen', async () => {
+    const { user, cardOf } = renderComposing()
+    const card = cardOf(FLAKY.task.title)
+    await user.click(within(card).getByRole('button', { name: 'Follow up' }))
+    await user.keyboard('Fix the flake')
+    await user.click(within(card).getByRole('radio', { name: 'Front' }))
+    await user.click(within(card).getByRole('button', { name: 'Cancel' }))
+
+    await user.click(within(card).getByRole('button', { name: 'Follow up' }))
+
+    expect(within(card).getByRole('radio', { name: 'Back' })).toBeChecked()
+    expect(within(card).getAllByRole('textbox')[0]).toHaveValue('')
+  })
+
+  test('opening a composer on a second card closes the first', async () => {
+    const { user, cardOf } = renderComposing()
+
+    await user.click(within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Follow up' }))
+    await user.click(within(cardOf(RETRY.task.title)).getByRole('button', { name: 'Follow up' }))
+
+    expect(screen.getAllByRole('form')).toHaveLength(1)
+    expect(within(cardOf(RETRY.task.title)).getByRole('form')).toBeVisible()
+    expect(
+      within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Follow up' })
+    ).toBeVisible()
+  })
+
+  test('signing off a card closes its composer, and the draft goes with it', async () => {
+    const onFollowUp = vi.fn()
+    const { user, cardOf, rerender } = renderComposing({ onFollowUp })
+    await user.click(within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Follow up' }))
+    await user.keyboard('Fix the flake')
+
+    const section = (toSignOff: DoneSectionProps['toSignOff']) => (
+      <DoneSection
+        toSignOff={toSignOff}
+        signedOff={DONE.signedOff}
+        onOpenTask={() => {}}
+        onSignOff={() => {}}
+        onFollowUp={onFollowUp}
+      />
+    )
+    await act(async () => rerender(section([RETRY])))
+    expect(screen.queryByRole('form')).toBeNull()
+
+    await act(async () => rerender(section(DONE.two)))
+    expect(screen.queryByRole('form')).toBeNull()
+    expect(within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Sign off' })).toBeVisible()
+  })
+
+  test('Sign off on another card leaves an open composer alone', async () => {
+    const { user, cardOf, onSignOff } = renderComposing()
+    await user.click(within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Follow up' }))
+
+    await user.click(within(cardOf(RETRY.task.title)).getByRole('button', { name: 'Sign off' }))
+
+    expect(onSignOff).toHaveBeenCalledExactlyOnceWith(RETRY.task.id)
+    expect(within(cardOf(FLAKY.task.title)).getByRole('form')).toBeVisible()
+  })
+
+  test('while the follow-up is in flight Append & queue is busy, Cancel disabled and the draft kept', async () => {
+    const { user, cardOf, rerender, onFollowUp } = renderComposing()
+    await user.click(within(cardOf(FLAKY.task.title)).getByRole('button', { name: 'Follow up' }))
+    await user.keyboard('Fix the flake')
+
+    rerender(
+      <DoneSection
+        toSignOff={DONE.two}
+        signedOff={DONE.signedOff}
+        onOpenTask={() => {}}
+        onFollowUp={onFollowUp}
+        pending={{ taskId: FLAKY.task.id, action: 'followUp' }}
+      />
+    )
+    const form = screen.getByRole('form')
+    expect(
+      within(form).getByRole('button', { name: 'Append & queue' }).getAttribute('aria-busy')
+    ).toBe('true')
+    expect(within(form).getByRole('button', { name: 'Cancel' })).toBeDisabled()
+
+    rerender(
+      <DoneSection
+        toSignOff={DONE.two}
+        signedOff={DONE.signedOff}
+        onOpenTask={() => {}}
+        onFollowUp={onFollowUp}
+      />
+    )
+    expect(within(screen.getByRole('form')).getAllByRole('textbox')[0]).toHaveValue('Fix the flake')
   })
 })

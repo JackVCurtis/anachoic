@@ -145,3 +145,26 @@ export const LongTitleNarrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
 }
+
+export const MoveToBacklog: Story = {
+  name: 'Move to backlog',
+  args: { onMoveToBacklog: fn() },
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: queue.toBacklog }))
+    await expect(args.onMoveToBacklog).toHaveBeenCalledWith(STARTS.task.id)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+  },
+}
+
+export const MovingToBacklog: Story = {
+  name: 'Moving to the backlog',
+  args: { onMoveToBacklog: fn(), pending: 'backlog' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: queue.toBacklog })).toHaveAttribute(
+      'aria-busy',
+      'true'
+    )
+    await expect(canvas.getByRole('button', { name: queue.move })).toBeDisabled()
+  },
+}

@@ -56,10 +56,29 @@ export function taskEntryMissing(draft: TaskEntryDraft): string | null {
   if (!isFilled(draft.title)) {
     return taskEntry.needsTitle
   }
-  if (draft.steps.length === 0 || draft.steps.some((step) => !isFilled(step.title))) {
+  if (!stepsFilled(draft.steps)) {
     return taskEntry.stepNeedsTitle
   }
   return null
+}
+
+/**
+ * Whether every step has a title. Spaces alone count as empty.
+ */
+export function stepsFilled(steps: readonly TaskEntryStep[]): boolean {
+  return steps.length > 0 && steps.every((step) => isFilled(step.title))
+}
+
+/**
+ * The steps as the tools take them: every text trimmed, and a detail left
+ * out when it is empty.
+ */
+export function submittedSteps(steps: readonly TaskEntryStep[]) {
+  return steps.map(({ title, owner, detail }) => ({
+    title: title.trim(),
+    owner,
+    ...(isFilled(detail) ? { detail: detail.trim() } : {}),
+  }))
 }
 
 /**
@@ -67,14 +86,7 @@ export function taskEntryMissing(draft: TaskEntryDraft): string | null {
  * when it is empty.
  */
 export function submittedTask(draft: TaskEntryDraft) {
-  return {
-    title: draft.title.trim(),
-    steps: draft.steps.map(({ title, owner, detail }) => ({
-      title: title.trim(),
-      owner,
-      ...(isFilled(detail) ? { detail: detail.trim() } : {}),
-    })),
-  }
+  return { title: draft.title.trim(), steps: submittedSteps(draft.steps) }
 }
 
 /**
