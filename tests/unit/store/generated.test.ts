@@ -116,6 +116,18 @@ describe('Random operations on a real database', () => {
               assignTo: chance(0.9) ? session : pick(['dedicated', 'nobody']),
             }),
         ],
+        [
+          'addTask',
+          () =>
+            services.addTask(database, actor, now(), {
+              title: `Task ${known + 1}`,
+              steps: [
+                { title: 'Step 1', owner: 'agent' },
+                { title: 'Step 2', owner: 'you' },
+                { title: 'Step 3', owner: 'agent' },
+              ],
+            }),
+        ],
         ['queueTask', () => services.queueTask(database, actor, now(), task)],
         [
           'reorderQueue',
@@ -182,7 +194,22 @@ describe('Random operations on a real database', () => {
         ],
         [
           'completeStep',
-          () => services.completeStep(database, session, now(), task, { summary: 'Done' }),
+          () => {
+            const running = read(database, (sqlite) =>
+              sqlite
+                .prepare(
+                  "SELECT task_id AS id FROM steps WHERE status = 'running' AND claimed_by = ?"
+                )
+                .all(session)
+            ) as Array<{ id: number }>
+            return services.completeStep(
+              database,
+              session,
+              now(),
+              running.length > 0 ? pick(running).id : task,
+              { summary: 'Done' }
+            )
+          },
         ],
         [
           'completeMyStep',
@@ -194,6 +221,39 @@ describe('Random operations on a real database', () => {
             services.completeMyStep(database, 'you', now(), task, {
               artifactUrl: pick(['https://example.com/pr/1', 'ftp://example.com/x']),
             }),
+        ],
+        [
+          'completeMyStep of a handed-back task',
+          () => {
+            const handed = read(database, (sqlite) =>
+              sqlite
+                .prepare("SELECT id FROM tasks WHERE resume_with IS NOT NULL AND status = 'active'")
+                .all()
+            ) as Array<{ id: number }>
+            return services.completeMyStep(
+              database,
+              'you',
+              now(),
+              handed.length > 0 ? pick(handed).id : task,
+              { artifactUrl: 'https://example.com/pr/2' }
+            )
+          },
+        ],
+        [
+          'claimStep of a handed-back task',
+          () => {
+            const handed = read(database, (sqlite) =>
+              sqlite
+                .prepare(
+                  "SELECT id, resume_with FROM tasks WHERE resume_with IS NOT NULL AND status = 'queue'"
+                )
+                .all()
+            ) as Array<{ id: number; resume_with: string }>
+            const [back] = handed.length > 0 ? [pick(handed)] : []
+            return back
+              ? services.claimStep(database, chance(0.7) ? back.resume_with : session, now())
+              : services.claimStep(database, session, now(), task)
+          },
         ],
         ['moveToBacklog', () => services.moveToBacklog(database, actor, now(), task)],
         ['signOff', () => services.signOff(database, 'you', now(), task)],
@@ -227,8 +287,9 @@ describe('Random operations on a real database', () => {
             sqlite.prepare("SELECT count(*) AS n FROM events WHERE kind = 'unassigned'").get()
           ) as { n: number }
         ).n
-      // The worker a task is assigned to is usually live: it has just been seen.
-      if (name === 'addTask assigned' && chance(0.8)) {
+      // The worker a task is assigned to is usually live: it has just been
+      // seen. So is a worker completing a step, as every tool call touches it.
+      if ((name === 'addTask assigned' || name === 'completeStep') && chance(0.8)) {
         touchSession(
           database,
           { id: session, kind: 'worker', projectDir: `/w/${session}` },
@@ -236,7 +297,26 @@ describe('Random operations on a real database', () => {
           1
         )
       }
+      // A worker that handed a task to you waits in wait_for_work, and its
+      // process's heartbeat keeps it live.
+      if (name.endsWith('of a handed-back task')) {
+        const waiting = read(database, (sqlite) =>
+          sqlite
+            .prepare('SELECT DISTINCT resume_with AS id FROM tasks WHERE resume_with IS NOT NULL')
+            .all()
+        ) as Array<{ id: string }>
+        for (const { id } of waiting) {
+          touchSession(database, { id, kind: 'worker', projectDir: `/w/${id}` }, now(), 1)
+        }
+      }
       const unassignedBefore = unassignedEvents()
+      const handedBackBefore = new Set(
+        (
+          read(database, (sqlite) =>
+            sqlite.prepare('SELECT id FROM tasks WHERE resume_with IS NOT NULL').all()
+          ) as Array<{ id: number }>
+        ).map(({ id }) => id)
+      )
       const before = readRevision(database)
       const result = run()
       const after = readRevision(database)
@@ -248,6 +328,16 @@ describe('Random operations on a real database', () => {
         }
       }
       if (unassignedEvents() > unassignedBefore) succeeded.add('release with unassign')
+      if (!isRefusal(result) && name === 'completeStep') {
+        if ((result.value as services.Acted).state.task.resumeWith !== null) {
+          succeeded.add('completeStep handing to you')
+        }
+      }
+      if (!isRefusal(result) && name.startsWith('claimStep')) {
+        if (handedBackBefore.has((result.value as services.Acted).state.task.id)) {
+          succeeded.add('claim of a handed-back task')
+        }
+      }
       applied.push(
         `${name}(T-${task}, ${actor}/${session}) at ${clock}s → ${isRefusal(result) ? result.code : 'ok'}`
       )
@@ -280,14 +370,18 @@ describe('Random operations on a real database', () => {
       'archiveTask',
       'askYou',
       'assigned claim',
+      'claim of a handed-back task',
       'claim refused by assignment',
       'claimStep',
       'claimStep named',
+      'claimStep of a handed-back task',
       'claimStep of an assigned task',
       'collectAnswer',
       'completeMyStep',
+      'completeMyStep of a handed-back task',
       'completeMyStep with a URL',
       'completeStep',
+      'completeStep handing to you',
       'moveToBacklog',
       'queueTask',
       'release with unassign',

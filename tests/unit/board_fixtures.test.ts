@@ -63,6 +63,7 @@ function stateOf(
     signedOffAt: facts.signedOffAt ?? null,
     archivedAt: null,
     assignedTo: null,
+    resumeWith: null,
   }
   const steps = pips.map((pip, index): Step => ({
     id: pip.id,

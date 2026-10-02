@@ -75,6 +75,7 @@ describe('a worker’s instructions', () => {
     'wrong_status',
     'stop work on a task',
     'wait_for_answer says the task was parked or your claim ended',
+    "when complete_step says the next step is the person's, call wait_for_work and keep calling it",
   ])('says %s', (phrase) => {
     expect(text).toContain(phrase)
   })

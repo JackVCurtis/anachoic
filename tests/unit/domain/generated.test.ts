@@ -97,6 +97,7 @@ function shape({ task, steps }: TaskState): string {
     task.signedOffAt !== null,
     task.archivedAt !== null,
     task.assignedTo,
+    task.resumeWith,
     steps.map((step) => [
       step.owner,
       step.status,
@@ -185,8 +186,15 @@ const AS_YOU: Record<keyof ReturnType<typeof canAct>, (state: TaskState) => Outc
     followUp(s, ctx('you', 999), { placement: 'last', steps: [{ title: 'x', owner: 'agent' }] }),
 }
 
+/**
+ * Exploring every reachable state takes a few seconds per chain, more while
+ * the other suites run beside it.
+ */
+const EXPLORE_TIMEOUT_MS = 60_000
+
 describe.each(chains().map((owners) => [owners.join(', '), owners] as const))(
   'A chain of %s',
+  { timeout: EXPLORE_TIMEOUT_MS },
   (_label, owners) => {
     test('every transition from every reachable state keeps the invariants', () => {
       const states = explore(owners, (state, path) => {
@@ -227,19 +235,23 @@ describe.each(chains().map((owners) => [owners.join(', '), owners] as const))(
   }
 )
 
-test('counts are the lengths of Your turn, Working, the queue and To sign off', () => {
-  const states: TaskState[] = []
-  for (const owners of chains()) {
-    explore(owners, (state) => {
-      states.push({ ...state, task: { ...state.task, id: states.length + 1 } })
+test(
+  'counts are the lengths of Your turn, Working, the queue and To sign off',
+  { timeout: EXPLORE_TIMEOUT_MS },
+  () => {
+    const states: TaskState[] = []
+    for (const owners of chains()) {
+      explore(owners, (state) => {
+        states.push({ ...state, task: { ...state.task, id: states.length + 1 } })
+      })
+    }
+    const lengthOf = (list: BoardList) => states.filter((state) => listOf(state) === list).length
+    expect(counts(states)).toEqual({
+      yourTurn: lengthOf('yourTurn'),
+      working: lengthOf('working'),
+      queue: lengthOf('queue'),
+      toSignOff: lengthOf('toSignOff'),
     })
+    expect(lengthOf('yourTurn')).toBeGreaterThan(0)
   }
-  const lengthOf = (list: BoardList) => states.filter((state) => listOf(state) === list).length
-  expect(counts(states)).toEqual({
-    yourTurn: lengthOf('yourTurn'),
-    working: lengthOf('working'),
-    queue: lengthOf('queue'),
-    toSignOff: lengthOf('toSignOff'),
-  })
-  expect(lengthOf('yourTurn')).toBeGreaterThan(0)
-})
+)

@@ -200,7 +200,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       asCaller(context, 'complete_step', ({ task, summary, links }, caller) =>
         answer(
           completeStep(database, caller.id, now(), task, { summary, links }),
-          ({ state, events }) => completeStepText(state, events)
+          ({ state, events }) => completeStepText(state, events, caller.kind)
         )
       )
     ),

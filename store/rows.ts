@@ -28,6 +28,7 @@ export function taskFromRow(row: Row): Task {
     signedOffAt: row.signed_off_at as string | null,
     archivedAt: row.archived_at as string | null,
     assignedTo: row.assigned_to as string | null,
+    resumeWith: row.resume_with as string | null,
   }
 }
 
@@ -105,12 +106,13 @@ export function loadSession(sqlite: DatabaseSync, id: string): Session | null {
 function writeTask(sqlite: DatabaseSync, task: Task) {
   sqlite
     .prepare(
-      `INSERT INTO tasks (id, title, status, queue_position, created_by, created_at, finished_at, signed_off_at, archived_at, assigned_to)
-       VALUES (:id, :title, :status, NULL, :created_by, :created_at, :finished_at, :signed_off_at, :archived_at, :assigned_to)
+      `INSERT INTO tasks (id, title, status, queue_position, created_by, created_at, finished_at, signed_off_at, archived_at, assigned_to, resume_with)
+       VALUES (:id, :title, :status, NULL, :created_by, :created_at, :finished_at, :signed_off_at, :archived_at, :assigned_to, :resume_with)
        ON CONFLICT (id) DO UPDATE SET
          title = excluded.title, status = excluded.status, queue_position = NULL,
          finished_at = excluded.finished_at, signed_off_at = excluded.signed_off_at,
-         archived_at = excluded.archived_at, assigned_to = excluded.assigned_to`
+         archived_at = excluded.archived_at, assigned_to = excluded.assigned_to,
+         resume_with = excluded.resume_with`
     )
     .run({
       id: task.id,
@@ -122,6 +124,7 @@ function writeTask(sqlite: DatabaseSync, task: Task) {
       signed_off_at: task.signedOffAt,
       archived_at: task.archivedAt,
       assigned_to: task.assignedTo,
+      resume_with: task.resumeWith,
     })
 }
 

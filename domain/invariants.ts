@@ -80,6 +80,15 @@ export function taskViolations({ task, steps }: TaskState): string[] {
     )
   if (task.status === 'queue' && current.owner !== 'agent')
     broken('10', 'queued with your step current')
+  const resumable =
+    (task.status === 'active' && current.owner === 'you' && current.status === 'waiting') ||
+    (task.status === 'queue' && current.owner === 'agent')
+  if (task.resumeWith !== null && !resumable) {
+    broken(
+      'resume',
+      `resumeWith ${task.resumeWith} while ${task.status} with ${current.owner === 'you' ? 'your' : 'an agent’s'} step ${current.status}`
+    )
+  }
 
   return found
 }

@@ -201,15 +201,30 @@ describe('firstClaimable', () => {
     const unassigned = add(null)
     const forB = add(B)
     const revision = readRevision(database)
-    expect(firstClaimable(database, A)).toEqual({ taskId: unassigned, assigned: false })
-    expect(firstClaimable(database, B)).toEqual({ taskId: forB, assigned: true })
+    expect(firstClaimable(database, A)).toEqual({
+      taskId: unassigned,
+      assigned: false,
+      handedBack: false,
+      handBack: null,
+    })
+    expect(firstClaimable(database, B)).toEqual({
+      taskId: forB,
+      assigned: true,
+      handedBack: false,
+      handBack: null,
+    })
     ok(claimStep(database, A, now()))
     const afterClaim = readRevision(database)
     expect(firstClaimable(database, A)).toBeNull()
     expect(firstClaimable(database, 'dedicated')).toBeNull()
     const forA = add(A)
     add(null)
-    expect(firstClaimable(database, A)).toEqual({ taskId: forA, assigned: true })
+    expect(firstClaimable(database, A)).toEqual({
+      taskId: forA,
+      assigned: true,
+      handedBack: false,
+      handBack: null,
+    })
     expect(readRevision(database)).toBe(afterClaim + 2)
     expect(revision).toBeLessThan(afterClaim)
   })

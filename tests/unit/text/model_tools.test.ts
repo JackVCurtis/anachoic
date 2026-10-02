@@ -125,6 +125,9 @@ describe('the worker tools', () => {
 
     const yours = accepted(completeStep(second, ctx(A), { summary: 'Redis' }))
     expect(completeStepText(at(yours), yours.events)).toBe(
+      "Completed T-012 step 2. Step 3 of T-012 is the person's. Call wait_for_work to be told when this task needs an agent again."
+    )
+    expect(completeStepText(at(yours), yours.events, 'dedicated')).toBe(
       'Completed T-012 step 2. Step 3 "Review the PR" waits on you.'
     )
 

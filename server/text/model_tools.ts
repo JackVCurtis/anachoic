@@ -1,5 +1,5 @@
 import { currentStep } from '../../domain/chain.js'
-import type { Event, Step, TaskState } from '../../domain/types.js'
+import type { Event, SessionKind, Step, TaskState } from '../../domain/types.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import { formatTaskId } from '../../shared/task_id.js'
 
@@ -106,9 +106,14 @@ export function askYouText(state: TaskState): string {
 
 /**
  * What happened after the step was completed: the task is done, waits on
- * you, or is back in the queue for an agent to continue.
+ * you, or is back in the queue for an agent to continue. A worker that hands
+ * a step to you is told to wait for the task to come back.
  */
-export function completeStepText(state: TaskState, events: readonly Event[]): string {
+export function completeStepText(
+  state: TaskState,
+  events: readonly Event[],
+  kind: SessionKind = 'worker'
+): string {
   const id = formatTaskId(state.task.id)
   const completed = events.find((event) => event.kind === 'completed')
   const number = state.steps.find((step) => step.id === completed?.stepId)?.number
@@ -120,7 +125,9 @@ export function completeStepText(state: TaskState, events: readonly Event[]): st
       return `${head} ${id} is back in the queue at position ${state.task.queuePosition}. Call claim_step with task ${id} to continue it.`
     default: {
       const next = currentStep(state.steps)
-      return `${head} Step ${next.number} "${next.title}" waits on you.`
+      return kind === 'dedicated'
+        ? `${head} Step ${next.number} "${next.title}" waits on you.`
+        : `${head} Step ${next.number} of ${id} is the person's. Call wait_for_work to be told when this task needs an agent again.`
     }
   }
 }

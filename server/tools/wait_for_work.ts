@@ -2,7 +2,7 @@ import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
 import { invalid } from '../../domain/refusal.js'
 import { formatTaskId } from '../../shared/task_id.js'
-import { firstClaimable, type Claimable } from '../../store/queries.js'
+import { firstClaimable, type Work } from '../../store/queries.js'
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
 import { refusalResult, textResult } from '../results.js'
 import { asCaller, type ToolContext } from './context.js'
@@ -12,19 +12,34 @@ import { keepAlive, pause } from './waiting.js'
 export const NO_WORK_YET = 'No work yet. Call wait_for_work again to keep waiting.'
 export const DEDICATED_WAIT_FOR_WORK = 'This chat does not wait'
 
+function sentence(text: string) {
+  return /[.!?]$/.test(text) ? text : `${text}.`
+}
+
 /**
- * The work found, and the call that takes it.
+ * The work found, and the call that takes it. A task handed back to the
+ * caller names your step, with its artifact and note when present.
  */
-export function workText({ taskId, assigned }: Claimable): string {
+export function workText({ taskId, assigned, handBack }: Work): string {
   const id = formatTaskId(taskId)
+  if (handBack) {
+    const { stepNumber, title, artifactUrl, note } = handBack
+    return [
+      `The person finished step ${stepNumber} of ${id}, “${title}”${artifactUrl ? `: ${artifactUrl}` : '.'}`,
+      ...(note ? [`Note: ${sentence(note)}`] : []),
+      `Call claim_step with task ${id} to continue it.`,
+    ].join(' ')
+  }
   const where = assigned ? 'is assigned to you' : 'is in the queue'
   return `${id} ${where}. Call claim_step with task ${id}.`
 }
 
 /**
  * wait_for_work: an idle worker waits inside the call until the queue holds
- * a task it may claim, those assigned to it first. Each poll is a read, so
- * no transaction or lock is held across the wait, and nothing is claimed.
+ * a task it may claim: those assigned to it first, then those it handed to
+ * you, then unassigned ones not handed back to another worker. Each poll is
+ * a read, so no transaction or lock is held across the wait, and nothing is
+ * claimed.
  */
 export function registerWaitForWork(server: McpServer, context: ToolContext) {
   const { database, logger, wait } = context
@@ -59,7 +74,7 @@ export function registerWaitForWork(server: McpServer, context: ToolContext) {
           const found = firstClaimable(database, caller.id)
           if (found) {
             return end(
-              found.assigned ? 'assigned' : 'queued',
+              found.assigned ? 'assigned' : found.handedBack ? 'handed_back' : 'queued',
               textResult(workText(found)),
               found.taskId
             )

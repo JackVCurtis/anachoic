@@ -447,6 +447,7 @@ export function add(input: NewTask, ctx: Context): Change {
     signedOffAt: null,
     archivedAt: null,
     assignedTo: input.assignTo ?? null,
+    resumeWith: null,
   }
   const steps = newSteps(input.taskId, 1, input.steps, 'chain')
   const count = steps.length === 1 ? '1 step' : `${steps.length} steps`
@@ -483,7 +484,7 @@ export function unqueue(state: TaskState, ctx: Context): Outcome {
   const refused = preconditions.unqueue(state, ctx)
   if (refused) return refused
   return {
-    task: { ...state.task, status: 'backlog' },
+    task: { ...state.task, status: 'backlog', resumeWith: null },
     steps: state.steps,
     queue: LEAVE,
     events: [event(ctx, state.task.id, null, 'parked', 'Moved from the queue to the backlog')],
@@ -523,7 +524,7 @@ export function claim(state: TaskState, ctx: Context): Outcome {
     startedAt: step.startedAt ?? ctx.now,
   }
   return {
-    task: { ...state.task, status: 'active' },
+    task: { ...state.task, status: 'active', resumeWith: null },
     steps: withStep(state.steps, index, claimed),
     queue: LEAVE,
     events: [event(ctx, state.task.id, claimed, 'claimed', `Claimed by ${nameOf(ctx, ctx.actor)}`)],
@@ -614,7 +615,7 @@ function advance(state: TaskState, ctx: Context, completed: Event): Change {
   const { step } = current(state)
   if (step.status === 'done') {
     return {
-      task: { ...state.task, status: 'done', finishedAt: ctx.now },
+      task: { ...state.task, status: 'done', finishedAt: ctx.now, resumeWith: null },
       steps: state.steps,
       queue: NONE,
       events: [completed],
@@ -649,8 +650,12 @@ export function completeStep(state: TaskState, ctx: Context, input: CompleteInpu
     links: mergeLinks(step.links, input.links),
     finishedAt: ctx.now,
   }
+  const steps = withStep(state.steps, index, done)
+  const next = steps[index + 1]
+  // The worker that hands a step to you gets the task back when you are done.
+  const resumeWith = next?.owner === 'you' ? ctx.actor : null
   return advance(
-    { task: state.task, steps: withStep(state.steps, index, done) },
+    { task: { ...state.task, resumeWith }, steps },
     ctx,
     event(ctx, state.task.id, done, 'completed', brief(input.summary))
   )
@@ -710,7 +715,7 @@ export function park(state: TaskState, ctx: Context): Outcome {
   const { index, step } = current(state)
   const parked = backToPending(step, ctx.now)
   return {
-    task: { ...state.task, status: 'backlog' },
+    task: { ...state.task, status: 'backlog', resumeWith: null },
     steps: withStep(state.steps, index, parked),
     queue: NONE,
     events: [event(ctx, state.task.id, parked, 'parked', 'Parked in the backlog')],
@@ -736,7 +741,7 @@ export function release(state: TaskState, ctx: Context): Outcome {
   const { index, step } = current(state)
   const released = backToPending(step, ctx.now)
   return {
-    task: { ...state.task, status: 'queue' },
+    task: { ...state.task, status: 'queue', resumeWith: null },
     steps: withStep(state.steps, index, released),
     queue: JOIN_FIRST,
     events: [
@@ -815,7 +820,8 @@ export function followUp(state: TaskState, ctx: Context, input: FollowUpInput): 
 
 /**
  * Archive: the task leaves every list with its status unchanged. Its queue
- * position, assignment, any claim and any unanswered question are cleared.
+ * position, assignment, resumeWith, any claim and any unanswered question are
+ * cleared.
  */
 export function archive(state: TaskState, ctx: Context): Outcome {
   const refused = preconditions.archive(state, ctx)
@@ -823,7 +829,7 @@ export function archive(state: TaskState, ctx: Context): Outcome {
   const { index, step } = current(state)
   const held = step.status === 'running' || step.status === 'waiting'
   return {
-    task: { ...state.task, archivedAt: ctx.now, assignedTo: null },
+    task: { ...state.task, archivedAt: ctx.now, assignedTo: null, resumeWith: null },
     steps: held ? withStep(state.steps, index, backToPending(step, ctx.now)) : state.steps,
     queue: state.task.status === 'queue' ? LEAVE : NONE,
     events: [event(ctx, state.task.id, null, 'archived', 'Archived')],

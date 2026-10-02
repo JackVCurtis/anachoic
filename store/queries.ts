@@ -95,36 +95,95 @@ export interface Claimable {
   taskId: number
   /** Assigned to the session that asked, rather than unassigned. */
   assigned: boolean
+  /** The session that asked handed the task to you, and gets it back. */
+  handedBack: boolean
+}
+
+export interface ClaimableOptions {
+  /**
+   * Whether a task handed back to another session may be taken. wait_for_work
+   * leaves it to that session, which waits for it; claim_step takes it.
+   */
+  othersHandBacks?: boolean
 }
 
 /**
  * The task claim_step with no task would take for the session: the first
  * queued task, by position, whose current step is a pending agent step and
- * that is assigned to the session; failing that, the first such task that is
+ * that is assigned to the session; failing that, the first such task whose
+ * resumeWith is the session; failing that, the first such task that is
  * unassigned. Never one assigned to another session.
  */
-export function firstClaimableIn(sqlite: DatabaseSync, sessionId: SessionId): Claimable | null {
+export function firstClaimableIn(
+  sqlite: DatabaseSync,
+  sessionId: SessionId,
+  { othersHandBacks = true }: ClaimableOptions = {}
+): Claimable | null {
   const row = sqlite
     .prepare(
-      `SELECT tasks.id, tasks.assigned_to FROM tasks
+      `SELECT tasks.id, tasks.assigned_to, tasks.resume_with FROM tasks
        JOIN steps ON steps.task_id = tasks.id AND steps.number = (
          SELECT min(number) FROM steps AS later WHERE later.task_id = tasks.id AND later.status <> 'done'
        )
        WHERE tasks.status = 'queue' AND tasks.archived_at IS NULL
          AND (tasks.assigned_to = :session OR tasks.assigned_to IS NULL)
+         AND (:others OR tasks.resume_with IS NULL OR tasks.resume_with = :session)
          AND steps.owner = 'agent' AND steps.status = 'pending'
-       ORDER BY tasks.assigned_to IS NULL, tasks.queue_position
+       ORDER BY
+         CASE WHEN tasks.assigned_to = :session THEN 0 WHEN tasks.resume_with = :session THEN 1 ELSE 2 END,
+         tasks.queue_position
        LIMIT 1`
     )
-    .get({ session: sessionId }) as { id: number; assigned_to: string | null } | undefined
-  return row ? { taskId: row.id, assigned: row.assigned_to !== null } : null
+    .get({ session: sessionId, others: othersHandBacks ? 1 : 0 }) as
+    { id: number; assigned_to: string | null; resume_with: string | null } | undefined
+  return row
+    ? {
+        taskId: row.id,
+        assigned: row.assigned_to !== null,
+        handedBack: row.resume_with === sessionId,
+      }
+    : null
 }
 
 /**
- * firstClaimableIn as a read only, which wait_for_work polls.
+ * Your step that a hand-back names: the last of your steps done before the
+ * task's current agent step.
  */
-export function firstClaimable(database: Database, sessionId: SessionId): Claimable | null {
-  return read(database, (sqlite) => firstClaimableIn(sqlite, sessionId))
+export interface HandBack {
+  stepNumber: number
+  title: string
+  note: string | null
+  artifactUrl: string | null
+}
+
+export interface Work extends Claimable {
+  handBack: HandBack | null
+}
+
+/**
+ * The work wait_for_work polls for, as a read only: firstClaimableIn without
+ * the tasks handed back to other sessions, and for a task handed back to this
+ * one, your step it names.
+ */
+export function firstClaimable(database: Database, sessionId: SessionId): Work | null {
+  return read(database, (sqlite) => {
+    const found = firstClaimableIn(sqlite, sessionId, { othersHandBacks: false })
+    if (!found) return null
+    if (!found.handedBack) return { ...found, handBack: null }
+    const state = loadTaskState(sqlite, found.taskId)!
+    const yours = state.steps.findLast((step) => step.owner === 'you' && step.status === 'done')
+    return {
+      ...found,
+      handBack: yours
+        ? {
+            stepNumber: yours.number,
+            title: yours.title,
+            note: yours.note,
+            artifactUrl: yours.artifactUrl,
+          }
+        : null,
+    }
+  })
 }
 
 export function readRevision(database: Database): number {

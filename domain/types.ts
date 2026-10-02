@@ -77,6 +77,11 @@ export interface Task {
    * The worker that alone may claim the task's agent steps.
    */
   assignedTo: SessionId | null
+  /**
+   * The session that completed the agent step before your current step,
+   * which wait_for_work hands the task back to when your step is done.
+   */
+  resumeWith: SessionId | null
 }
 
 export interface Step {

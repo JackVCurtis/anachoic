@@ -157,9 +157,10 @@ export interface LivenessOptions {
 
 /**
  * Ends every session not seen within the dead window, releases each step it
- * claimed to the front of the queue with a released event, and clears its
- * assignment from every task assigned to it with an unassigned event.
- * Returns true when it ended any session.
+ * claimed to the front of the queue with a released event, clears its
+ * assignment from every task assigned to it with an unassigned event, and
+ * clears every resumeWith that names it. Returns true when it ended any
+ * session.
  */
 export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptions): boolean {
   const now = options.now()
@@ -180,6 +181,7 @@ export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptio
     "SELECT DISTINCT task_id FROM steps WHERE claimed_by = ? AND status IN ('running', 'waiting') ORDER BY task_id DESC"
   )
   const assigned = sqlite.prepare('SELECT id FROM tasks WHERE assigned_to = ? ORDER BY id')
+  const resumed = sqlite.prepare('UPDATE tasks SET resume_with = NULL WHERE resume_with = ?')
   for (const session of dead) {
     sqlite.prepare('UPDATE sessions SET ended_at = ? WHERE id = ?').run(now, session.id)
     // Released tasks each join the front, so the lowest task number ends up first.
@@ -193,6 +195,7 @@ export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptio
       const outcome = unassign(state, { actor: session.id, now, nameOf: (id) => names.get(id) })
       if (!isRefusal(outcome)) applyChange(sqlite, outcome)
     }
+    resumed.run(session.id)
   }
   return true
 }
