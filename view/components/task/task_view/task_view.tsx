@@ -56,6 +56,8 @@ export interface TaskViewProps {
   onRequestDisplayMode?: (mode: 'inline' | 'fullscreen') => void
   /** "Back to board" was pressed. Without it the view offers no way back to the board. */
   onBackToBoard?: () => void
+  /** The way back's label, for a view that opened the task from somewhere else. "Back to board" unless given. */
+  backLabel?: string
   /** Asks the host to open a link recorded on a step. */
   onOpenLink: (url: string) => void
   /** The host's safe-area insets, in pixels. */
@@ -154,6 +156,7 @@ export function TaskView({
   fullscreenAvailable = false,
   onRequestDisplayMode,
   onBackToBoard,
+  backLabel = taskView.backToBoard,
   onOpenLink,
   safeAreaInsets,
   titleRef,
@@ -226,6 +229,7 @@ export function TaskView({
               fullscreenAvailable={fullscreenAvailable}
               onRequestDisplayMode={onRequestDisplayMode}
               onBackToBoard={onBackToBoard}
+              backLabel={backLabel}
             />
           </div>
           <div className={styles.bottom}>
@@ -288,6 +292,7 @@ interface DisplayControlsProps {
   fullscreenAvailable: boolean
   onRequestDisplayMode?: (mode: 'inline' | 'fullscreen') => void
   onBackToBoard?: () => void
+  backLabel: string
 }
 
 /**
@@ -298,6 +303,7 @@ function DisplayControls({
   fullscreenAvailable,
   onRequestDisplayMode,
   onBackToBoard,
+  backLabel,
 }: DisplayControlsProps) {
   const toFullscreen = onRequestDisplayMode && fullscreenAvailable && displayMode === 'inline'
   const toInline = onRequestDisplayMode && displayMode === 'fullscreen'
@@ -309,7 +315,7 @@ function DisplayControls({
     <div className={styles.controls}>
       {onBackToBoard && (
         <Button variant="secondary" size="sm" onPress={onBackToBoard}>
-          {taskView.backToBoard}
+          {backLabel}
         </Button>
       )}
       {toFullscreen && (

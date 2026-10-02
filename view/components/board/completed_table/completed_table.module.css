@@ -1,0 +1,59 @@
+/* Copied from anachoic inertia/components/completed/completed_table/completed_table.module.css at fd99e0d */
+.id {
+  display: block;
+  color: var(--color-text-subtle);
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.title:hover {
+  color: var(--color-text-accent);
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+.faint {
+  color: var(--color-text-faint);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.steps {
+  display: block;
+  white-space: nowrap;
+}
+
+.pips {
+  min-width: 48px;
+  margin-top: var(--space-1);
+}
+
+.workers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+/* In a narrow table a link's label wraps rather than widening the column */
+.artifacts a {
+  white-space: normal;
+}

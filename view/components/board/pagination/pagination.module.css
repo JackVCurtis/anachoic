@@ -1,0 +1,17 @@
+/* Copied from anachoic inertia/components/completed/pagination/pagination.module.css at fd99e0d */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}

@@ -146,6 +146,40 @@ export interface SignedOffTask {
   signedOffAt: string
 }
 
+/**
+ * A signed-off task as a row of the History view shows it.
+ */
+export interface CompletedTask {
+  task: BoardTask
+  /** An instant. */
+  signedOffAt: string
+  steps: readonly BoardStep[]
+  /** Seconds, across every step of the chain. */
+  agentSeconds: number
+  /** Seconds, across every step of the chain. */
+  userSeconds: number
+  /** The names of the sessions that completed its agent steps. */
+  workers: readonly string[]
+  /** The links from its done steps. */
+  artifacts: readonly BoardArtifact[]
+}
+
+/**
+ * One page of the completed tasks.
+ */
+export interface HistoryPage {
+  /** Most recently signed off first. */
+  rows: readonly CompletedTask[]
+  /** From 1. */
+  page: number
+  /** At least 1. */
+  pageCount: number
+  /** The completed tasks the filter matches, across every page. */
+  total: number
+  /** What the rows were filtered by. Empty for none. */
+  filter: string
+}
+
 export type SessionKind = 'dedicated' | 'worker'
 
 export interface BoardSession {

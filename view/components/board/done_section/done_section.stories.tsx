@@ -61,6 +61,15 @@ export const SignedOffOnly: Story = {
   },
 }
 
+export const WithHistory: Story = {
+  name: 'With the link to the history',
+  args: { toSignOff: [], onShowHistory: fn() },
+  play: async ({ canvasElement, args }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: done.showHistory }))
+    await expect(args.onShowHistory).toHaveBeenCalledOnce()
+  },
+}
+
 export const Empty: Story = {
   name: 'Nothing at all',
   args: { toSignOff: [], signedOff: [] },
@@ -114,6 +123,13 @@ export const SignedOffOnlyNarrow: Story = {
 export const LongTitleNarrow: Story = {
   ...LongTitle,
   name: 'Long title, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const WithHistoryNarrow: Story = {
+  ...WithHistory,
+  name: 'With the link to the history, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }

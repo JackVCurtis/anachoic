@@ -219,3 +219,25 @@ export function formatEventTime(at: string, now: string, timeZone?: string): str
     time,
   })
 }
+
+/**
+ * When a task was signed off, as a date and a clock time: "2 Oct, 14:03",
+ * or "2 Oct 2025, 14:03" in an earlier year than `now`. Missing gives "—".
+ * The day and time are in `timeZone`, or in the browser's zone when it is
+ * absent.
+ */
+export function formatSignedOff(
+  signedOffAt: string | null | undefined,
+  now: string,
+  timeZone?: string
+): string {
+  if (signedOffAt === null || signedOffAt === undefined || Number.isNaN(Date.parse(signedOffAt))) {
+    return times.none
+  }
+  const signed = localParts(new Date(signedOffAt), timeZone)
+  const values = { day: signed.day, month: times.months[signed.month], time: clockTime(signed) }
+  if (signed.year === localParts(new Date(now), timeZone).year) {
+    return fillTemplate(times.signedOffThisYear, values)
+  }
+  return fillTemplate(times.signedOffEarlierYear, { ...values, year: signed.year })
+}

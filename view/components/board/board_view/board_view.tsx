@@ -45,6 +45,8 @@ export interface BoardViewActions {
   onRemoveSession?: (sessionId: string) => void
   /** The session whose removal is in flight, if any. */
   removingSessionId?: string | null
+  /** "Show all completed tasks" in Done. Without it Done offers no link to the history. */
+  onShowHistory?: () => void
 }
 
 /**
@@ -129,6 +131,7 @@ export function BoardView({
   onOpenLink,
   onRemoveSession,
   removingSessionId = null,
+  onShowHistory,
   announcement = null,
   messages = [],
   onDismissMessage = ignore,
@@ -193,6 +196,7 @@ export function BoardView({
         onArchive={onArchive}
         pending={pending}
         onOpenLink={onOpenLink}
+        onShowHistory={onShowHistory}
       />
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">
         {announcement && <span key={announcement.key}>{announcement.text}</span>}

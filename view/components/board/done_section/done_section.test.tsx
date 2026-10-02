@@ -271,4 +271,21 @@ describe('DoneSection follow-up composer', () => {
     )
     expect(within(screen.getByRole('form')).getAllByRole('textbox')[0]).toHaveValue('Fix the flake')
   })
+
+  test('"Show all completed tasks" shows once a task is signed off, and raises onShowHistory', async () => {
+    const onShowHistory = vi.fn()
+    const { user, section } = renderSection({ toSignOff: [], onShowHistory })
+
+    await user.click(within(section).getByRole('button', { name: done.showHistory }))
+    expect(onShowHistory).toHaveBeenCalledOnce()
+  })
+
+  test('with nothing signed off, or no onShowHistory, there is no link to the history', () => {
+    const { section, unmount } = renderSection({ signedOff: [], onShowHistory: vi.fn() })
+    expect(within(section).queryByRole('button', { name: done.showHistory })).toBeNull()
+    unmount()
+
+    const again = renderSection()
+    expect(within(again.section).queryByRole('button', { name: done.showHistory })).toBeNull()
+  })
 })

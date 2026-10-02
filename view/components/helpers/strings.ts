@@ -186,6 +186,33 @@ export const done = {
   signedOffCount: '{n tasks} signed off',
   showAll: 'Show all {n}',
   showFewer: 'Show fewer',
+  showHistory: 'Show all completed tasks',
+} as const
+
+/**
+ * The History view: the completed tasks, a page at a time.
+ */
+export const history = {
+  title: 'History',
+  summary: '{n completed tasks}',
+  filterLabel: 'Filter',
+  filterPlaceholder: 'Title or ID',
+  columnTask: 'Task',
+  columnSteps: 'Steps',
+  columnTimes: 'Agent / User',
+  columnWorkers: 'Workers',
+  columnArtifacts: 'Artifacts',
+  columnSignedOff: 'Signed off',
+  steps: '{n steps}',
+  times: '{agent} / {user}',
+  noneCell: '—',
+  page: 'Page {n} of {m}',
+  previous: '← Previous',
+  next: 'Next →',
+  emptyYet: 'No completed tasks yet',
+  emptyMatch: 'No completed tasks match',
+  backToBoard: 'Back to board',
+  backToHistory: 'Back to history',
 } as const
 
 export const taskView = {
@@ -268,6 +295,7 @@ export const events = {
 export const busy = {
   loadingBoard: 'Loading board…',
   loadingTask: 'Loading task…',
+  loadingHistory: 'Loading history…',
 } as const
 
 /**
@@ -301,6 +329,8 @@ export const times = {
   finishedYesterday: 'yesterday',
   finishedThisYear: '{month} {day}',
   finishedEarlierYear: '{month} {day}, {year}',
+  signedOffThisYear: '{day} {month}, {time}',
+  signedOffEarlierYear: '{day} {month} {year}, {time}',
   eventYesterday: 'Yesterday {time}',
   eventThisWeek: '{weekday} {time}',
   eventEarlier: '{month} {day} {time}',
@@ -321,6 +351,7 @@ export const assistive = {
   opensInBrowser: 'opens in the browser',
   none: 'none',
   landmarkMessages: 'Messages',
+  landmarkPages: 'Pages',
   pipSummaryIntro: '{n steps}: {parts}',
   pipDone: '{d} done',
   pipRunning: '{r} running',
@@ -354,6 +385,7 @@ export const strings = {
   queue,
   backlog,
   done,
+  history,
   taskView,
   events,
   busy,

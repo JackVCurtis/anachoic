@@ -1,0 +1,42 @@
+/* Adapted from anachoic inertia/components/completed/completed_view/completed_view.module.css at fd99e0d */
+/* The view's height comes from its content alone: no viewport units, no inner scrolling */
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: max(var(--space-4), var(--history-inset-top, 0px))
+    max(var(--space-6), var(--history-inset-right, 0px))
+    max(var(--space-4), var(--history-inset-bottom, 0px))
+    max(var(--space-6), var(--history-inset-left, 0px));
+  background: var(--color-bg);
+}
+
+/* Under 600 px the button wraps below the title rather than squeezing it */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
+
+.header {
+  flex: 1 1 auto;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 320px;
+}
+
+.label {
+  color: var(--color-text-subtle);
+}
+
+.field {
+  width: 100%;
+}

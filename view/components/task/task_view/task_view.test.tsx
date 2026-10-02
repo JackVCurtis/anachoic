@@ -150,6 +150,15 @@ describe('TaskView', () => {
     expect(onBackToBoard).toHaveBeenCalledTimes(1)
   })
 
+  test('the way back takes the label it is given, as "Back to history"', async () => {
+    const onBackToBoard = vi.fn()
+    const { user } = renderView({ data: RUNNING, onBackToBoard, backLabel: 'Back to history' })
+
+    expect(screen.queryByRole('button', { name: 'Back to board' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Back to history' }))
+    expect(onBackToBoard).toHaveBeenCalledTimes(1)
+  })
+
   test('while loading, the header shows what is known and the body a busy indicator', () => {
     renderView({ task: RUNNING.task, data: null })
 

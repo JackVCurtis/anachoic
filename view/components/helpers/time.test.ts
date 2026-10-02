@@ -5,6 +5,7 @@ import {
   formatElapsed,
   formatEventTime,
   formatFinished,
+  formatSignedOff,
   formatWaited,
 } from './time'
 
@@ -304,9 +305,24 @@ describe('in a time zone given', () => {
     }
   )
 
+  test.each([
+    { at: '2026-03-11T18:31:00.000Z', expected: '12 Mar, 00:01' },
+    { at: '2026-03-11T18:29:00.000Z', expected: '11 Mar, 23:59' },
+    { at: '2025-12-31T18:30:00.000Z', expected: '1 Jan, 00:00' },
+    { at: '2025-12-31T18:29:00.000Z', expected: '31 Dec 2025, 23:59' },
+  ])('formatSignedOff of $at gives "$expected" in every browser zone', ({ at, expected }) => {
+    expect(formatSignedOff(at, KOLKATA_NOW, ZONE)).toBe(expected)
+  })
+
+  test('formatSignedOff of nothing gives a dash', () => {
+    expect(formatSignedOff(null, KOLKATA_NOW, ZONE)).toBe('—')
+    expect(formatSignedOff('not a time', KOLKATA_NOW, ZONE)).toBe('—')
+  })
+
   test('without a zone the browser’s zone is used', () => {
     const at = local(2026, 3, 12, 0, 1)
     expect(formatEventTime(at, NOW)).toBe('00:01:00')
     expect(formatFinished(at, NOW)).toBe('today 00:01')
+    expect(formatSignedOff(at, NOW)).toBe('12 Mar, 00:01')
   })
 })

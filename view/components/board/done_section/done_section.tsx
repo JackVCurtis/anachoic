@@ -13,6 +13,7 @@ import { plural } from '../../helpers/words'
 import { LABEL_TICK, useNow, useTimeZone } from '../../hooks/use_now/use_now'
 import { Disclosure } from '../../patterns/disclosure/disclosure'
 import { EmptyState } from '../../patterns/empty_state/empty_state'
+import { Button } from '../../primitives/button/button'
 import type { PendingCardAction, SignedOffTask, SignOffTask } from '../board_data'
 import { BoardSection } from '../board_section/board_section'
 import { FollowUpComposer } from '../follow_up_composer/follow_up_composer'
@@ -40,6 +41,8 @@ export interface DoneSectionProps {
   pending?: PendingCardAction | null
   /** Asks the host to open an artifact link. Without it no card draws its links. */
   onOpenLink?: (url: string) => void
+  /** "Show all completed tasks" was pressed. Without it the section offers no link to the history. */
+  onShowHistory?: () => void
 }
 
 /** The one follow-up being written, and the card it is written on. */
@@ -65,6 +68,7 @@ export function DoneSection({
   onArchive,
   pending = null,
   onOpenLink,
+  onShowHistory,
 }: DoneSectionProps) {
   const [open, setOpen] = useState(false)
   const [composing, setComposing] = useState<Composing | null>(null)
@@ -123,22 +127,31 @@ export function DoneSection({
       }))}
       footer={
         recent.length > 0 && (
-          <Disclosure
-            open={open}
-            onToggle={() => setOpen(!open)}
-            toggle={fillTemplate(done.signedOffCount, { 'n tasks': plural(recent.length, 'task') })}
-            toggleVariant="utility"
-            toggleSize="sm"
-            toggleClassName={styles.toggle}
-          >
-            <ul className={styles.signedOff}>
-              {recent.map((task) => (
-                <li key={task.task.id}>
-                  <SignedOffRow task={task} onOpenTask={onOpenTask} />
-                </li>
-              ))}
-            </ul>
-          </Disclosure>
+          <>
+            <Disclosure
+              open={open}
+              onToggle={() => setOpen(!open)}
+              toggle={fillTemplate(done.signedOffCount, {
+                'n tasks': plural(recent.length, 'task'),
+              })}
+              toggleVariant="utility"
+              toggleSize="sm"
+              toggleClassName={styles.toggle}
+            >
+              <ul className={styles.signedOff}>
+                {recent.map((task) => (
+                  <li key={task.task.id}>
+                    <SignedOffRow task={task} onOpenTask={onOpenTask} />
+                  </li>
+                ))}
+              </ul>
+            </Disclosure>
+            {onShowHistory && (
+              <Button variant="utility" size="sm" onPress={onShowHistory} className={styles.toggle}>
+                {done.showHistory}
+              </Button>
+            )}
+          </>
         )
       }
     />
