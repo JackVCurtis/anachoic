@@ -15,7 +15,7 @@ export const stepStatusSchema = z.enum(['pending', 'running', 'waiting', 'done']
 export const outputFormatSchema = z.enum(OUTPUT_FORMATS)
 
 /**
- * A link to an artifact a done step of yours produced.
+ * A link to the artifact a done step with an output format produced.
  */
 export const artifactSchema = z.object({
   stepNumber: z.number().int().positive(),
@@ -51,7 +51,7 @@ export const pipSchema = z.object({
   status: stepStatusSchema,
   title: z.string(),
   sessionName: z.string().nullable(),
-  /** Present only on your steps that declare an output format. */
+  /** Present only on steps that declare an output format. */
   outputFormat: outputFormatSchema.optional(),
   /** Present only once such a step is done. */
   artifactUrl: z.string().optional(),
@@ -76,6 +76,12 @@ export const yourTurnItemSchema = z.object({
    * always sends it.
    */
   blocked: z.object({ reason: z.string(), since: instant }).nullable().optional(),
+  /**
+   * On a user step's item: the previous step's artifact, which this step
+   * takes as its input, or null when it produced none. Absent on an agent
+   * step's item.
+   */
+  input: artifactSchema.nullable().optional(),
   steps: pips,
   canAct: z.object({
     complete: z.boolean().optional(),
@@ -90,6 +96,8 @@ export const workingItemSchema = z.object({
     number: z.number().int().positive(),
     title: z.string(),
     note: z.string().optional(),
+    /** What the running step must produce, when it declares an output format. */
+    outputFormat: outputFormatSchema.optional(),
     runningSince: instant,
   }),
   session: z.object({ id: z.string(), name: z.string() }),
