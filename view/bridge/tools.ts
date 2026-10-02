@@ -1,4 +1,4 @@
-import type { GetBoardResult } from '../../shared/props'
+import type { BoardProps, GetBoardResult } from '../../shared/props'
 import type { HostApp } from './connect'
 
 /**
@@ -48,4 +48,41 @@ export function getBoard(app: Pick<HostApp, 'callServerTool'>, sinceRevision?: n
     'get_board',
     sinceRevision === undefined ? {} : { sinceRevision }
   )
+}
+
+type App = Pick<HostApp, 'callServerTool'>
+
+/** A task as the app-only tools take it: its display id or its number. */
+export type TaskArg = string | number
+
+export interface NewStep {
+  title: string
+  owner: 'agent' | 'you'
+  detail?: string
+}
+
+/**
+ * Your actions. Each resolves to the fresh board on success, which the view
+ * draws at once, or to the refusal's sentence.
+ */
+export const actions = {
+  addTask: (app: App, input: { title: string; steps: NewStep[]; queue: boolean }) =>
+    callAppTool<BoardProps>(app, 'add_task_from_view', { ...input }),
+  queueTask: (app: App, task: TaskArg) =>
+    callAppTool<BoardProps>(app, 'queue_task_from_view', { task }),
+  reorderQueue: (app: App, task: TaskArg, position: number) =>
+    callAppTool<BoardProps>(app, 'reorder_queue', { task, position }),
+  moveToBacklog: (app: App, task: TaskArg) =>
+    callAppTool<BoardProps>(app, 'move_to_backlog', { task }),
+  completeMyStep: (app: App, task: TaskArg, note?: string) =>
+    callAppTool<BoardProps>(app, 'complete_my_step', note ? { task, note } : { task }),
+  answerQuestion: (app: App, task: TaskArg, answer: string) =>
+    callAppTool<BoardProps>(app, 'answer_question', { task, answer }),
+  signOff: (app: App, task: TaskArg) => callAppTool<BoardProps>(app, 'sign_off', { task }),
+  addFollowUp: (
+    app: App,
+    task: TaskArg,
+    input: { steps: NewStep[]; placement: 'first' | 'last' }
+  ) => callAppTool<BoardProps>(app, 'add_follow_up_from_view', { task, ...input }),
+  archiveTask: (app: App, task: TaskArg) => callAppTool<BoardProps>(app, 'archive_task', { task }),
 }
