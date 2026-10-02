@@ -81,3 +81,4 @@ Then check each item. Nothing on the board may address the user as "you": the se
 |---|---|---|---|
 | 2026-10-02 | Installed `anachoic.mcpb` 0.0.0 | 0 | Passed, reported by the user |
 | 2026-10-02 | Installed `anachoic.mcpb` 0.0.0, a Claude Code worker | 1 | Passed, reported by the user |
+| 2026-10-02 | Claude desktop 2.19675.0, `anachoic.mcpb` and `anachoic-worker` 0.2.0, two Claude Code 2.1.286 workers | 2 | Passed, reported by the user. The SessionEnd hook removed workers on exit; the log shows `session_ended` with the claimed task released. |

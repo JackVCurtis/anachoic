@@ -16,6 +16,12 @@ From the Claude Code documentation ([hooks](https://code.claude.com/docs/en/hook
   - Whether deleting or archiving a session in desktop's Code tab fires `SessionEnd`.
   - Whether the hook's `session_id` equals the `CLAUDE_CODE_SESSION_ID` that the server process sees. Todo MCP-20 checks this by hand.
 
+### Checked by hand on 2026-10-02
+
+- **The hook's `session_id` is the same id** as the `CLAUDE_CODE_SESSION_ID` the worker's server process sees. In two exits, the hook removed exactly the worker that had joined under that id and released its claimed task, as logged in `session_ended`.
+- **Exiting a Claude Code session runs the hook** with the `anachoic-worker` plugin installed, Claude Code 2.1.286.
+- **Not yet observed:** whether deleting a session in desktop's Code tab runs it. Liveness and Remove cover that case.
+
 ## Three ways a worker leaves the list
 
 | Way | When | Shown afterwards |
