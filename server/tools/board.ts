@@ -1,31 +1,23 @@
 import { registerAppTool } from '@modelcontextprotocol/ext-apps/server'
 import type { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import {
-  boardPropsSchema,
-  getBoardResultSchema,
-  type BoardProps,
-  type GetBoardResult,
-} from '../../shared/props.js'
+import { boardPropsSchema, getBoardResultSchema, type GetBoardResult } from '../../shared/props.js'
 import { TOOL_DESCRIPTIONS } from '../instructions.js'
-import { emptyBoard } from '../props/empty_board.js'
+import { readRevision } from '../../store/queries.js'
+import { readBoardProps } from '../props/board.js'
 import { guarded } from '../results.js'
 import { boardSummary } from '../text/board_summary.js'
 import { VIEWS } from '../views.js'
 import { asCaller, type ToolContext } from './context.js'
 import { sessionInput } from './session_input.js'
 
-export type BoardSource = () => BoardProps
-
 /**
  * show_board, which the model calls to draw the board, and get_board, which
  * only the view calls, to fetch the board on connect and to poll it.
  */
-export function registerBoardTools(
-  server: McpServer,
-  context: ToolContext,
-  board: BoardSource = () => emptyBoard()
-) {
+export function registerBoardTools(server: McpServer, context: ToolContext) {
+  const board = () => readBoardProps(context.database, context.now())
+
   registerAppTool(
     server,
     'show_board',
@@ -59,14 +51,19 @@ export function registerBoardTools(
       _meta: { ui: { visibility: ['app'] } },
     },
     guarded(context.logger, 'get_board', ({ sinceRevision }) => {
+      const revision = readRevision(context.database)
+      if (sinceRevision === revision) {
+        const unchanged: GetBoardResult = { changed: false, revision }
+        return {
+          content: [{ type: 'text', text: `Board, revision ${revision}, unchanged` }],
+          structuredContent: unchanged,
+        }
+      }
       const props = board()
-      const result: GetBoardResult =
-        sinceRevision === props.revision ? { changed: false, revision: props.revision } : props
-      const text =
-        'changed' in result
-          ? `Board, revision ${props.revision}, unchanged`
-          : `Board, revision ${props.revision}`
-      return { content: [{ type: 'text', text }], structuredContent: result }
+      return {
+        content: [{ type: 'text', text: `Board, revision ${props.revision}` }],
+        structuredContent: props,
+      }
     })
   )
 }

@@ -1,41 +1,24 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
-import { Client } from '@modelcontextprotocol/client'
-import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
+import { join } from 'node:path'
+import type { Client } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 import { boardPropsSchema } from '../../shared/props.js'
-
-const SERVER = resolve(import.meta.dirname, '../../dist/server.js')
+import { connect, textOf } from './support/server.js'
 
 let dataDir: string
 let client: Client
+const others: Client[] = []
 
 beforeEach(async () => {
   dataDir = await mkdtemp(join(tmpdir(), 'anachoic-data-'))
-  client = new Client({ name: 'anachoic-integration', version: '0.0.0' })
-  await client.connect(
-    new StdioClientTransport({
-      command: process.execPath,
-      args: [SERVER],
-      cwd: '/',
-      env: { ANACHOIC_DATA_DIR: dataDir },
-      stderr: 'ignore',
-    })
-  )
+  client = await connect({ dataDir, clientName: 'claude-ai' })
 })
 
 afterEach(async () => {
-  await client.close()
+  await Promise.all([client, ...others.splice(0)].map((each) => each.close()))
   await rm(dataDir, { recursive: true, force: true })
 })
-
-function textOf(result: { content?: unknown }) {
-  const content = result.content as Array<{ type: string; text?: string }>
-  expect(content).toHaveLength(1)
-  expect(content[0].type).toBe('text')
-  return content[0].text!
-}
 
 test('lists show_board with its view and get_board for the view only', async () => {
   const { tools } = await client.listTools()
@@ -54,19 +37,21 @@ test('show_board returns the board summary and the board props', async () => {
   const result = await client.callTool({ name: 'show_board', arguments: {} })
 
   expect(result.isError).toBeFalsy()
-  const text = textOf(result)
-  expect(text.split('\n')).toEqual([
-    'Board, revision 0',
+  expect(textOf(result).split('\n')).toEqual([
+    'Board, revision 1',
     'Your turn (0): none',
     'Working (0): none',
     'Queue (0): none',
     'Backlog (0): none',
     'To sign off (0): none',
-    'Sessions: none',
+    'Sessions: This chat',
   ])
   const props = boardPropsSchema.parse(result.structuredContent)
-  expect(props.revision).toBe(0)
+  expect(props.revision).toBe(1)
   expect(props.counts).toEqual({ yourTurn: 0, working: 0, queue: 0, toSignOff: 0 })
+  expect(props.sessions).toEqual([
+    { id: 'dedicated', kind: 'dedicated', name: 'This chat', live: true },
+  ])
 })
 
 test('get_board answers unchanged at the current revision and the props otherwise', async () => {
@@ -77,4 +62,44 @@ test('get_board answers unchanged at the current revision and the props otherwis
   const fresh = await client.callTool({ name: 'get_board', arguments: {} })
   expect(boardPropsSchema.parse(fresh.structuredContent).revision).toBe(0)
   expect(textOf(fresh)).toBe('Board, revision 0')
+})
+
+test('get_board is a read: it never records the view’s client as a session', async () => {
+  await client.callTool({ name: 'get_board', arguments: {} })
+  const again = await client.callTool({ name: 'get_board', arguments: { sinceRevision: 0 } })
+  expect(again.structuredContent).toEqual({ changed: false, revision: 0 })
+})
+
+test('after a worker adds a task in another process, get_board returns a later board with it', async () => {
+  const worker = await connect({
+    dataDir,
+    clientName: 'claude-code',
+    env: { CLAUDE_CODE_SESSION_ID: 'worker-a', CLAUDE_PROJECT_DIR: '/w/api-server' },
+  })
+  others.push(worker)
+  const first = await client.callTool({ name: 'get_board', arguments: {} })
+  const { revision } = boardPropsSchema.parse(first.structuredContent)
+
+  await worker.callTool({
+    name: 'add_task',
+    arguments: { title: 'Add retries', steps: [{ title: 'Write it', owner: 'agent' }] },
+  })
+
+  const later = await client.callTool({ name: 'get_board', arguments: { sinceRevision: revision } })
+  const props = boardPropsSchema.parse(later.structuredContent)
+  expect(props.revision).toBeGreaterThan(revision)
+  expect(props.queue).toEqual([
+    expect.objectContaining({
+      task: { id: '1', displayId: 'T-001', title: 'Add retries' },
+      position: 1,
+      nextOwner: 'agent',
+    }),
+  ])
+  expect(props.sessions).toEqual([
+    { id: 'worker-a', kind: 'worker', name: 'api-server', live: true },
+  ])
+
+  const workerView = await worker.callTool({ name: 'show_board', arguments: {} })
+  expect(textOf(workerView)).toContain('Queue (1): 1. T-001 "Add retries" next: agent')
+  expect(textOf(workerView)).toContain('Sessions: api-server (live, idle)')
 })
