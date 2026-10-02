@@ -1,14 +1,22 @@
 import type { CSSProperties } from 'react'
-import { assistive, backlog, done, queue, sessions, working, yourTurn } from '../../helpers/strings'
+import { assistive, backlog, done, queue, sessions, working } from '../../helpers/strings'
 import { EmptyState } from '../../patterns/empty_state/empty_state'
 import { Frame } from '../../primitives/frame/frame'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import type { BoardData, BoardTask } from '../board_data'
 import { BoardHeader } from '../board_header/board_header'
 import { BoardSection } from '../board_section/board_section'
+import { YourTurnSection } from '../your_turn_section/your_turn_section'
 import styles from './board_view.module.css'
 
-export type BoardViewProps = BoardData
+export interface BoardViewActions {
+  /** A card's title was pressed. Nothing happens until the board has a task panel. */
+  onOpenTask?: (taskId: string) => void
+}
+
+export type BoardViewProps = BoardData & BoardViewActions
+
+function ignore() {}
 
 /**
  * A task as one line, until each section draws its own cards.
@@ -57,6 +65,7 @@ export function BoardView({
   updated,
   unreachable,
   safeAreaInsets,
+  onOpenTask = ignore,
 }: BoardViewProps) {
   return (
     <div className={styles.board} style={insetStyle(safeAreaInsets)}>
@@ -64,13 +73,7 @@ export function BoardView({
       <BoardHeader counts={counts} updated={updated} unreachable={unreachable} />
       <section aria-label={assistive.landmarkMessages} className={styles.messages} />
       <div className={styles.entry} />
-      <BoardSection
-        title={yourTurn.title}
-        count={yourTurnTasks.length}
-        cards={taskLines(yourTurnTasks)}
-        empty={<EmptyState variant="dashed" message={yourTurn.nothingWaiting} />}
-        inverseHeader
-      />
+      <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
       <BoardSection
         title={sessions.title}
         count={sessionList.length}

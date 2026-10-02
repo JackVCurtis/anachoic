@@ -91,13 +91,18 @@ export interface BoardSample {
  * One step of a chain: who does it, where it stands, its title, and the
  * session that holds it while it is running or waiting.
  */
-type StepSpec = readonly [owner: Owner, status: StepStatus, title: string, sessionName?: string]
+export type StepSpec = readonly [
+  owner: Owner,
+  status: StepStatus,
+  title: string,
+  sessionName?: string,
+]
 
-function taskOf(number: number, title: string): TaskSample {
+export function taskOf(number: number, title: string): TaskSample {
   return { id: String(number), displayId: `T-${String(number).padStart(3, '0')}`, title }
 }
 
-function chainOf(task: TaskSample, specs: readonly StepSpec[]): PipStepSample[] {
+export function chainOf(task: TaskSample, specs: readonly StepSpec[]): PipStepSample[] {
   return specs.map(([owner, status, title, sessionName], index) => ({
     id: `${task.id}.${index + 1}`,
     owner,
@@ -116,7 +121,7 @@ function currentOf(steps: readonly PipStepSample[]) {
   return { number: at + 1, step: steps[at] }
 }
 
-function yourStep(
+export function yourStep(
   number: number,
   title: string,
   specs: readonly StepSpec[],
@@ -133,7 +138,7 @@ function yourStep(
   }
 }
 
-function agentAsks(
+export function agentAsks(
   number: number,
   title: string,
   specs: readonly StepSpec[],
@@ -158,7 +163,7 @@ function agentAsks(
   }
 }
 
-function running(
+export function running(
   number: number,
   title: string,
   specs: readonly StepSpec[],
@@ -179,7 +184,7 @@ function running(
   }
 }
 
-function queued(
+export function queued(
   position: number,
   number: number,
   title: string,
@@ -196,12 +201,12 @@ function queued(
   }
 }
 
-function parked(number: number, title: string, specs: readonly StepSpec[]): BacklogSample {
+export function parked(number: number, title: string, specs: readonly StepSpec[]): BacklogSample {
   const task = taskOf(number, title)
   return { task, steps: chainOf(task, specs), canAct: { queue: true, archive: true } }
 }
 
-function finished(
+export function finished(
   number: number,
   title: string,
   specs: readonly StepSpec[],
@@ -216,11 +221,11 @@ function finished(
   }
 }
 
-function holdingOf(item: YourTurnSample | WorkingSample, status: 'running' | 'waiting') {
+export function holdingOf(item: YourTurnSample | WorkingSample, status: 'running' | 'waiting') {
   return { task: item.task, step: { number: item.step.number, title: item.step.title }, status }
 }
 
-function countsOf(board: Pick<BoardSample, 'yourTurn' | 'working' | 'queue' | 'toSignOff'>) {
+export function countsOf(board: Pick<BoardSample, 'yourTurn' | 'working' | 'queue' | 'toSignOff'>) {
   return {
     yourTurn: board.yourTurn.length,
     working: board.working.length,

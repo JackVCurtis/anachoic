@@ -1,0 +1,57 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+/* Under 600 px the counter wraps below the kind label rather than squeezing it */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.kind {
+  min-width: 0;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* text-status names a light color; on the inverted card the counter takes the tone's */
+.counter {
+  margin-left: auto;
+  color: inherit;
+  opacity: var(--dim-2);
+  white-space: nowrap;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.id {
+  opacity: var(--dim-2);
+}
+
+.question {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
