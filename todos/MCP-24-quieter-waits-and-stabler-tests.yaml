@@ -1,0 +1,25 @@
+id: MCP-24
+title: "Quieter waits, stabler tests and tidied loose ends"
+area: MCP
+phase: "4"
+summary: >
+  Collect the small items noted while building: waiting tools that log every poll, tests that are
+  flaky when the whole suite runs in parallel, todo text that describes superseded behaviour, and a
+  workaround the task panel no longer needs.
+requirements:
+  - "wait_for_answer and wait_for_work log a line when a wait starts, when it returns and when it is cancelled, never per poll; the cancellation tests check the cancellation line instead"
+  - "Find and fix the parallel-run flakiness: the HTTP instructions integration test (port collision: pick a free port per test), and the FlashMessage and InlineConfirm ui tests that timed out once; run each suite five times in a row with no failure"
+  - "Update todos UIS-15 and UIS-16 text where it describes polling through board_source.ts and posting sentences through wake.ts, to say task_source.ts and that nothing is posted"
+  - "Remove the task panel's start-before-refresh workaround now that task_source.start() no longer drops a refresh's refusal, keeping its tests passing"
+acceptance_criteria:
+  - "Integration suite: a 30-second wait with the poll interval shortened writes no more than three log lines"
+  - "pnpm test passes five times in a row"
+  - "Lint and typecheck pass"
+depends_on:
+  - "MCP-11"
+  - "MCP-15"
+external_dependencies: []
+docs:
+  - "05-sessions.md#waiting-for-your-answer"
+  - "08-packaging-and-hosts.md#logs"
+  - "09-testing-and-build-order.md#test-suites"

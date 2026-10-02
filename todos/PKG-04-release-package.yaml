@@ -1,26 +1,25 @@
 id: PKG-04
-title: "Release-quality package - icon, data directory setting, versioning and README"
+title: "Local release package - icon, one version, and a README for daily use"
 area: PKG
 phase: "4"
 summary: >
-  Finish the desktop extension so it can be relied on every day. Add the icon, make the data directory
-  a setting in the extension's settings, keep one version number for the package, the manifest and the
-  server, and write a README that covers installing, the dedicated session, workers, updating, data
-  and logs. Installing a newer .mcpb keeps the board, migrates it, and makes a worker on an older
+  Finish the desktop extension and the worker plugin so they can be relied on every day, for local use
+  only: the app is not published, signed or listed anywhere. Add the icon, keep one version number for
+  the package, the manifest, the plugin and the server, and write a README that covers installing,
+  the dedicated session, the prompts, workers, updating, data and logs. Installing a newer .mcpb keeps the board, migrates it, and makes a worker on an older
   build refuse with a message that says to update.
 requirements:
   - "Add mcpb/icon.png, a plain 512 x 512 PNG, and name it in the manifest's icon field; pack copies it into the extension"
-  - "Add user_config.data_dir to the manifest: type directory, a title and description, default ${HOME}/Library/Application Support/Anachoic MCP; mcp_config.env sets ANACHOIC_DATA_DIR to ${user_config.data_dir}"
-  - "package.json's version is the one version: scripts/pack.mjs writes it into the manifest it packs, and the server reports it as its serverInfo version and in its start log line"
+  - "The data directory stays fixed at the server's default (no user_config setting), so desktop and the worker plugin always share one board; the manifest sets no ANACHOIC_DATA_DIR override"
+  - "package.json's version is the one version: scripts/pack.mjs writes it into the manifest and the plugin it packs, and the server reports it as its serverInfo version and in its start log line"
   - "A database migrated by a newer build makes an older server refuse to start with a sentence that says a newer version of the server owns the database and to update, as 04 requires"
-  - "Write README.md: what the app is; installing anachoic.mcpb by double-click or Settings → Extensions; keeping one desktop chat as the dedicated session; adding workers with `pnpm print-worker-command`; the data folder and how to change it; updating; where logs are; and the development loop"
+  - "Rewrite README.md for local use: what the app is; that it is not published; installing anachoic.mcpb; the Board and History prompts; installing the anachoic-worker plugin from plugin/ and starting workers with /worker; updating both after a new pack (marketplace update, plugin update, reinstalling the .mcpb, restarting); the data folder; where logs are; the development loop"
   - "The README states that every desktop chat that uses the server counts as the dedicated session, and that the views are light only"
 acceptance_criteria:
   - "`pnpm run pack` passes mcpb validate, and the packed manifest's version equals package.json's"
   - "Integration test: a server started against a database whose user_version is ahead of its migrations exits non-zero with the update sentence on stderr"
-  - "Manual desktop check: the icon shows in Settings → Extensions; changing the data folder setting starts the server on a new, empty board in that folder"
+  - "Manual desktop check: the icon shows in Settings → Extensions"
   - "Manual desktop check: installing a newer .mcpb over the old one keeps every task, and a worker still running the older server file refuses with the update sentence"
-  - "Following the README on a machine without the repository's tooling installs the extension and one worker"
 depends_on:
   - "PKG-02"
   - "MCP-13"

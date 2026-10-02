@@ -109,3 +109,5 @@ Use a task with a worker step that declared Output "Pull request", then a user s
 | 2026-10-02 | Installed `anachoic.mcpb` 0.0.0 | 0 | Passed, reported by the user |
 | 2026-10-02 | Installed `anachoic.mcpb` 0.0.0, a Claude Code worker | 1 | Passed, reported by the user |
 | 2026-10-02 | Claude desktop 2.19675.0, `anachoic.mcpb` and `anachoic-worker` 0.2.0, two Claude Code 2.1.286 workers | 2 | Passed, reported by the user. The SessionEnd hook removed workers on exit; the log shows `session_ended` with the claimed task released. |
+| 2026-10-02 | `anachoic.mcpb` and `anachoic-worker` 0.3.0 | 3 | Passed, reported by the user |
+| 2026-10-02 | `anachoic.mcpb` and `anachoic-worker` 0.4.0 | H, prompts and History | Passed, reported by the user |
