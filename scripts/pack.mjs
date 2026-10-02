@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { writePrompts } from './manifest.mjs'
 import { buildPlugin } from './plugin.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
@@ -31,10 +32,12 @@ if (packageVersion !== manifestVersion) {
 }
 
 /**
- * Builds, lays the server and its views out in mcpb/server/ as the
- * extension runs them, packs mcpb/ into anachoic.mcpb, and lays out the
- * worker plugin's local marketplace in plugin/.
+ * Writes the manifest's prompts from the server's, builds, lays the server
+ * and its views out in mcpb/server/ as the extension runs them, packs mcpb/
+ * into anachoic.mcpb, and lays out the worker plugin's local marketplace in
+ * plugin/.
  */
+writePrompts(join(EXTENSION, 'manifest.json'))
 run('pnpm', ['build'])
 
 rmSync(EXTENSION_SERVER, { recursive: true, force: true })

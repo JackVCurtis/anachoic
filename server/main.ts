@@ -17,6 +17,7 @@ import { INSTRUCTIONS } from './instructions.js'
 import { createLifecycle } from './lifecycle.js'
 import { readInput, sessionEnded } from './session_ended.js'
 import { createLogger, describeError } from './logger.js'
+import { registerPrompts } from './prompts.js'
 import { registerBoardTools } from './tools/board.js'
 import type { ToolContext } from './tools/context.js'
 import { registerHistoryTools } from './tools/history.js'
@@ -67,6 +68,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     leave_board: registerLeaveBoard(server, context),
   })
   registerViewActions(server, context)
+  registerPrompts(server)
   server.server.oninitialized = () => {
     const client = context.client()
     // Names only, never values: they show what each host passes to the server.
