@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react'
-import { assistive, backlog, done, queue, sessions, working } from '../../helpers/strings'
+import { assistive, backlog, done, queue, working } from '../../helpers/strings'
 import { EmptyState } from '../../patterns/empty_state/empty_state'
 import { Frame } from '../../primitives/frame/frame'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import type { BoardData, BoardTask } from '../board_data'
 import { BoardHeader } from '../board_header/board_header'
 import { BoardSection } from '../board_section/board_section'
+import { SessionsSection } from '../sessions_section/sessions_section'
 import { YourTurnSection } from '../your_turn_section/your_turn_section'
 import styles from './board_view.module.css'
 
@@ -74,19 +75,7 @@ export function BoardView({
       <section aria-label={assistive.landmarkMessages} className={styles.messages} />
       <div className={styles.entry} />
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
-      <BoardSection
-        title={sessions.title}
-        count={sessionList.length}
-        cards={sessionList.map(({ id, name }) => ({
-          id,
-          card: (
-            <Frame className={styles.line}>
-              <span className="text-name">{name}</span>
-            </Frame>
-          ),
-        }))}
-        empty={<EmptyState variant="dashed" message={sessions.nothingLive} />}
-      />
+      <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
       <BoardSection
         title={working.title}
         count={workingTasks.length}

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { FOLD_AFTER } from '../../helpers/constants'
+import { joinClasses } from '../../helpers/join_classes'
 import { fillTemplate, fold } from '../../helpers/strings'
 import { Disclosure } from '../../patterns/disclosure/disclosure'
 import { SectionHeader } from '../../patterns/section_header/section_header'
@@ -26,6 +27,12 @@ export interface BoardSectionProps {
   folds?: boolean
   /** `ol` for a list whose order means something, as the queue's does. */
   listElement?: 'ul' | 'ol'
+  /** `tight` puts the cards --space-2 apart, `loose` --space-4. */
+  cardGap?: 'tight' | 'loose'
+  /** Placement of the section only. */
+  className?: string
+  /** Drawn after the cards and their fold, whether or not there are cards. */
+  footer?: ReactNode
 }
 
 /**
@@ -40,6 +47,9 @@ export function BoardSection({
   inverseHeader = false,
   folds = true,
   listElement: List = 'ul',
+  cardGap = 'tight',
+  className,
+  footer,
 }: BoardSectionProps) {
   const [open, setOpen] = useState(false)
   const folded = folds && cards.length > FOLD_AFTER
@@ -49,7 +59,7 @@ export function BoardSection({
   const header = <SectionHeader headingLevel={2} title={title} summary={count} spacing="roomy" />
 
   return (
-    <section className={styles.section}>
+    <section className={joinClasses(styles.section, className)}>
       {inverseHeader ? (
         <Frame tone="inverse" className={styles.inverseHeader}>
           {header}
@@ -60,7 +70,7 @@ export function BoardSection({
       {cards.length === 0 ? (
         empty
       ) : (
-        <List className={styles.list}>
+        <List className={joinClasses(styles.list, cardGap === 'loose' && styles.loose)}>
           {shown.map(({ id, card }) => (
             <li key={id}>{card}</li>
           ))}
@@ -75,13 +85,14 @@ export function BoardSection({
           toggleSize="sm"
           toggleClassName={styles.toggle}
         >
-          <List className={styles.list}>
+          <List className={joinClasses(styles.list, cardGap === 'loose' && styles.loose)}>
             {rest.map(({ id, card }) => (
               <li key={id}>{card}</li>
             ))}
           </List>
         </Disclosure>
       )}
+      {footer}
     </section>
   )
 }

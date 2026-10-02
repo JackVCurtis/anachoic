@@ -1,0 +1,73 @@
+/* Copied from anachoic inertia/components/board/agent_slot_card/agent_slot_card.module.css at fd99e0d */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+/* Under 600 px the state label wraps below the name rather than squeezing it */
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.state {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.stepLine {
+  color: var(--color-text-accent);
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.released {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.releasedLabel {
+  color: var(--color-text-subtle);
+}
+
+.releasedList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.releasedTask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.id {
+  color: var(--color-text-subtle);
+}

@@ -86,6 +86,7 @@ export const sessions = {
   running: 'Running',
   waitingOnYou: 'Waiting on you',
   holding: 'Step {n} of {m} · {step title}',
+  holdingStep: 'Step {n} · {step title}',
   ended: 'Ended {when}',
   released: 'Released',
   releasedTasks: 'Released {n tasks}',
@@ -177,6 +178,7 @@ export const fold = {
  */
 export const times = {
   justNow: 'just now',
+  ago: '{time} ago',
   none: '—',
   finishedToday: 'today {time}',
   finishedYesterday: 'yesterday',

@@ -24,6 +24,10 @@
   list-style: none;
 }
 
+.loose {
+  gap: var(--space-4);
+}
+
 .toggle {
   align-self: flex-start;
 }
