@@ -99,7 +99,7 @@ When a worker completes an agent step and the next step is yours, the worker's t
 
 For the second, the text says what you did: "The person finished step 3 of T-012, “Review the PR”: https://… Note: Looks good. Call claim_step with task T-012 to continue it." The link and the note appear only when present.
 
-**A preference, not a lock.** `resumeWith` does not reserve the task. If that worker is not waiting, any worker may claim the task, as before. An assignment, where there is one, still decides who may claim ([assigning a task to a worker](#assigning-a-task-to-a-worker)).
+**A preference, not a lock.** `resumeWith` does not reserve the task. Any worker may still claim it with `claim_step`, as before. But `wait_for_work` does not offer a task handed back to another worker while that worker is live, so that two waiting workers are never both told of the same task. An assignment, where there is one, still decides who may claim ([assigning a task to a worker](#assigning-a-task-to-a-worker)).
 
 ### Domain
 

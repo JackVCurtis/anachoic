@@ -34,6 +34,7 @@ A blocked step is an agent step that is `waiting` because its worker blocked it.
 - **Blocking a step that is not `running`:** "Step 2 of T-012 is not running". This includes a step already blocked, or waiting on a question.
 - **`unblock_step` on a step that is not blocked:** "Step 2 of T-012 is not blocked".
 - **`complete_step`, `ask_you` or `update_step` on a blocked step:** "Step 2 of T-012 is blocked. Call unblock_step first."
+- **`answer_question` on a blocked step**, which has no question: the same sentence. The board offers no answer field on a blocked card anyway.
 
 **Invariants:**
 - A step has a `blockedReason` only while it is an agent step that is `waiting`.
