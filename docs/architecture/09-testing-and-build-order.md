@@ -13,7 +13,7 @@
 
 - **Invariants.** They are checked after every operation in the domain's tests, in the generated style of anachoic DOM-08: every transition from every reachable state.
 - **Across processes.** Two processes claim the same step, and exactly one wins. Eight processes write at once, and the revision stays contiguous with no `busy` refusal. A process killed mid-transaction leaves no partial write. These are the spike's measurements, kept as tests ([04](04-persistence.md#writing)).
-- **Liveness.** A worker process that is killed has its claim released within the dead window, which tests can shorten through an environment variable. A process that restarts under the same session id keeps the session.
+- **Liveness.** A worker process that is killed has its claim released within the dead window, which tests can shorten through `ANACHOIC_DEAD_WINDOW_MS`, with `ANACHOIC_HEARTBEAT_MS` shortened to match. A process that restarts under the same session id keeps the session.
 - **`wait_for_answer`.** It returns on an answer. It sends progress at the interval, which tests can shorten, and returns on its own timeout. It returns at once when the task is parked or archived.
 - **Identity.** Identity is resolved for each client kind in [05](05-sessions.md#identity), using fake `clientInfo` and environment.
 - **Text results.** The board summary stays under its token budget for a board of 100 tasks and 10 sessions.

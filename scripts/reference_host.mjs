@@ -150,37 +150,63 @@ function watchServer() {
   })
 }
 
-if (!existsSync(SERVER)) {
-  say('dist/server.js is missing. Run `pnpm build` or `pnpm dev` first.')
-  process.exit(1)
+/**
+ * Builds the reference host once per pinned commit and version, and patches
+ * its sandbox route. The e2e suite calls this before starting the host.
+ */
+export function prepareHost() {
+  buildHost()
+  patchSandboxSend()
 }
 
-buildHost()
-patchSandboxSend()
-mkdirSync(DATA_DIR, { recursive: true })
-watchServer()
-const host = start(join(HOST, 'node_modules', '.bin', 'tsx'), ['serve.ts'], {
-  cwd: HOST,
-  env: {
-    ...process.env,
-    HOST_PORT: String(REFERENCE_HOST_PORT),
-    SERVERS: JSON.stringify([MCP_URL]),
-  },
-})
-
-say(`Reference host: http://localhost:${REFERENCE_HOST_PORT}, connected to ${MCP_URL}`)
-say(
-  'The reference host allows more than Claude desktop does (data: fonts, a looser CSP), ' +
-    'so check views in desktop chat before calling them done.'
-)
-
-async function stopAll(code) {
-  unwatchFile(SERVER)
-  await Promise.all([...children].map((child) => stopChild(child)))
-  process.exit(code)
+/**
+ * Starts the reference host's two servers, pointed at the given MCP server
+ * URLs. The caller stops the returned process.
+ */
+export function startHost(servers, options = {}) {
+  return spawn(join(HOST, 'node_modules', '.bin', 'tsx'), ['serve.ts'], {
+    stdio: ['ignore', 'inherit', 'inherit'],
+    ...options,
+    cwd: HOST,
+    env: {
+      ...process.env,
+      HOST_PORT: String(REFERENCE_HOST_PORT),
+      SERVERS: JSON.stringify(servers),
+    },
+  })
 }
 
-host.on('exit', (code) => void stopAll(code ?? 0))
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => void stopAll(0))
+function main() {
+  if (!existsSync(SERVER)) {
+    say('dist/server.js is missing. Run `pnpm build` or `pnpm dev` first.')
+    process.exit(1)
+  }
+
+  prepareHost()
+  mkdirSync(DATA_DIR, { recursive: true })
+  watchServer()
+  const host = startHost([MCP_URL])
+  children.add(host)
+  host.on('exit', () => children.delete(host))
+
+  say(`Reference host: http://localhost:${REFERENCE_HOST_PORT}, connected to ${MCP_URL}`)
+  say(
+    'The reference host allows more than Claude desktop does (data: fonts, a looser CSP), ' +
+      'so check views in desktop chat before calling them done.'
+  )
+
+  async function stopAll(code) {
+    unwatchFile(SERVER)
+    await Promise.all([...children].map((child) => stopChild(child)))
+    process.exit(code)
+  }
+
+  host.on('exit', (code) => void stopAll(code ?? 0))
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.on(signal, () => void stopAll(0))
+  }
+}
+
+if (import.meta.main) {
+  main()
 }

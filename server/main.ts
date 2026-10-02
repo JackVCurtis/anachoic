@@ -23,6 +23,7 @@ import { createCallers, type Callers } from './callers.js'
 import { describeTools, kindOfOpening, serveByClient } from './client_texts.js'
 import { describeClient, hostVariableNames, kindOfClient } from './identity.js'
 import { INSTRUCTIONS } from './instructions.js'
+import { livenessTimings } from './liveness_timings.js'
 import { createLifecycle } from './lifecycle.js'
 import { readInput, sessionEnded } from './session_ended.js'
 import { createLogger, describeError } from './logger.js'
@@ -203,7 +204,10 @@ if (!unreadableFile) {
   } catch (error) {
     logger.log('retention_failed', describeError(error))
   }
+  const liveness = livenessTimings(process.env)
   heartbeat = startHeartbeat(database, {
+    intervalMs: liveness.heartbeatMs,
+    deadWindowMs: liveness.deadWindowMs,
     onError: (error) => logger.log('heartbeat_failed', describeError(error)),
   })
 }

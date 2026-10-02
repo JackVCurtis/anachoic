@@ -18,22 +18,30 @@ export interface ConnectOptions {
  * Starts the built server as its own process, with an empty environment
  * apart from the data directory and `env`, and connects a client to it.
  */
-export async function connect({
+export async function connect(options: ConnectOptions): Promise<Client> {
+  const { client } = await connectProcess(options)
+  return client
+}
+
+/**
+ * As connect, and also gives the server process's id, for a test that kills
+ * it.
+ */
+export async function connectProcess({
   dataDir,
   clientName = 'anachoic-integration',
   env = {},
-}: ConnectOptions): Promise<Client> {
+}: ConnectOptions): Promise<{ client: Client; pid: number }> {
   const client = new Client({ name: clientName, version: '0.0.0' })
-  await client.connect(
-    new StdioClientTransport({
-      command: process.execPath,
-      args: [SERVER],
-      cwd: '/',
-      env: { ANACHOIC_DATA_DIR: dataDir, ...env },
-      stderr: 'ignore',
-    })
-  )
-  return client
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [SERVER],
+    cwd: '/',
+    env: { ANACHOIC_DATA_DIR: dataDir, ...env },
+    stderr: 'ignore',
+  })
+  await client.connect(transport)
+  return { client, pid: transport.pid! }
 }
 
 export function textOf(result: { content?: unknown }): string {
