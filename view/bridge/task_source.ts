@@ -43,6 +43,7 @@ export function createTaskSource(
   /*
    * Bumped by every refresh and stop, so a poll that was in flight then
    * neither schedules the next poll nor changes the reachability shown.
+   * Starting does not bump it: a refresh already in flight still reports.
    */
   let generation = 0
 
@@ -114,7 +115,6 @@ export function createTaskSource(
         return
       }
       running = true
-      generation += 1
       schedule(POLL_MS)
     },
     stop() {

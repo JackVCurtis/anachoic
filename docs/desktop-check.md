@@ -72,8 +72,20 @@ Then check each item. Nothing on the board may address the user as "you": the se
 
 ## G. The task view (phase 3)
 
-1. Send `Open task T-001.` The task view appears with the whole chain.
-2. Press **Open in full screen**, then **Back to inline**.
+Use a task with a worker step that declared Output "Pull request", then a user step, and with at least one note, one question and answer, and one block and unblock in its history. The test in section F produces one.
+
+1. **From the board.** Press a card's title. The board is replaced by the task panel, in the same view.
+   - The header shows the title, the list it is in, and "Assigned to …" when the task is assigned.
+   - The timeline lists every step with its owner (the worker's name, or "User") and its status. The current step is open.
+   - Opening a step shows its question and answer, its block reason, notes, summary, "Produces a pull request", its artifact link, and on a user step its input link. Each link opens in the browser.
+   - The event list names who did what, and when.
+   - "Back to board" returns to the board, with focus on the card that opened the task.
+2. **From the chat.** Send `Open task T-0nn`. The task view appears and asks for full screen. If desktop allows it, the view fills the window. "Back to inline" returns it to the chat. Claude's reply describes the task from the text result, including the artifact links.
+3. **Live.** With the task open, have a worker add a note to its current step. The note appears in the timeline within 5 s, without a reload.
+4. **Park and Archive.** Each asks first in place. Escape closes the confirmation, and focus returns to its button.
+   - Park moves the task to the backlog, and the view shows it there.
+   - Archive takes the task off every list. In the board panel it returns to the board, and in the standalone view it says the task was archived.
+5. **Nothing is posted** to the chat by any of these actions, and no text on screen says "you".
 
 ## Results
 

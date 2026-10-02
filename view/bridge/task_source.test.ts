@@ -119,4 +119,23 @@ describe('the task source', () => {
     expect(app.callsTo('get_task')).toHaveLength(2)
     source.stop()
   })
+
+  test('a refresh in flight when the source starts still shows its refusal', async () => {
+    let answer: (result: ReturnType<typeof refusedResult>) => void = () => {}
+    const app = new FakeApp({
+      answer: () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    })
+    const source = createTaskSource(app, 'T-012', { task: taskProps(3) })
+
+    const refreshing = source.refresh()
+    source.start()
+    answer(refusedResult('T-012 was archived'))
+    await refreshing
+
+    expect(source.getSnapshot()).toMatchObject({ refusal: 'T-012 was archived' })
+    source.stop()
+  })
 })
