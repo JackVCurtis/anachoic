@@ -2,7 +2,12 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { buildPlugin, MARKETPLACE_NAME, PLUGIN_NAME } from '../../scripts/plugin.mjs'
+import {
+  buildPlugin,
+  MARKETPLACE_NAME,
+  PLUGIN_NAME,
+  WORKER_COMMAND,
+} from '../../scripts/plugin.mjs'
 
 const ROOT = resolve(import.meta.dirname, '../..')
 const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'mcpb', 'manifest.json'), 'utf8'))
@@ -82,4 +87,24 @@ test('a second build replaces the first', () => {
   buildPlugin({ dist, out, manifest: MANIFEST, version: '1.2.4' })
   expect(existsSync(join(out, 'stale.txt'))).toBe(false)
   expect(json(join(out, '.claude-plugin', 'marketplace.json')).plugins[0].version).toBe('1.2.4')
+})
+
+test('the plugin ships a /worker command that joins the board and waits for work', () => {
+  const { plugin } = buildPlugin({ dist, out, manifest: MANIFEST, version: '1.2.3' })
+  const command = readFileSync(join(plugin, 'commands', 'worker.md'), 'utf8')
+
+  expect(command).toBe(WORKER_COMMAND)
+  expect(command).toMatch(
+    /^---\ndescription: .+\nargument-hint: .+\nallowed-tools: mcp__plugin_anachoic-worker_anachoic\n---\n/
+  )
+  for (const tool of [
+    'join_board',
+    'claim_step',
+    'wait_for_work',
+    'complete_step',
+    'leave_board',
+  ]) {
+    expect(command).toContain(tool)
+  }
+  expect(command).toContain('$ARGUMENTS')
 })

@@ -60,6 +60,7 @@ The heartbeat never revives a removed session, even if its server process is sti
      - the `SessionEnd` hook
    - **Installing.** You install it with `/plugin marketplace add <folder>`, then `/plugin install anachoic-worker@anachoic`.
    - **Workers only.** It is for worker sessions. Desktop chat keeps using the `.mcpb`.
+   - **`/worker`.** The plugin also ships a slash command, `/worker [name]`. It starts a worker: it joins the board under the name given, or a name that fits the project, claims steps, and waits for work between them. Its `allowed-tools` covers only the plugin's own board tools, so a worker isn't stopped by permission prompts while it waits.
 2. **A settings snippet, for an install without the plugin.** `pnpm print-worker-command --hook` prints the `hooks.SessionEnd` entry to add to `~/.claude/settings.json` beside the `claude mcp add` command. The script never edits your settings.
 
 ## Tools and board
