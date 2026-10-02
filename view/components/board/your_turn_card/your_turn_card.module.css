@@ -50,7 +50,9 @@
   opacity: var(--dim-2);
 }
 
-.question {
+/* A question or a block's reason is shown in full, however long */
+.question,
+.reason {
   min-width: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -93,4 +95,9 @@
 .needs {
   color: inherit;
   opacity: var(--dim-2);
+}
+
+/* Where to unblock a blocked step, at full strength so it passes on the inverted field */
+.unblock {
+  color: inherit;
 }

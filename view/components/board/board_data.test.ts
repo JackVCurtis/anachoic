@@ -9,5 +9,6 @@ test('every named board fixture is a BoardData', () => {
     'BUSY_BOARD',
     'MANY_BOARD',
     'LONG_TEXT_BOARD',
+    'BLOCKED_BOARD',
   ])
 })

@@ -17,7 +17,7 @@ export interface SessionCardProps {
 }
 
 /**
- * One session: the step it holds, running or waiting on you, or nothing.
+ * One session: the step it holds, running, waiting on you or blocked, or nothing.
  * A session that has ended shows what it released.
  */
 export function SessionCard({ session, onOpenTask }: SessionCardProps) {
@@ -42,20 +42,34 @@ interface HoldingCardProps {
   onOpenTask: (taskId: string) => void
 }
 
+/**
+ * The square and the words for the state of the step a session holds.
+ */
+function holdingState(holding: Holding): { state: StatusSquareState; label: string } {
+  switch (holding.status) {
+    case 'running':
+      return { state: 'running', label: sessions.running }
+    case 'waiting':
+      return { state: 'waiting', label: sessions.waitingOnYou }
+    case 'blocked':
+      return {
+        state: 'attention',
+        label: fillTemplate(sessions.blockedOn, {
+          id: holding.task.displayId,
+          n: holding.step.number,
+        }),
+      }
+  }
+}
+
 function HoldingCard({ session, holding, onOpenTask }: HoldingCardProps) {
-  const running = holding.status === 'running'
+  const { state, label } = holdingState(holding)
 
   return (
     <ActionCard
       title={holding.task.title}
       onAction={() => onOpenTask(holding.task.id)}
-      leading={
-        <Header
-          state={running ? 'running' : 'waiting'}
-          session={session}
-          label={running ? sessions.running : sessions.waitingOnYou}
-        />
-      }
+      leading={<Header state={state} session={session} label={label} />}
       className={styles.card}
       titleClassName={joinClasses('text-title-3', styles.title)}
     >

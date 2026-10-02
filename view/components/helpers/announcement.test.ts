@@ -21,6 +21,14 @@ test.each<{ fact: AnnouncementFact; expected: string }>([
     fact: { kind: 'sign-off', title: TITLE },
     expected: '“Migrate billing webhooks” is finished and waiting for sign-off',
   },
+  {
+    fact: { kind: 'blocked', displayId: 'T-012', sessionName: 'api-server' },
+    expected: 'T-012 is blocked in api-server',
+  },
+  {
+    fact: { kind: 'blocked', displayId: 'T-012' },
+    expected: 'T-012 is blocked',
+  },
 ])('$fact.kind gives "$expected"', ({ fact, expected }) => {
   expect(announcement(fact)).toBe(expected)
 })

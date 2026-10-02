@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
 import { yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
+import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
@@ -255,4 +256,61 @@ export const NeedsLinkWithoutMarkDone: Story = {
     await expect(canvas.getByText('Needs a link')).toBeVisible()
     await expect(canvas.queryByRole('textbox', { name: 'Link' })).toBeNull()
   },
+}
+
+/**
+ * A blocked card has no dimmed control, so its stories run the contrast rule
+ * on the inverted field.
+ */
+const CONTRAST_ON = { a11y: { config: { rules: [{ id: 'color-contrast', enabled: true }] } } }
+
+async function expectBlockedCard(canvasElement: HTMLElement, item: YourTurnTask) {
+  const canvas = within(canvasElement)
+  await expect(canvas.getByText(yourTurn.kindBlocked)).toBeVisible()
+  await expect(canvas.getByText(item.blocked!.reason)).toBeVisible()
+  await expect(canvas.getAllByRole('button')).toHaveLength(1)
+  await expect(canvas.queryByRole('textbox')).toBeNull()
+  await expectNoSidewaysScroll()
+}
+
+export const Blocked: Story = {
+  name: 'Blocked by its worker',
+  args: { item: YOUR_TURN.blocked },
+  parameters: CONTRAST_ON,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expectBlockedCard(canvasElement, YOUR_TURN.blocked)
+    await expect(canvas.getByText('api-server')).toBeVisible()
+    await expect(canvas.getByText('Step 2 · Deploy')).toBeVisible()
+    await expect(canvas.getByText('Blocked 20m')).toBeVisible()
+    await expect(canvas.getByText('Unblock it in api-server’s session')).toBeVisible()
+    await userEvent.click(canvas.getByRole('button', { name: YOUR_TURN.blocked.task.title }))
+    await expect(args.onOpenTask).toHaveBeenCalledWith(YOUR_TURN.blocked.task.id)
+  },
+}
+
+export const BlockedNarrow: Story = {
+  name: 'Blocked by its worker, narrow',
+  args: { item: YOUR_TURN.blocked },
+  globals: NARROW,
+  parameters: { ...CONTRAST_ON, frame: 'narrow' },
+  play: async ({ canvasElement }) => {
+    await expectBlockedCard(canvasElement, YOUR_TURN.blocked)
+  },
+}
+
+export const BlockedLong: Story = {
+  name: 'Blocked, with a reason of 2,000 characters, a long title and worker name',
+  args: { item: YOUR_TURN.longBlocked },
+  parameters: CONTRAST_ON,
+  play: async ({ canvasElement }) => {
+    await expectBlockedCard(canvasElement, YOUR_TURN.longBlocked)
+  },
+}
+
+export const BlockedLongNarrow: Story = {
+  ...BlockedLong,
+  name: 'Blocked, with a reason of 2,000 characters, a long title and worker name, narrow',
+  globals: NARROW,
+  parameters: { ...CONTRAST_ON, frame: 'narrow' },
 }

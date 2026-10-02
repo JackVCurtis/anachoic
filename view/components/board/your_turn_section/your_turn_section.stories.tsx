@@ -7,6 +7,9 @@ import { YourTurnSection } from './your_turn_section'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
+/** Everything drawn on the inverted field, for a rule run there alone. */
+const INVERSE_BAND = '[data-tone="inverse"], [data-tone="inverse"] *'
+
 const meta = {
   title: 'Board/YourTurnSection',
   component: YourTurnSection,
@@ -45,6 +48,32 @@ export const EachKind: Story = {
     await expect(canvas.getByText('Your step')).toBeVisible()
     await expect(canvas.getByText('This chat asks')).toBeVisible()
   },
+}
+
+export const ThreeKinds: Story = {
+  name: 'A blocked step beside your step and an agent’s question',
+  args: { tasks: [YOUR_TURN.blocked, YOUR_TURN.yourStep, YOUR_TURN.question] },
+  parameters: {
+    a11y: {
+      /* The header and every card are on the inverse field, so contrast is checked */
+      config: { rules: [{ id: 'color-contrast', enabled: true, selector: INVERSE_BAND }] },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(yourTurn.kindBlocked)).toBeVisible()
+    await expect(canvas.getByText('Your step')).toBeVisible()
+    await expect(canvas.getByText('This chat asks')).toBeVisible()
+    const [sideways] = await windowOverflow()
+    await expect(sideways).toBe(0)
+  },
+}
+
+export const ThreeKindsNarrow: Story = {
+  ...ThreeKinds,
+  name: 'A blocked step beside your step and an agent’s question, narrow',
+  globals: NARROW,
+  parameters: { ...ThreeKinds.parameters, frame: 'narrow' },
 }
 
 export const NothingWaiting: Story = {

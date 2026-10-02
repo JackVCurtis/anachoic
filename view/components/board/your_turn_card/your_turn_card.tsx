@@ -9,9 +9,10 @@ import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
 import { StatusSquare } from '../../primitives/status_square/status_square'
+import { Tag } from '../../primitives/tag/tag'
 import { TextArea } from '../../primitives/text_area/text_area'
 import { TextInput } from '../../primitives/text_input/text_input'
-import type { YourTurnTask } from '../board_data'
+import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
 
@@ -58,9 +59,88 @@ function kindLabel({ step, sessionName }: YourTurnTask): string {
 
 /**
  * One step that waits on you, inverted so that it cannot be missed: your own
- * step, or an agent's question with the session that asks it.
+ * step, an agent's question with the session that asks it, or a step a
+ * worker blocked.
  */
 export function YourTurnCard({
+  item,
+  onOpenTask,
+  onCompleteStep,
+  onAnswer,
+  onPark,
+  busy = null,
+}: YourTurnCardProps) {
+  if (item.blocked) {
+    return <BlockedCard item={item} blocked={item.blocked} onOpenTask={onOpenTask} />
+  }
+  return (
+    <WaitingCard
+      item={item}
+      onOpenTask={onOpenTask}
+      onCompleteStep={onCompleteStep}
+      onAnswer={onAnswer}
+      onPark={onPark}
+      busy={busy}
+    />
+  )
+}
+
+interface BlockedCardProps {
+  item: YourTurnTask
+  blocked: BoardBlock
+  onOpenTask: (taskId: string) => void
+}
+
+/**
+ * A step its worker blocked: the worker, the step, the reason in full, how
+ * long it has been blocked, and where to unblock it. It is unblocked in the
+ * worker's session, so the card has no action but opening the task.
+ */
+function BlockedCard({ item, blocked, onOpenTask }: BlockedCardProps) {
+  const now = useNow(LABEL_TICK.waited)
+  const { task, step, steps, sessionName } = item
+
+  return (
+    <ActionCard
+      tone="inverse"
+      title={task.title}
+      onAction={() => onOpenTask(task.id)}
+      className={styles.card}
+      titleClassName={joinClasses('text-title-4', styles.title)}
+      leading={
+        <div className={styles.top}>
+          <StatusSquare state="attention" />
+          <Tag variant="accent">{yourTurn.kindBlocked}</Tag>
+          {sessionName && <span className={styles.kind}>{sessionName}</span>}
+          <span className={joinClasses('text-status', 'text-tabular', styles.counter)}>
+            {fillTemplate(yourTurn.blockedFor, { waited: formatWaited(blocked.since, now) })}
+          </span>
+        </div>
+      }
+    >
+      <p className={styles.step}>
+        <span className={joinClasses('text-mono-xs', styles.id)}>{task.displayId}</span>
+        <span className="text-body-sm">
+          {fillTemplate(yourTurn.blockedStep, { 'n': step.number, 'step title': step.title })}
+        </span>
+      </p>
+      <p data-raised className={joinClasses('text-body-sm', styles.reason)}>
+        {blocked.reason}
+      </p>
+      {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
+      <p className={joinClasses('text-hint', styles.unblock)}>
+        {sessionName
+          ? fillTemplate(yourTurn.unblockIn, { session: sessionName })
+          : yourTurn.unblockInUnnamed}
+      </p>
+    </ActionCard>
+  )
+}
+
+/**
+ * Your own step, or an agent's question, with the actions the server allows.
+ */
+function WaitingCard({
   item,
   onOpenTask,
   onCompleteStep,

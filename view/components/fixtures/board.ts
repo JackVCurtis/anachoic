@@ -39,6 +39,7 @@ export interface YourTurnSample {
     waitingSince: string
   }
   sessionName?: string
+  blocked?: { reason: string; since: string }
   steps: readonly PipStepSample[]
   canAct: { complete?: boolean; answer?: boolean; park: boolean }
 }
@@ -91,7 +92,7 @@ export interface SessionSample {
   holding?: {
     task: TaskSample
     step: { number: number; title: string }
-    status: 'running' | 'waiting'
+    status: 'running' | 'waiting' | 'blocked'
   }
   endedAt?: string
   released?: readonly TaskSample[]
@@ -183,6 +184,35 @@ export function agentAsks(
     sessionName: current.step.sessionName ?? undefined,
     steps,
     canAct: { complete: false, answer: true, park: true },
+  }
+}
+
+/**
+ * An agent step its worker blocked, waiting since it was blocked. The server
+ * may still allow Park on it; the card offers nothing.
+ */
+export function workerBlocks(
+  number: number,
+  title: string,
+  specs: readonly StepSpec[],
+  reason: string,
+  since: string
+): YourTurnSample {
+  const task = taskOf(number, title)
+  const steps = chainOf(task, specs)
+  const current = currentOf(steps)
+  return {
+    task,
+    step: {
+      number: current.number,
+      title: current.step.title,
+      owner: 'agent',
+      waitingSince: since,
+    },
+    sessionName: current.step.sessionName ?? undefined,
+    blocked: { reason, since },
+    steps,
+    canAct: { complete: false, answer: false, park: true },
   }
 }
 
@@ -283,7 +313,10 @@ export function workersOf(board: Pick<BoardSample, 'sessions'>): WorkerSample[] 
 /**
  * The step a session holds, naming its task by id, display id and title only.
  */
-export function holdingOf(item: YourTurnSample | WorkingSample, status: 'running' | 'waiting') {
+export function holdingOf(
+  item: YourTurnSample | WorkingSample,
+  status: 'running' | 'waiting' | 'blocked'
+) {
   const { id, displayId, title } = item.task
   return {
     task: { id, displayId, title },
@@ -609,7 +642,64 @@ export const LONG_TEXT_BOARD: BoardSample = {
   unreachable: false,
 }
 
+/** api-server blocked the deploy of T-030 twenty minutes ago. */
+const DEPLOY_BLOCKED = workerBlocks(
+  30,
+  'Roll out the sessions table',
+  [
+    ['agent', 'done', 'Write the migration'],
+    ['agent', 'waiting', 'Deploy', API_SERVER],
+    ['you', 'pending', 'Check the sessions on staging'],
+  ],
+  'Needs AWS credentials: the deploy role for the staging account has expired, and it can only be renewed from your machine.',
+  before({ minutes: 20 })
+)
+
+const BLOCKED_LISTS = {
+  yourTurn: [DEPLOY_BLOCKED, REVIEW_THE_PR, CHOOSE_THE_CACHE_KEY],
+  working: [],
+  queue: BUSY_QUEUE,
+  toSignOff: [],
+}
+
+/**
+ * Your turn holds a step api-server blocked, your own step and This chat's
+ * question, the three kinds of card together. api-server holds the blocked
+ * step.
+ */
+export const BLOCKED_BOARD: BoardSample = {
+  ...BLOCKED_LISTS,
+  backlog: [],
+  signedOff: [],
+  sessions: [
+    {
+      id: 'dedicated',
+      kind: 'dedicated',
+      name: THIS_CHAT,
+      live: true,
+      holding: holdingOf(CHOOSE_THE_CACHE_KEY, 'waiting'),
+    },
+    {
+      id: 'worker-api-server',
+      kind: 'worker',
+      name: API_SERVER,
+      live: true,
+      holding: holdingOf(DEPLOY_BLOCKED, 'blocked'),
+    },
+    { id: 'worker-web-client', kind: 'worker', name: WEB_CLIENT, live: true },
+  ],
+  counts: countsOf(BLOCKED_LISTS),
+  updatedAt: null,
+  unreachable: false,
+}
+
 /**
  * Every named board, for tests that check them all.
  */
-export const NAMED_BOARDS = { EMPTY_BOARD, BUSY_BOARD, MANY_BOARD, LONG_TEXT_BOARD } as const
+export const NAMED_BOARDS = {
+  EMPTY_BOARD,
+  BUSY_BOARD,
+  MANY_BOARD,
+  LONG_TEXT_BOARD,
+  BLOCKED_BOARD,
+} as const

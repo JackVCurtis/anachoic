@@ -33,6 +33,8 @@ These are specified in anachoic but not yet built there, so they are written her
 
 [11](11-assignment-and-outputs.md) adds the Worker and Output fields to TaskEntry, the artifact field to YourTurnCard, and artifact links and the assigned worker to the cards.
 
+[12](12-blocked-steps.md#board) adds a third kind of YourTurnCard, a step a worker blocked, with no action, and the blocked worker's line in Sessions.
+
 | Component | Layer | Is |
 |---|---|---|
 | BoardView | `board/` | The one board view. It replaces anachoic's BoardView, SignOffView and CompletedView ([layout](#layout)). |
@@ -122,5 +124,6 @@ The clock (`use_now`) takes `timeZone` from the host context, so times are shown
 - "Claimed by", "Unclaimed" and "Idle"
 - "Asks", for an agent's question, and "Answer", for the button
 - "Released", for work a session left behind when it ended
+- "Blocked", for a step its worker cannot complete until you act with it in its session
 
 The refusal sentences in [03](03-domain-model.md#refusals) follow the same rules.

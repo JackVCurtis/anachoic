@@ -58,10 +58,21 @@ export interface YourTurnTask {
     /** An instant. */
     waitingSince: string
   }
-  /** The session that asks. Absent for your own step. */
+  /** The session that asks, or the worker that blocked the step. Absent for your own step. */
   sessionName?: string | null
+  /**
+   * Set when the worker blocked its step: why, and since when. It is
+   * unblocked in the worker's session, so the card offers no action.
+   */
+  blocked?: BoardBlock | null
   steps: readonly BoardStep[]
   canAct: { complete?: boolean; answer?: boolean; park: boolean }
+}
+
+export interface BoardBlock {
+  reason: string
+  /** An instant. */
+  since: string
 }
 
 export interface WorkingTask {
@@ -141,7 +152,8 @@ export interface BoardSession {
   holding?: {
     task: BoardTask
     step: { number: number; title: string }
-    status: 'running' | 'waiting'
+    /** `waiting`: on your answer or your step. `blocked`: until you act in the session. */
+    status: 'running' | 'waiting' | 'blocked'
   } | null
   /** An instant. Only an ended session has one. */
   endedAt?: string | null

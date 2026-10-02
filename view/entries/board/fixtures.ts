@@ -1,5 +1,6 @@
 import type { BoardProps } from '../../../shared/props.js'
 import {
+  BLOCKED_BOARD,
   BUSY_BOARD,
   EMPTY_BOARD,
   LONG_TEXT_BOARD,
@@ -57,6 +58,8 @@ export const MANY_BOARD_PROPS: BoardProps = toBoardProps(MANY_BOARD, 512)
 
 export const LONG_TEXT_BOARD_PROPS: BoardProps = toBoardProps(LONG_TEXT_BOARD, 37)
 
+export const BLOCKED_BOARD_PROPS: BoardProps = toBoardProps(BLOCKED_BOARD, 88)
+
 /**
  * Every named board as props, for tests that check them all.
  */
@@ -65,4 +68,5 @@ export const NAMED_BOARD_PROPS = {
   BUSY_BOARD: BUSY_BOARD_PROPS,
   MANY_BOARD: MANY_BOARD_PROPS,
   LONG_TEXT_BOARD: LONG_TEXT_BOARD_PROPS,
+  BLOCKED_BOARD: BLOCKED_BOARD_PROPS,
 } as const

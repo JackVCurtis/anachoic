@@ -113,13 +113,14 @@ describe('the words of 07', () => {
         'sessionAsks',
         'questionForYou',
         'waitingForSignOff',
+        'blockedIn',
       ])
     )
   })
 
   test('the strings of what this app does not have are gone', () => {
     for (const { value } of ALL) {
-      expect(value).not.toMatch(/\b(?:cap|tmux|approv|unblock|paused?|(?:workflow)s?|repo)\b/i)
+      expect(value).not.toMatch(/\b(?:cap|tmux|approv|paused?|(?:workflow)s?|repo)\b/i)
     }
   })
 })
@@ -225,6 +226,21 @@ describe('fillTemplate', () => {
       template: sessions.holding,
       values: { 'n': 2, 'm': 3, 'step title': 'Write the migration' },
       expected: 'Step 2 of 3 · Write the migration',
+    },
+    {
+      template: sessions.blockedOn,
+      values: { id: 'T-012', n: 2 },
+      expected: 'Blocked on T-012 step 2',
+    },
+    {
+      template: yourTurn.unblockIn,
+      values: { session: 'api-server' },
+      expected: 'Unblock it in api-server’s session',
+    },
+    {
+      template: assistive.blockedIn,
+      values: { id: 'T-012', session: 'api-server' },
+      expected: 'T-012 is blocked in api-server',
     },
     { template: queue.title, values: {}, expected: 'Queue' },
   ])('$template gives "$expected"', ({ template, values, expected }) => {

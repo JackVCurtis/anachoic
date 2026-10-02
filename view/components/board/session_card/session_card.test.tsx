@@ -31,6 +31,18 @@ describe('SessionCard', () => {
     expect(container.querySelector('article')).not.toBeNull()
   })
 
+  test('a session holding a blocked step says what it is blocked on, with the attention square', () => {
+    const { container } = renderCard(SESSIONS.blocked)
+
+    expect(screen.getByText('api-server')).toBeVisible()
+    expect(screen.getByText('Blocked on T-030 step 2')).toBeVisible()
+    expect(screen.getByText('Step 2 · Deploy')).toBeVisible()
+    expect(screen.queryByText('Waiting on you')).toBeNull()
+    const square = container.querySelector('[aria-hidden="true"]')
+    expect(square?.className).toMatch(/attention/)
+    expect(container.querySelector('[data-tone="inverse"]')).toBeNull()
+  })
+
   test('this chat is named "This chat" once, with no kind tag', () => {
     renderCard(SESSIONS.thisChat)
 
@@ -80,6 +92,7 @@ describe('SessionCard', () => {
   test('no card offers Cancel step or shows a cap', () => {
     const all = [
       ...SESSIONS.busy,
+      SESSIONS.blocked,
       ...SESSIONS.severalWorkers,
       ...SESSIONS.idleSessions,
       SESSIONS.endedTwo,

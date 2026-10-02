@@ -17,19 +17,7 @@ export function toBoardData(props: BoardProps): BoardLists {
     backlog: props.backlog,
     toSignOff: props.toSignOff,
     signedOff: props.signedOff,
-    // The session card shows a blocked holding as waiting on you until it
-    // draws blocks of its own.
-    sessions: props.sessions.map(({ holding, ...session }) =>
-      holding
-        ? {
-            ...session,
-            holding: {
-              ...holding,
-              status: holding.status === 'blocked' ? ('waiting' as const) : holding.status,
-            },
-          }
-        : session
-    ),
+    sessions: props.sessions,
     counts: props.counts,
   }
 }

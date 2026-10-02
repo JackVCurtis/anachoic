@@ -122,6 +122,11 @@ export const yourTurn = {
   needs: 'Needs {needed}',
   urlPlaceholder: 'https://…',
   notWebAddress: 'That is not a web address',
+  kindBlocked: 'Blocked',
+  blockedStep: 'Step {n} · {step title}',
+  blockedFor: 'Blocked {waited}',
+  unblockIn: 'Unblock it in {session}’s session',
+  unblockInUnnamed: 'Unblock it in the worker’s session',
 } as const
 
 export const sessions = {
@@ -136,6 +141,7 @@ export const sessions = {
   waitingOnYou: 'Waiting on you',
   holding: 'Step {n} of {m} · {step title}',
   holdingStep: 'Step {n} · {step title}',
+  blockedOn: 'Blocked on {id} step {n}',
   ended: 'Ended {when}',
   released: 'Released',
   releasedTasks: 'Released {n tasks}',
@@ -295,6 +301,8 @@ export const assistive = {
   sessionAsks: '{session} asks about “{title}”',
   questionForYou: '“{title}” has a question for you',
   waitingForSignOff: '“{title}” is finished and waiting for sign-off',
+  blockedIn: '{id} is blocked in {session}',
+  blockedUnnamed: '{id} is blocked',
 } as const
 
 export const strings = {

@@ -11,7 +11,7 @@ import { openLink } from '../../bridge/tools'
 import { createYourActions } from '../../bridge/wake'
 import { card } from '../../components/helpers/strings'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
-import { announcement } from '../../components/helpers/announcement'
+import { announcement, type AnnouncementFact } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
 import { useCardActions } from './use_card_actions'
@@ -38,18 +38,26 @@ export async function loadBoard(
 }
 
 /**
+ * The fact a card arriving in Your turn is announced as.
+ */
+function arrivalFact({ task, step, session, blocked }: YourTurnItem): AnnouncementFact {
+  if (blocked) {
+    return { kind: 'blocked', displayId: task.displayId, sessionName: session?.name }
+  }
+  return step.owner === 'you'
+    ? { kind: 'your-step', title: task.title }
+    : { kind: 'question', title: task.title, sessionName: session?.name }
+}
+
+/**
  * The sentences for the tasks a poll brought into Your turn, one per card.
  */
 function arrivalAnnouncement(
   items: readonly YourTurnItem[],
   key: number
 ): BoardAnnouncement | null {
-  const sentences = items.flatMap(({ task, step, session }) => {
-    const sentence = announcement(
-      step.owner === 'you'
-        ? { kind: 'your-step', title: task.title }
-        : { kind: 'question', title: task.title, sessionName: session?.name }
-    )
+  const sentences = items.flatMap((item) => {
+    const sentence = announcement(arrivalFact(item))
     return sentence === null ? [] : [sentence]
   })
   return sentences.length === 0 ? null : { key, text: sentences.join('. ') }

@@ -1,6 +1,7 @@
 import {
   agentAsks,
   API_SERVER,
+  BLOCKED_BOARD,
   BUSY_BOARD,
   DOCS,
   finished,
@@ -14,6 +15,7 @@ import {
   THIS_CHAT,
   WEB_CLIENT,
   withArtifacts,
+  workerBlocks,
   yourStep,
   type ArtifactSample,
   type SessionSample,
@@ -30,14 +32,27 @@ import { LONG_TEXT } from './long_text.js'
  */
 
 const [REVIEW_THE_PR, CHOOSE_THE_CACHE_KEY] = BUSY_BOARD.yourTurn
+const [DEPLOY_BLOCKED] = BLOCKED_BOARD.yourTurn
 
 /**
- * Your turn: your own step, an agent's question, a question of 2,000
- * characters, a long title, and twenty cards.
+ * Your turn: your own step, an agent's question, a blocked step, a question
+ * of 2,000 characters, a reason of 2,000 characters with a long title and
+ * worker name, a long title, and twenty cards.
  */
 export const YOUR_TURN = {
   yourStep: REVIEW_THE_PR,
   question: CHOOSE_THE_CACHE_KEY,
+  blocked: DEPLOY_BLOCKED,
+  longBlocked: workerBlocks(
+    32,
+    LONG_TEXT.title,
+    [
+      ['agent', 'done', LONG_TEXT.title],
+      ['agent', 'waiting', LONG_TEXT.title, LONG_TEXT.name],
+    ],
+    LONG_TEXT.answer.slice(0, 2000),
+    before({ hours: 2, minutes: 5 })
+  ),
   longQuestion: agentAsks(
     30,
     'Pick the retry policy for the billing webhooks',
@@ -81,7 +96,7 @@ function worker(
     title: string
     step: number
     stepTitle: string
-    status: 'running' | 'waiting'
+    status: 'running' | 'waiting' | 'blocked'
   }
 ): SessionSample {
   return {
@@ -100,9 +115,10 @@ function worker(
 }
 
 const [THIS_CHAT_WAITING, API_SERVER_RUNNING, WEB_CLIENT_IDLE, DOCS_ENDED] = BUSY_BOARD.sessions
+const [, API_SERVER_BLOCKED] = BLOCKED_BOARD.sessions
 
 /**
- * Sessions: this chat holding a step, workers running and waiting, idle
+ * Sessions: this chat holding a step, workers running, waiting and blocked, idle
  * sessions, an ended session that released two tasks, twelve live sessions
  * and long names.
  */
@@ -112,6 +128,7 @@ export const SESSIONS = {
   idle: WEB_CLIENT_IDLE,
   ended: DOCS_ENDED,
   busy: BUSY_BOARD.sessions,
+  blocked: API_SERVER_BLOCKED,
   waitingWorker: worker('billing', {
     number: 15,
     title: 'Add retries to the billing webhooks',

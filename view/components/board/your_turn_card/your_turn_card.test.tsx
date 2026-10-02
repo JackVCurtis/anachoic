@@ -257,3 +257,97 @@ describe('YourTurnCard actions', () => {
     expect(screen.getByRole('textbox')).toHaveValue('')
   })
 })
+
+describe('YourTurnCard, blocked', () => {
+  function renderBlocked(item: YourTurnTask) {
+    const callbacks = {
+      onOpenTask: vi.fn(),
+      onCompleteStep: vi.fn(),
+      onAnswer: vi.fn(),
+      onPark: vi.fn(),
+    }
+    const rendered = renderComponent(<YourTurnCard item={item} {...callbacks} />)
+    return { ...rendered, ...callbacks, card: screen.getByRole('article') }
+  }
+
+  test('shows the Blocked tag, the worker, the step, the reason, the time and where to unblock it', () => {
+    const { card } = renderBlocked(YOUR_TURN.blocked)
+
+    expect(screen.getByText('Blocked')).toBeVisible()
+    expect(screen.getByText('api-server')).toBeVisible()
+    expect(screen.getByText(YOUR_TURN.blocked.task.displayId)).toBeVisible()
+    expect(screen.getByText('Step 2 · Deploy')).toBeVisible()
+    expect(screen.getByText(YOUR_TURN.blocked.blocked!.reason)).toBeVisible()
+    expect(screen.getByText('Blocked 20m')).toBeVisible()
+    expect(screen.getByText('Unblock it in api-server’s session')).toBeVisible()
+    expect(card.getAttribute('data-tone')).toBe('inverse')
+  })
+
+  test('has no button but its title, no field and no Park, even where the server allows Park', () => {
+    expect(YOUR_TURN.blocked.canAct.park).toBe(true)
+    renderBlocked(YOUR_TURN.blocked)
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      YOUR_TURN.blocked.task.title,
+    ])
+    expect(screen.queryByRole('textbox')).toBeNull()
+    expect(screen.queryByText(yourTurn.park)).toBeNull()
+  })
+
+  test('pressing the title raises onOpenTask with the task id', async () => {
+    const { user, onOpenTask } = renderBlocked(YOUR_TURN.blocked)
+
+    await user.click(screen.getByRole('button', { name: YOUR_TURN.blocked.task.title }))
+
+    expect(onOpenTask).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.blocked.task.id)
+  })
+
+  test('without a worker named, it says to unblock it in the worker’s session', () => {
+    renderBlocked({ ...YOUR_TURN.blocked, sessionName: null })
+
+    expect(screen.getByText('Unblock it in the worker’s session')).toBeVisible()
+  })
+
+  test.each([
+    ['a reason of 2,000 characters', YOUR_TURN.longBlocked.blocked!.reason],
+    ['a reason with no space', `https://console.aws.example.com/${'x'.repeat(400)}`],
+  ])('%s wraps in full within 600 px and never widens the card', (_, reason) => {
+    const item = {
+      ...YOUR_TURN.longBlocked,
+      blocked: { ...YOUR_TURN.longBlocked.blocked!, reason },
+    }
+    renderComponent(
+      <div style={{ width: 600 }}>
+        <YourTurnCard item={item} onOpenTask={() => {}} />
+      </div>
+    )
+    const shown = screen.getByText(reason)
+    const article = screen.getByRole('article')
+
+    expect(shown.textContent).toBe(reason)
+    expect(getComputedStyle(shown).textOverflow).not.toBe('ellipsis')
+    expect(shown.scrollHeight).toBeLessThanOrEqual(shown.clientHeight)
+    expect(shown.getBoundingClientRect().height).toBeGreaterThan(40)
+    expect(article.scrollWidth).toBeLessThanOrEqual(article.clientWidth)
+    expect(article.getBoundingClientRect().width).toBeLessThanOrEqual(600)
+  })
+
+  test('the time blocked advances each minute', () => {
+    vi.useFakeTimers({
+      now: Date.parse(FIXED_NOW) + 45_000,
+      toFake: ['setInterval', 'clearInterval', 'Date'],
+    })
+    render(<YourTurnCard item={YOUR_TURN.blocked} onOpenTask={() => {}} />)
+    expect(screen.getByText('Blocked 20m')).toBeDefined()
+
+    act(() => {
+      vi.advanceTimersByTime(30_000)
+    })
+    expect(screen.getByText('Blocked 21m')).toBeDefined()
+
+    act(() => {
+      vi.advanceTimersByTime(60_000)
+    })
+    expect(screen.getByText('Blocked 22m')).toBeDefined()
+  })
+})

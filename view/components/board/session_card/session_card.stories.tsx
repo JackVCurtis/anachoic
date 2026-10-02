@@ -58,6 +58,24 @@ export const Waiting: Story = {
   },
 }
 
+export const Blocked: Story = {
+  name: 'Holding a step it blocked',
+  args: { session: SESSIONS.blocked },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Blocked on T-030 step 2')).toBeVisible()
+    await expect(canvas.getByText('Step 2 · Deploy')).toBeVisible()
+    await expect(canvasElement.querySelector('[data-tone="inverse"]')).toBeNull()
+  },
+}
+
+export const BlockedNarrow: Story = {
+  ...Blocked,
+  name: 'Holding a step it blocked, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
 export const ThisChat: Story = {
   name: 'This chat holding a step',
   args: { session: SESSIONS.thisChat },

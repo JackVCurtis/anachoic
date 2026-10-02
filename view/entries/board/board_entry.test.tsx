@@ -1,5 +1,5 @@
 import { Profiler } from 'react'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import type { CallToolResult } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import type { BoardProps, QueueItem, YourTurnItem } from '../../../shared/props'
@@ -49,6 +49,17 @@ function question(id: string, title: string, session: string): YourTurnItem {
     session: { id: `session-${session}`, name: session },
     steps: [],
     canAct: { answer: true, park: true },
+  }
+}
+
+function blocked(id: string, title: string, session: string): YourTurnItem {
+  return {
+    task: { id, displayId: `T-0${id}`, title },
+    step: { number: 2, title: 'Deploy', owner: 'agent', waitingSince: START.toISOString() },
+    session: { id: `session-${session}`, name: session },
+    blocked: { reason: 'Needs AWS credentials', since: START.toISOString() },
+    steps: [],
+    canAct: { park: true },
   }
 }
 
@@ -287,6 +298,62 @@ describe('the board entry', () => {
 
     await advance(POLL_MS)
     expect(liveRegion().textContent).toBe('Session 2 asks about “Cache keys”')
+  })
+
+  test('draws a blocked step as a blocked card and its worker as blocked, until it is unblocked', async () => {
+    const holdingBlocked = (revision: number, items: YourTurnItem[]): BoardProps => ({
+      ...board(revision, items),
+      sessions: [
+        {
+          id: 'session-api-server',
+          kind: 'worker',
+          name: 'api-server',
+          live: true,
+          holding: {
+            task: { id: '12', displayId: 'T-012', title: 'Ship it' },
+            step: { number: 2, title: 'Deploy' },
+            status: 'blocked',
+          },
+        },
+      ],
+    })
+    const app = queuedApp([
+      boardResult(holdingBlocked(3, [blocked('12', 'Ship it', 'api-server')])),
+      boardResult(board(4)),
+    ])
+    await renderEntry(app)
+    const yourTurnSection = screen
+      .getByRole('heading', { level: 2, name: /^Your turn/ })
+      .closest('section')!
+
+    expect(within(yourTurnSection).getByText('Needs AWS credentials')).toBeTruthy()
+    expect(within(yourTurnSection).getByText('Unblock it in api-server’s session')).toBeTruthy()
+    expect(
+      within(yourTurnSection)
+        .getAllByRole('button')
+        .map((button) => button.textContent)
+    ).toEqual(['Ship it'])
+    expect(screen.getByText('Blocked on T-012 step 2')).toBeTruthy()
+
+    await advance(POLL_MS)
+
+    expect(screen.queryByText('Needs AWS credentials')).toBeNull()
+    expect(screen.queryByText('Blocked on T-012 step 2')).toBeNull()
+    expect(app.calls.sendMessage).toEqual([])
+  })
+
+  test('says which worker blocked a task that a poll brings into Your turn blocked', async () => {
+    const app = queuedApp([
+      boardResult(board(3, [yourStep('a', 'Review the PR')])),
+      boardResult(
+        board(4, [yourStep('a', 'Review the PR'), blocked('12', 'Ship it', 'api-server')])
+      ),
+    ])
+    await renderEntry(app)
+
+    await advance(POLL_MS)
+
+    expect(liveRegion().textContent).toBe('T-012 is blocked in api-server')
   })
 
   test('the view is as tall after 20 dimension-only context changes, which render nothing', async () => {
