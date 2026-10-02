@@ -1,0 +1,73 @@
+/* The view's height comes from its content alone: no viewport units, no inner scrolling */
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+  padding: max(var(--space-4), var(--task-inset-top, 0px))
+    max(var(--space-6), var(--task-inset-right, 0px))
+    max(var(--space-4), var(--task-inset-bottom, 0px))
+    max(var(--space-6), var(--task-inset-left, 0px));
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-hairline) solid var(--color-divider);
+}
+
+/* Under 600 px the controls wrap below the title rather than squeezing it */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.identity {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.subtle {
+  color: var(--color-text-subtle);
+}
+
+.title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 6px;
+}
+
+.meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.archived {
+  margin: 0;
+}

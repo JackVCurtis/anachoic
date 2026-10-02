@@ -124,8 +124,8 @@ export interface TaskSummary {
  */
 export interface TaskViewData {
   task: TaskSummary
-  /** The list the task is in, for the badge. */
-  list: TaskList
+  /** The list the task is in, for the badge. Null when it is in none. */
+  list: TaskList | null
   /** In chain order. */
   steps: readonly TimelineStepData[]
   /** The step the chain is at. Null when the task is done. */

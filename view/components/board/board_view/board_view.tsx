@@ -17,7 +17,7 @@ import { YourTurnSection } from '../your_turn_section/your_turn_section'
 import styles from './board_view.module.css'
 
 export interface BoardViewActions {
-  /** A card's title was pressed. Nothing happens until the board has a task panel. */
+  /** A card's title was pressed, to open its task. */
   onOpenTask?: (taskId: string) => void
   /** "Queue →" was pressed. Without it no Backlog card offers the button. */
   onQueueTask?: (taskId: string) => void

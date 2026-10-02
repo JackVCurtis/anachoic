@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { YourTurnItem } from '../../../shared/props'
 import {
   openBoardSource,
@@ -12,11 +12,13 @@ import { createYourActions } from '../../bridge/wake'
 import { card } from '../../components/helpers/strings'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement, type AnnouncementFact } from '../../components/helpers/announcement'
+import { TaskPanel } from './task_panel'
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
 import { useCardActions } from './use_card_actions'
 import { useRemoveSession } from './use_remove_session'
 import { useTaskEntry } from './use_task_entry'
+import { useTaskPanel } from './use_task_panel'
 import { useYourTurnActions } from './use_your_turn_actions'
 
 export interface LoadedBoard {
@@ -90,6 +92,8 @@ function Board({ app, source }: LiveBoardProps) {
   const removeSession = useRemoveSession(yourActions, source, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
+  const boardRoot = useRef<HTMLDivElement>(null)
+  const { panel, openTask, backToBoard } = useTaskPanel(app, board, source, boardRoot)
 
   async function reorder(taskId: string, position: number) {
     const item = board.queue.find((queued) => queued.task.id === taskId)
@@ -128,24 +132,42 @@ function Board({ app, source }: LiveBoardProps) {
     }
   }
 
+  /*
+   * The board stays mounted, hidden, while the task panel shows, so the card
+   * that opened the task can take focus back.
+   */
   return (
-    <BoardView
-      {...lists}
-      updatedAt={updatedAt}
-      unreachable={unreachable}
-      safeAreaInsets={safeAreaInsets}
-      announcement={said}
-      onReorder={(taskId, position) => void reorder(taskId, position)}
-      reordering={reordering}
-      onQueueTask={(taskId) => void queueTask(taskId)}
-      onOpenLink={(url) => void openArtifact(url)}
-      taskEntry={taskEntry}
-      {...yourTurnActions}
-      {...cardActions}
-      {...removeSession}
-      messages={messages}
-      onDismissMessage={dismiss}
-    />
+    <>
+      <div ref={boardRoot} hidden={panel !== null}>
+        <BoardView
+          {...lists}
+          updatedAt={updatedAt}
+          unreachable={unreachable}
+          safeAreaInsets={safeAreaInsets}
+          announcement={said}
+          onReorder={(taskId, position) => void reorder(taskId, position)}
+          reordering={reordering}
+          onQueueTask={(taskId) => void queueTask(taskId)}
+          onOpenLink={(url) => void openArtifact(url)}
+          taskEntry={taskEntry}
+          {...yourTurnActions}
+          {...cardActions}
+          {...removeSession}
+          messages={messages}
+          onDismissMessage={dismiss}
+          onOpenTask={openTask}
+          selectedTaskId={panel?.summary.id ?? null}
+        />
+      </div>
+      {panel && (
+        <TaskPanel
+          app={app}
+          panel={panel}
+          onBackToBoard={backToBoard}
+          onOpenLink={(url) => void openArtifact(url)}
+        />
+      )}
+    </>
   )
 }
 
@@ -153,7 +175,8 @@ function Board({ app, source }: LiveBoardProps) {
  * The live board: drawn from the source, which polls while it is mounted.
  * Your actions call their app-only tools and the board is redrawn from each
  * result; nothing is posted to the dedicated chat. Artifact links are opened
- * by the host. Each failure is shown in the message region.
+ * by the host. Each failure is shown in the message region. A card's title
+ * swaps the board for its task, in the same frame.
  */
 export function BoardEntry({
   connection,
