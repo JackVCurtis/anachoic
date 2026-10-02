@@ -10,7 +10,7 @@ import { QueueSection } from './queue_section'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
-const [FIRST, SECOND] = QUEUE.busy
+const [FIRST, SECOND, THIRD] = QUEUE.busy
 
 function sectionOf(canvasElement: HTMLElement): HTMLElement {
   const heading = within(canvasElement).getByRole('heading', { level: 2, name: queue.title })
@@ -112,6 +112,66 @@ export const Movable: Story = {
     await expect(canvas.getAllByRole('button', { name: queue.move })).toHaveLength(4)
     await userEvent.click(canvas.getAllByRole('button', { name: queue.move })[0])
     await expect(args.onOpenTask).not.toHaveBeenCalled()
+  },
+}
+
+/**
+ * Lifts the card whose title is given with its Move handle, then presses the
+ * keys given, as the keyboard would.
+ */
+async function liftWithKeys(canvasElement: HTMLElement, title: string, keys = '') {
+  const canvas = within(canvasElement)
+  const item = canvas.getByRole('button', { name: title }).closest('li') as HTMLElement
+  within(item).getByRole('button', { name: queue.move }).focus()
+  await userEvent.keyboard(`{Enter}${keys}`)
+  return within(item).getByRole('button', { name: queue.drop })
+}
+
+export const Lifted: Story = {
+  name: 'A card lifted',
+  args: { onReorder: fn() },
+  play: async ({ canvasElement }) => {
+    const handle = await liftWithKeys(canvasElement, THIRD.task.title, '{ArrowUp}')
+
+    await expect(handle).toHaveFocus()
+    await expect(canvasElement.querySelector('[aria-live="assertive"]')).toHaveTextContent(
+      'Position 2 of 4'
+    )
+  },
+}
+
+export const LiftedAtFront: Story = {
+  name: 'A card lifted to the front',
+  args: { onReorder: fn() },
+  play: async ({ canvasElement }) => {
+    const handle = await liftWithKeys(canvasElement, THIRD.task.title, '{Home}')
+
+    await expect(handle.closest('li')).toHaveTextContent('#1 in line')
+  },
+}
+
+export const LiftedAtBack: Story = {
+  name: 'A card lifted to the back',
+  args: { onReorder: fn() },
+  play: async ({ canvasElement }) => {
+    const handle = await liftWithKeys(canvasElement, FIRST.task.title, '{End}')
+
+    await expect(handle.closest('li')).toHaveTextContent(`#${QUEUE.busy.length} in line`)
+  },
+}
+
+export const Twelve: Story = {
+  name: 'Twelve tasks with Move handles, one lifted',
+  args: { tasks: QUEUE.twenty.slice(0, 12), onReorder: fn() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    canvas.getAllByRole('button', { name: queue.move })[0].focus()
+    await userEvent.keyboard('{Enter}{ArrowDown}{ArrowDown}')
+
+    await expect(canvas.getAllByRole('listitem')).toHaveLength(12)
+    await expect(canvas.getByRole('button', { name: queue.drop }).closest('li')).toHaveTextContent(
+      '#3 in line'
+    )
   },
 }
 

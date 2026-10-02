@@ -1,5 +1,5 @@
 // Copied from anachoic inertia/components/board/queue_card/queue_card.tsx at fd99e0d
-import { useId } from 'react'
+import { useId, useLayoutEffect, useRef } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
 import { queuePosition } from '../../helpers/queue'
 import { ownerLabel } from '../../helpers/steps'
@@ -9,7 +9,7 @@ import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import type { BoardStep, QueueTask } from '../board_data'
-import { MoveHandle } from '../move_handle/move_handle'
+import { MoveHandle, type HandleMove } from '../move_handle/move_handle'
 import { pipsOf } from '../pips'
 import styles from './queue_card.module.css'
 
@@ -28,6 +28,8 @@ export interface QueueCardProps {
   onOpenTask: (taskId: string) => void
   onLift?: (taskId: string) => void
   onDrop?: (taskId: string) => void
+  onMove?: (taskId: string, move: HandleMove) => void
+  onCancelMove?: (taskId: string) => void
 }
 
 /**
@@ -62,8 +64,28 @@ export function QueueCard({
   onOpenTask,
   onLift,
   onDrop,
+  onMove,
+  onCancelMove,
 }: QueueCardProps) {
   const titleId = useId()
+  const handle = useRef<HTMLButtonElement>(null)
+
+  /*
+   * A lifted card keeps its handle focused and in view at each place it
+   * takes. A keyed list may move the focused node itself, which drops focus,
+   * so focus is put back after every move.
+   */
+  useLayoutEffect(() => {
+    const element = handle.current
+    if (!lifted || !element) {
+      return
+    }
+    if (document.activeElement !== element) {
+      element.focus({ preventScroll: true })
+    }
+    const card = element.closest('[data-card]') ?? element
+    card.scrollIntoView({ block: 'nearest' })
+  }, [lifted, task.position])
 
   return (
     <ActionCard
@@ -80,11 +102,14 @@ export function QueueCard({
           <span className={styles.position}>{queuePosition(task.position)}</span>
           {movable && (
             <MoveHandle
+              ref={handle}
               lifted={lifted}
               disabled={busy}
               describedBy={`${titleId} ${instructionsId}`}
               onLift={() => onLift?.(task.task.id)}
               onDrop={() => onDrop?.(task.task.id)}
+              onMove={(move) => onMove?.(task.task.id, move)}
+              onCancel={() => onCancelMove?.(task.task.id)}
             />
           )}
         </div>

@@ -18,6 +18,8 @@ const meta = {
     describedBy: `${TITLE_ID} ${INSTRUCTIONS_ID}`,
     onLift: fn(),
     onDrop: fn(),
+    onMove: fn(),
+    onCancel: fn(),
   },
   decorators: [
     (Story) => (
@@ -58,6 +60,22 @@ export const Lifted: Story = {
     await userEvent.click(handle)
     await expect(args.onDrop).toHaveBeenCalledOnce()
     await expect(args.onLift).not.toHaveBeenCalled()
+  },
+}
+
+export const LiftedKeys: Story = {
+  name: 'Its card lifted, moved with the keys',
+  args: { lifted: true },
+  play: async ({ args, canvasElement }) => {
+    within(canvasElement).getByRole('button', { name: queue.drop }).focus()
+    await userEvent.keyboard('{ArrowUp}{ArrowDown}{Home}{End}')
+
+    await expect(args.onMove).toHaveBeenNthCalledWith(1, 'up')
+    await expect(args.onMove).toHaveBeenNthCalledWith(2, 'down')
+    await expect(args.onMove).toHaveBeenNthCalledWith(3, 'first')
+    await expect(args.onMove).toHaveBeenNthCalledWith(4, 'last')
+    await userEvent.keyboard('{Escape}')
+    await expect(args.onCancel).toHaveBeenCalledOnce()
   },
 }
 

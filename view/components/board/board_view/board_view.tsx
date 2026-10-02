@@ -16,6 +16,10 @@ export interface BoardViewActions {
   onOpenTask?: (taskId: string) => void
   /** "Queue →" was pressed. Without it no Backlog card offers the button. */
   onQueueTask?: (taskId: string) => void
+  /** A Queue card was dropped in a new place. Without it no Queue card has a Move handle. */
+  onReorder?: (taskId: string, position: number) => void
+  /** A change of the Queue's order is in flight. */
+  reordering?: boolean
   /** The task open in the task panel, so its card shows as selected. */
   selectedTaskId?: string | null
 }
@@ -71,6 +75,8 @@ export function BoardView({
   safeAreaInsets,
   onOpenTask = ignore,
   onQueueTask,
+  onReorder,
+  reordering = false,
   selectedTaskId = null,
   announcement = null,
 }: BoardViewProps) {
@@ -83,7 +89,13 @@ export function BoardView({
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
       <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} />
-      <QueueSection tasks={queueTasks} selectedTaskId={selectedTaskId} onOpenTask={onOpenTask} />
+      <QueueSection
+        tasks={queueTasks}
+        busy={reordering}
+        selectedTaskId={selectedTaskId}
+        onOpenTask={onOpenTask}
+        onReorder={onReorder}
+      />
       <BacklogSection
         tasks={backlogTasks}
         selectedTaskId={selectedTaskId}

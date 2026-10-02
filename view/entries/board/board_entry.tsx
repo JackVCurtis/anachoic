@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { YourTurnItem } from '../../../shared/props'
 import {
   openBoardSource,
@@ -7,6 +7,7 @@ import {
 } from '../../bridge/board_source'
 import { connectToHost, type ConnectOptions, type HostConnection } from '../../bridge/connect'
 import { HostContextProvider, useHostContext } from '../../bridge/host_context'
+import { createYourActions } from '../../bridge/wake'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
@@ -48,8 +49,16 @@ function arrivalAnnouncement(
   return sentences.length === 0 ? null : { key, text: sentences.join('. ') }
 }
 
-function Board({ source }: { source: BoardSource }) {
+interface LiveBoardProps {
+  app: HostConnection['app']
+  source: BoardSource
+  onRefusal: (sentence: string) => void
+}
+
+function Board({ app, source, onRefusal }: LiveBoardProps) {
   const { safeAreaInsets } = useHostContext()
+  const yourActions = useMemo(() => createYourActions(app), [app])
+  const [reordering, setReordering] = useState(false)
   const { board, updatedAt, unreachable, arrived, arrivals } = useSyncExternalStore(
     source.subscribe,
     source.getSnapshot
@@ -63,6 +72,21 @@ function Board({ source }: { source: BoardSource }) {
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
+  async function reorder(taskId: string, position: number) {
+    const item = board.queue.find((queued) => queued.task.id === taskId)
+    if (!item) {
+      return
+    }
+    setReordering(true)
+    const outcome = await yourActions.reorderQueue(item.task, position)
+    setReordering(false)
+    if (outcome.ok) {
+      source.replace(outcome.props)
+    } else if ('refusal' in outcome) {
+      onRefusal(outcome.refusal)
+    }
+  }
+
   return (
     <BoardView
       {...lists}
@@ -70,23 +94,32 @@ function Board({ source }: { source: BoardSource }) {
       unreachable={unreachable}
       safeAreaInsets={safeAreaInsets}
       announcement={said}
+      onReorder={(taskId, position) => void reorder(taskId, position)}
+      reordering={reordering}
     />
   )
 }
 
+function ignore() {}
+
 /**
  * The live board: drawn from the source, which polls while it is mounted.
+ * Your actions call their app-only tools, the board is redrawn from each
+ * result, and each success is posted to the dedicated session. A refusal's
+ * sentence goes to onRefusal.
  */
 export function BoardEntry({
   connection,
   source,
+  onRefusal = ignore,
 }: {
   connection: HostConnection
   source: BoardSource
+  onRefusal?: (sentence: string) => void
 }) {
   return (
     <HostContextProvider store={connection.hostContext}>
-      <Board source={source} />
+      <Board app={connection.app} source={source} onRefusal={onRefusal} />
     </HostContextProvider>
   )
 }

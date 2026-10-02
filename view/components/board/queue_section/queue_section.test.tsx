@@ -7,9 +7,11 @@ import { assistive, queue } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { QueueTask } from '../board_data'
+import { act } from 'react'
 import { QueueSection, type QueueSectionProps } from './queue_section'
 
-const [FIRST, SECOND] = QUEUE.busy
+const [FIRST, SECOND, THIRD, FOURTH] = QUEUE.busy
+const COUNT = QUEUE.busy.length
 
 /**
  * A spacing token's length, as a computed style writes it.
@@ -151,5 +153,223 @@ describe('QueueSection', () => {
     expect(style.fontWeight).toBe('400')
     expect(style.textTransform).toBe('none')
     expect(style.color).toBe(resolvedColor('--color-text-accent'))
+  })
+})
+
+function titles(): string[] {
+  return screen
+    .getAllByRole('listitem')
+    .map((item) => within(item).getByRole('heading').textContent ?? '')
+}
+
+function positions(): string[] {
+  return screen
+    .getAllByRole('listitem')
+    .map((item) => within(item).getByText(/in line$/).textContent ?? '')
+}
+
+function handleOf(task: QueueTask): HTMLElement {
+  return within(cardOf(task)).getByRole('button', { name: /^(Move|Drop)$/ })
+}
+
+function moveRegion(): HTMLElement {
+  return document.querySelector('[aria-live="assertive"]') as HTMLElement
+}
+
+function renderMovable(props: Partial<QueueSectionProps> = {}) {
+  const onReorder = vi.fn()
+  const result = renderQueue({ onReorder, ...props })
+  return { ...result, onReorder }
+}
+
+describe('moving a card with the keyboard', () => {
+  test('the Move handle lifts its card, which takes the lifted look and reads Drop', async () => {
+    const { user } = renderMovable()
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}')
+
+    const handle = handleOf(THIRD)
+    expect(handle).toHaveTextContent(queue.drop)
+    expect(handle).toHaveFocus()
+    expect(handle).not.toHaveAttribute('aria-pressed')
+    expect(handle).not.toHaveAttribute('aria-grabbed')
+    expect(getComputedStyle(cardOf(THIRD)).backgroundColor).toBe(
+      resolvedColor('--color-accent-100')
+    )
+    expect(getComputedStyle(cardOf(THIRD)).borderTopColor).toBe(resolvedColor('--color-accent-300'))
+    expect(moveRegion()).toHaveTextContent(`“${THIRD.task.title}” lifted. Position 3 of ${COUNT}`)
+  })
+
+  test('a click lifts too, and the arrows move the card after it', async () => {
+    const { user } = renderMovable()
+
+    await user.click(handleOf(THIRD))
+    await user.keyboard('{ArrowUp}')
+
+    expect(titles()[1]).toBe(THIRD.task.title)
+    expect(handleOf(THIRD)).toHaveFocus()
+  })
+
+  test('Up, Down, Home and End move the lifted card, and every label follows the order', async () => {
+    const { user, onReorder } = renderMovable()
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}')
+
+    await user.keyboard('{ArrowUp}')
+    expect(titles()).toEqual([FIRST, THIRD, SECOND, FOURTH].map((task) => task.task.title))
+    expect(positions()).toEqual(['#1 in line', '#2 in line', '#3 in line', '#4 in line'])
+    expect(moveRegion()).toHaveTextContent(`Position 2 of ${COUNT}`)
+    expect(handleOf(THIRD)).toHaveFocus()
+
+    await user.keyboard('{ArrowDown}')
+    await user.keyboard('{ArrowDown}')
+    expect(titles()).toEqual([FIRST, SECOND, FOURTH, THIRD].map((task) => task.task.title))
+    expect(handleOf(THIRD)).toHaveFocus()
+
+    await user.keyboard('{Home}')
+    expect(titles()[0]).toBe(THIRD.task.title)
+    expect(handleOf(THIRD)).toHaveFocus()
+
+    await user.keyboard('{End}')
+    expect(titles()[COUNT - 1]).toBe(THIRD.task.title)
+    expect(handleOf(THIRD)).toHaveFocus()
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+
+  test('an arrow at the end of the list does nothing and says nothing', async () => {
+    const { user } = renderMovable()
+
+    handleOf(FIRST).focus()
+    await user.keyboard('{Enter}')
+    const lifted = moveRegion().textContent
+    await user.keyboard('{ArrowUp}')
+
+    expect(titles()[0]).toBe(FIRST.task.title)
+    expect(moveRegion().textContent).toBe(lifted)
+  })
+
+  test.each(['{Enter}', ' '])(
+    '%j drops in a new place and raises onReorder once with the new position',
+    async (key) => {
+      const { user, onReorder } = renderMovable()
+
+      handleOf(THIRD).focus()
+      await user.keyboard('{Enter}')
+      await user.keyboard('{Home}')
+      await user.keyboard(key)
+
+      expect(onReorder).toHaveBeenCalledExactlyOnceWith(THIRD.task.id, 1)
+      expect(handleOf(THIRD)).toHaveTextContent(queue.move)
+      expect(moveRegion()).toHaveTextContent(
+        `“${THIRD.task.title}” dropped at position 1 of ${COUNT}`
+      )
+    }
+  )
+
+  test('a drop where the card started raises nothing', async () => {
+    const { user, onReorder } = renderMovable()
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('{ArrowUp}')
+    await user.keyboard('{ArrowDown}')
+    await user.keyboard('{Enter}')
+
+    expect(onReorder).not.toHaveBeenCalled()
+    expect(moveRegion()).toHaveTextContent(
+      `“${THIRD.task.title}” dropped at position 3 of ${COUNT}`
+    )
+  })
+
+  test('Escape cancels: the card goes back to where it was lifted and nothing is raised', async () => {
+    const { user, onReorder } = renderMovable()
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('{Home}')
+    await user.keyboard('{Escape}')
+
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(onReorder).not.toHaveBeenCalled()
+    expect(handleOf(THIRD)).toHaveTextContent(queue.move)
+    expect(handleOf(THIRD)).toHaveFocus()
+    expect(moveRegion()).toHaveTextContent(
+      `Move cancelled. “${THIRD.task.title}” is back at position 3 of ${COUNT}`
+    )
+  })
+
+  test('Tab away from a lifted handle cancels the move', async () => {
+    const { user, onReorder } = renderMovable()
+
+    handleOf(THIRD).focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('{ArrowUp}')
+    await user.tab()
+
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(handleOf(THIRD)).toHaveTextContent(queue.move)
+    expect(onReorder).not.toHaveBeenCalled()
+    expect(moveRegion()).toHaveTextContent(`Move cancelled. “${THIRD.task.title}”`)
+  })
+
+  test('one card is lifted at a time', async () => {
+    const { user } = renderMovable()
+
+    handleOf(SECOND).focus()
+    await user.keyboard('{Enter}')
+
+    expect(screen.getAllByRole('button', { name: queue.drop })).toHaveLength(1)
+  })
+
+  test('one assertive live region, with no handle while busy and no lift', async () => {
+    const { user } = renderMovable({ busy: true })
+
+    expect(document.querySelectorAll('[aria-live="assertive"]')).toHaveLength(1)
+    expect(moveRegion()).toHaveAttribute('aria-atomic', 'true')
+    for (const handle of screen.getAllByRole('button', { name: queue.move })) {
+      expect(handle).toBeDisabled()
+    }
+    await user.click(handleOf(SECOND))
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+  })
+
+  test('a lifted card is put back when a change of order starts', async () => {
+    const onReorder = vi.fn()
+    const { user, rerender } = renderMovable({ onReorder })
+
+    handleOf(SECOND).focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('{End}')
+    act(() => {
+      rerender(
+        <div style={{ width: 600 }}>
+          <QueueSection tasks={QUEUE.busy} busy onOpenTask={() => {}} onReorder={onReorder} />
+        </div>
+      )
+    })
+
+    expect(titles()).toEqual(QUEUE.busy.map((task) => task.task.title))
+    expect(screen.queryByRole('button', { name: queue.drop })).toBeNull()
+    expect(onReorder).not.toHaveBeenCalled()
+  })
+
+  test('a lifted card in a long queue is kept in view as it moves', async () => {
+    const { user } = renderMovable({ tasks: QUEUE.twenty })
+    const first = screen.getAllByRole('button', { name: queue.move })[0]
+
+    first.focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard('{End}')
+
+    const handle = screen.getByRole('button', { name: queue.drop })
+    const item = handle.closest('li')!
+    const box = item.getBoundingClientRect()
+    expect(screen.getAllByRole('listitem').indexOf(item)).toBe(QUEUE.twenty.length - 1)
+    expect(within(item).getByText(/in line$/)).toHaveTextContent(`#${QUEUE.twenty.length} in line`)
+    expect(handle).toHaveFocus()
+    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
+    expect(box.top).toBeGreaterThanOrEqual(-1)
   })
 })

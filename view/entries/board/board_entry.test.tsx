@@ -2,11 +2,11 @@ import { Profiler } from 'react'
 import { act, render, screen } from '@testing-library/react'
 import type { CallToolResult } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import type { BoardProps, YourTurnItem } from '../../../shared/props'
+import type { BoardProps, QueueItem, YourTurnItem } from '../../../shared/props'
 import { BACKOFF_MS, POLL_MS } from '../../bridge/board_source'
 import { boardResult, emptyBoardProps } from '../../bridge/testing/board_props'
 import { FakeApp, type ToolAnswer } from '../../bridge/testing/fake_app'
-import { boardHeader } from '../../components/helpers/strings'
+import { boardHeader, queue as queueWords } from '../../components/helpers/strings'
 import { ViewFrame } from '../../components/testing/view_frame'
 import { BoardEntry, loadBoard } from './board_entry'
 
@@ -57,6 +57,30 @@ function board(revision: number, yourTurn: YourTurnItem[] = []): BoardProps {
     ...emptyBoardProps(revision),
     yourTurn,
     counts: { yourTurn: yourTurn.length, working: 0, queue: 0, toSignOff: 0 },
+  }
+}
+
+function queued(id: string, title: string, position: number): QueueItem {
+  return {
+    task: { id, displayId: `T-0${id}`, title },
+    position,
+    nextOwner: 'agent',
+    steps: [],
+    canAct: { reorder: true, backlog: true },
+  }
+}
+
+const QUEUED = [
+  queued('13', 'Upgrade the queue client', 1),
+  queued('15', 'Add retries', 2),
+  queued('19', 'Write the setup guide', 3),
+]
+
+function queueBoard(revision: number, items: QueueItem[]): BoardProps {
+  return {
+    ...emptyBoardProps(revision),
+    queue: items,
+    counts: { yourTurn: 0, working: 0, queue: items.length, toSignOff: 0 },
   }
 }
 
@@ -281,5 +305,100 @@ describe('the board entry', () => {
     expect(commits).toBe(0)
     expect(container.getBoundingClientRect().height).toBe(height)
     expect(document.documentElement.getBoundingClientRect().height).toBe(documentHeight)
+  })
+})
+
+describe('reordering the queue', () => {
+  function queueTitles() {
+    const list = screen
+      .getByRole('heading', { level: 2, name: queueWords.title })
+      .closest('section')!
+    return Array.from(list.querySelectorAll('li h3')).map((heading) => heading.textContent)
+  }
+
+  /**
+   * A fake App whose reorder_queue gives the answer given, and whose get_board
+   * gives the queue in its first order and then reports no change.
+   */
+  function reorderApp(answer: CallToolResult) {
+    return new FakeApp({
+      hostContext: { displayMode: 'inline', timeZone: 'UTC' },
+      answer: (params) => {
+        if (params.name === 'reorder_queue') {
+          return answer
+        }
+        const since = params.arguments?.sinceRevision as number | undefined
+        return since === undefined ? boardResult(queueBoard(3, QUEUED)) : unchanged(since)
+      },
+    })
+  }
+
+  const MOVED = [
+    { ...QUEUED[2], position: 1 },
+    { ...QUEUED[0], position: 2 },
+    { ...QUEUED[1], position: 3 },
+  ]
+
+  async function dropThirdAtFront() {
+    const item = screen.getByRole('button', { name: 'Write the setup guide' }).closest('li')!
+    const handle = item.querySelector('button')!
+    handle.focus()
+    await act(async () => {
+      handle.click()
+    })
+    await act(async () => {
+      handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    })
+    await act(async () => {
+      handle.click()
+    })
+  }
+
+  test('a drop calls reorder_queue with the display id and position, draws the result and sends the sentence once', async () => {
+    const app = reorderApp({
+      content: [{ type: 'text', text: 'Moved T-019 to position 1.' }],
+      structuredContent: {
+        ...queueBoard(4, MOVED),
+        acted: { task: MOVED[0].task, status: 'queue', position: 1 },
+      },
+    })
+    await renderEntry(app)
+
+    await dropThirdAtFront()
+    await advance(0)
+
+    expect(app.callsTo('reorder_queue')).toEqual([
+      { name: 'reorder_queue', arguments: { task: 'T-019', position: 1 } },
+    ])
+    expect(queueTitles()).toEqual([
+      'Write the setup guide',
+      'Upgrade the queue client',
+      'Add retries',
+    ])
+  })
+
+  test('a refusal goes to onRefusal and the queue keeps the order the props give', async () => {
+    const app = reorderApp({
+      content: [{ type: 'text', text: 'T-019 is in the backlog, not the queue' }],
+      isError: true,
+    })
+    const onRefusal = vi.fn()
+    const { connection, source } = await loadBoard({ app })
+    render(
+      <ViewFrame>
+        <BoardEntry connection={connection} source={source} onRefusal={onRefusal} />
+      </ViewFrame>
+    )
+
+    await dropThirdAtFront()
+    await advance(0)
+
+    expect(onRefusal).toHaveBeenCalledExactlyOnceWith('T-019 is in the backlog, not the queue')
+    expect(queueTitles()).toEqual([
+      'Upgrade the queue client',
+      'Add retries',
+      'Write the setup guide',
+    ])
+    expect(app.calls.sendMessage).toEqual([])
   })
 })
