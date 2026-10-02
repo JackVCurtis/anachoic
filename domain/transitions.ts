@@ -1,5 +1,6 @@
 import { stepId } from '../shared/step_id.js'
 import { currentStepIndex } from './chain.js'
+import type { Placement } from './queue_order.js'
 import {
   agentStep,
   archived,
@@ -39,7 +40,7 @@ export type QueueEffect =
   | { kind: 'move'; position: number }
   | { kind: 'leave' }
 
-export type Placement = 'first' | 'last'
+export type { Placement }
 
 /**
  * What a transition did: the task and its whole chain as they now are, the
