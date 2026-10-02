@@ -43,7 +43,7 @@ These choices are made in these documents, without a decision from the product o
 | Should the views follow the host's dark theme? | Light only. Revisit after phase 2. |
 | Does the 240 s tool limit apply to local `.mcpb` servers? | Nothing in the dedicated session blocks, so it does not matter yet |
 | Does `CLAUDE_CODE_SESSION_ID` survive `/clear` and `--resume`? | [05](05-sessions.md#liveness) handles a returning id. A changed id after `/clear` shows up as a new session, and the old one is released. Todo MCP-06 checks this. |
-| What is desktop's `local-agent-mode` client? | It is ignored until it calls a tool |
+| What is desktop's `local-agent-mode` client? | It draws views, so it counts as the dedicated session. On 2026-10-02, before desktop was restarted after its update to 2.19675.0, the chat's calls came through it and no view was drawn. It most likely serves desktop's Code tab. A Code-tab session that uses the extension's tools therefore acts as "This chat"; Code-tab workers should use the `anachoic-worker` plugin's tools. |
 | Can a view render in a desktop Code-tab session? | Not relied on. The Code tab is treated as text only. |
 | Which client name and environment does a desktop Code-tab session give the server? | It is treated as any other client: a worker with a minted id, unless it reports `claude-code` with `CLAUDE_CODE_SESSION_ID`. The server logs each client's name and version, and the names (never the values) of the `CLAUDE`, `ANTHROPIC` and `MCP` variables it was given, on `initialized`, so the answer can be read from its log. |
 

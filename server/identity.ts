@@ -87,9 +87,9 @@ export function resolveIdentity(
 
 /**
  * The kind of session a client's calls belong to, which also decides which
- * instructions it is sent. Desktop chat is the dedicated session whatever
- * name its client gives: claude-ai, or local-agent-mode-<extension> since
- * desktop 2.19675.0. So any client that draws views is, except Claude Code.
+ * instructions it is sent. Any client that draws views is the dedicated
+ * session, except Claude Code: desktop chat (claude-ai), and since desktop
+ * 2.19675.0 also local-agent-mode-<extension>, whatever it is named next.
  */
 export function kindOfClient(client: ClientInfo | undefined): SessionKind {
   if (client?.name === DESKTOP_CHAT_CLIENT) return 'dedicated'
