@@ -3,11 +3,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { checkBoard, taskViolations } from '../../../domain/invariants.js'
+import { inputOf } from '../../../domain/derived.js'
 import { isRefusal } from '../../../domain/refusal.js'
 import type { StepInput } from '../../../domain/types.js'
 import { closeDatabase, openDatabase, type Database } from '../../../store/database.js'
 import { readBoard, readTask } from '../../../store/queries.js'
 import { read } from '../../../store/read.js'
+import { write } from '../../../store/write.js'
 import {
   addFollowUp,
   addTask,
@@ -53,35 +55,38 @@ function storedStep(taskId: number, number: number) {
 }
 
 /**
- * T-1: an agent step, then your step with a pull request format, then an
- * agent step. Your step is waiting on you when this returns.
+ * T-1: an agent step with a pull request format, then your step, then an
+ * agent step. A holds step 1, running, when this returns.
  */
-function reviewTask(): number {
+function prTask(): number {
   const added = ok(
     addTask(database, 'you', now(), {
       title: 'Ship the fix',
       steps: [
-        { title: 'Open the PR', owner: 'agent' },
-        { title: 'Review the PR', owner: 'you', outputFormat: 'pull_request' },
+        { title: 'Open the PR', owner: 'agent', outputFormat: 'pull_request' },
+        { title: 'Review the PR', owner: 'you' },
         { title: 'Merge', owner: 'agent' },
       ],
     })
   )
   ok(claimStep(database, A, now()))
-  ok(completeStep(database, A, now(), added.state.task.id, { summary: 'Opened' }))
-  expect(storedStep(added.state.task.id, 2).status).toBe('waiting')
+  expect(storedStep(added.state.task.id, 1).status).toBe('running')
   return added.state.task.id
 }
 
+function complete(id: number, artifactUrl?: string | null) {
+  return completeStep(database, A, now(), id, { summary: 'Opened', artifactUrl })
+}
+
 describe('Declaring an output format', () => {
-  test('your steps may declare one, and every read returns it with an empty artifact', () => {
-    const id = reviewTask()
-    expect(storedStep(id, 1)).toMatchObject({ outputFormat: null, artifactUrl: null })
-    expect(storedStep(id, 2)).toMatchObject({ outputFormat: 'pull_request', artifactUrl: null })
+  test('agent steps may declare one, and every read returns it with an empty artifact', () => {
+    const id = prTask()
+    expect(storedStep(id, 1)).toMatchObject({ outputFormat: 'pull_request', artifactUrl: null })
+    expect(storedStep(id, 2)).toMatchObject({ outputFormat: null, artifactUrl: null })
     const board = readBoard(database, now())
     expect(board.tasks[0].steps.map((step) => step.outputFormat)).toEqual([
-      null,
       'pull_request',
+      null,
       null,
     ])
   })
@@ -89,15 +94,15 @@ describe('Declaring an output format', () => {
   test.each<[string, (steps: StepInput[]) => ServiceResult]>([
     ['Add', (steps) => addTask(database, 'you', now(), { title: 'T', steps, queue: false })],
     ['Add to queue', (steps) => addTask(database, 'you', now(), { title: 'T', steps })],
-  ])('%s refuses a format on an agent step', (_name, run) => {
-    expect(run([{ title: 'Write', owner: 'agent', outputFormat: 'document' }])).toEqual({
+  ])('%s refuses a format on a user step', (_name, run) => {
+    expect(run([{ title: 'Review', owner: 'you', outputFormat: 'document' }])).toEqual({
       code: 'invalid',
-      sentence: 'Only your steps can declare an output format',
+      sentence: 'Only agent steps can declare an output format',
     })
     expect(readBoard(database, now()).tasks).toEqual([])
   })
 
-  test('Follow-up accepts a format on your step and refuses one on an agent step', () => {
+  test('Follow-up accepts a format on an agent step and refuses one on a user step', () => {
     const added = ok(
       addTask(database, 'you', now(), { title: 'T', steps: [{ title: 'Do', owner: 'agent' }] })
     )
@@ -108,38 +113,38 @@ describe('Declaring an output format', () => {
     expect(
       addFollowUp(database, 'you', now(), id, {
         placement: 'last',
-        steps: [{ title: 'More', owner: 'agent', outputFormat: 'ticket' }],
+        steps: [{ title: 'Check it', owner: 'you', outputFormat: 'ticket' }],
       })
-    ).toEqual({ code: 'invalid', sentence: 'Only your steps can declare an output format' })
+    ).toEqual({ code: 'invalid', sentence: 'Only agent steps can declare an output format' })
 
     ok(
       addFollowUp(database, 'you', now(), id, {
         placement: 'last',
-        steps: [{ title: 'File it', owner: 'you', outputFormat: 'ticket' }],
+        steps: [{ title: 'File it', owner: 'agent', outputFormat: 'ticket' }],
       })
     )
-    expect(storedStep(id, 2)).toMatchObject({ outputFormat: 'ticket', status: 'waiting' })
+    expect(storedStep(id, 2)).toMatchObject({ outputFormat: 'ticket', status: 'pending' })
   })
 
   test('an unknown format is refused', () => {
     const result = addTask(database, 'you', now(), {
       title: 'T',
-      steps: [{ title: 'Do', owner: 'you', outputFormat: 'slides' as never }],
+      steps: [{ title: 'Do', owner: 'agent', outputFormat: 'slides' as never }],
     })
     expect(result).toMatchObject({ code: 'invalid' })
   })
 })
 
-describe('Marking a formatted step done', () => {
+describe('Completing a formatted agent step', () => {
   test('without a URL it is refused with the format it needs', () => {
-    const id = reviewTask()
+    const id = prTask()
     for (const artifactUrl of [undefined, null, '', '   ']) {
-      expect(completeMyStep(database, 'you', now(), id, { artifactUrl })).toEqual({
+      expect(complete(id, artifactUrl)).toEqual({
         code: 'invalid',
-        sentence: 'Step 2 of T-001 needs a pull request link',
+        sentence: 'Step 1 of T-001 needs a pull request link (artifact_url)',
       })
     }
-    expect(storedStep(id, 2)).toMatchObject({ status: 'waiting', artifactUrl: null })
+    expect(storedStep(id, 1)).toMatchObject({ status: 'running', artifactUrl: null })
   })
 
   test('each format names the link it needs', () => {
@@ -152,18 +157,19 @@ describe('Marking a formatted step done', () => {
       const { state } = ok(
         addTask(database, 'you', now(), {
           title: 'T',
-          steps: [{ title: 'Write', owner: 'you', outputFormat }],
+          steps: [{ title: 'Write', owner: 'agent', outputFormat }],
         })
       )
-      expect(completeMyStep(database, 'you', now(), state.task.id, {})).toEqual({
+      ok(claimStep(database, A, now(), state.task.id))
+      expect(completeStep(database, A, now(), state.task.id, { summary: 'Done' })).toEqual({
         code: 'invalid',
-        sentence: `Step 1 of T-00${state.task.id} needs ${needed}`,
+        sentence: `Step 1 of T-00${state.task.id} needs ${needed} (artifact_url)`,
       })
     }
   })
 
   test('with an invalid URL it is refused and nothing changes', () => {
-    const id = reviewTask()
+    const id = prTask()
     for (const artifactUrl of [
       'ftp://example.com/pr/1',
       '/pulls/12',
@@ -171,41 +177,86 @@ describe('Marking a formatted step done', () => {
       `https://example.com/${'a'.repeat(2001 - 'https://example.com/'.length)}`,
       'not a url',
     ]) {
-      expect(completeMyStep(database, 'you', now(), id, { artifactUrl })).toEqual({
+      expect(complete(id, artifactUrl)).toEqual({
         code: 'invalid',
         sentence: 'That is not a web address',
       })
     }
-    expect(storedStep(id, 2)).toMatchObject({ status: 'waiting', artifactUrl: null })
+    expect(storedStep(id, 1)).toMatchObject({ status: 'running', artifactUrl: null })
   })
 
   test('with a valid URL the step is done and the URL stored with it', () => {
-    const id = reviewTask()
+    const id = prTask()
     const url = 'https://github.com/acme/api/pull/12'
-    const { state } = ok(
-      completeMyStep(database, 'you', now(), id, { artifactUrl: url, note: 'Two nits' })
-    )
-    expect(state.steps[1]).toMatchObject({ status: 'done', artifactUrl: url, note: 'Two nits' })
-    expect(storedStep(id, 2)).toMatchObject({ status: 'done', artifactUrl: url })
-    expect(readTask(database, id)!.state.task.status).toBe('queue')
+    const { state } = ok(complete(id, url))
+    expect(state.steps[0]).toMatchObject({ status: 'done', artifactUrl: url, summary: 'Opened' })
+    expect(storedStep(id, 1)).toMatchObject({ status: 'done', artifactUrl: url })
+    expect(storedStep(id, 2).status).toBe('waiting')
   })
 
   test('an http URL is accepted too', () => {
-    const id = reviewTask()
-    ok(completeMyStep(database, 'you', now(), id, { artifactUrl: 'http://tickets.local/T-9' }))
-    expect(storedStep(id, 2).artifactUrl).toBe('http://tickets.local/T-9')
+    const id = prTask()
+    ok(complete(id, 'http://tickets.local/T-9'))
+    expect(storedStep(id, 1).artifactUrl).toBe('http://tickets.local/T-9')
   })
 })
 
-describe('Marking a step with no format done', () => {
-  test('a URL given anyway is ignored, even an invalid one', () => {
+describe('Completing a step with no format', () => {
+  test('a URL given anyway to an agent step is ignored, even an invalid one', () => {
     for (const artifactUrl of ['https://example.com/x', 'javascript:alert(1)']) {
       const { state } = ok(
-        addTask(database, 'you', now(), { title: 'T', steps: [{ title: 'Check', owner: 'you' }] })
+        addTask(database, 'you', now(), { title: 'T', steps: [{ title: 'Do', owner: 'agent' }] })
       )
-      ok(completeMyStep(database, 'you', now(), state.task.id, { artifactUrl }))
+      ok(claimStep(database, A, now(), state.task.id))
+      ok(completeStep(database, A, now(), state.task.id, { summary: 'Done', artifactUrl }))
       expect(storedStep(state.task.id, 1)).toMatchObject({ status: 'done', artifactUrl: null })
     }
+  })
+
+  test('marking a user step done takes no URL', () => {
+    const id = prTask()
+    ok(complete(id, 'https://github.com/acme/api/pull/12'))
+    const { state } = ok(completeMyStep(database, 'you', now(), id, { note: 'Two nits' }))
+    expect(state.steps[1]).toMatchObject({ status: 'done', artifactUrl: null, note: 'Two nits' })
+  })
+
+  test('a user step that carries a format from before is never required to have a URL', () => {
+    const { state } = ok(
+      addTask(database, 'you', now(), { title: 'T', steps: [{ title: 'Review', owner: 'you' }] })
+    )
+    write(database, (sqlite) =>
+      sqlite
+        .prepare("UPDATE steps SET output_format = 'pull_request' WHERE task_id = ?")
+        .run(state.task.id)
+    )
+    expect(storedStep(state.task.id, 1).outputFormat).toBe('pull_request')
+    ok(completeMyStep(database, 'you', now(), state.task.id))
+    expect(storedStep(state.task.id, 1)).toMatchObject({
+      status: 'done',
+      outputFormat: 'pull_request',
+      artifactUrl: null,
+    })
+  })
+})
+
+describe('inputOf', () => {
+  test("is the previous step's artifact once it is done", () => {
+    const id = prTask()
+    const url = 'https://github.com/acme/api/pull/12'
+    const before = readTask(database, id)!.state.steps
+    expect(inputOf(before, before[1])).toBeNull()
+    ok(complete(id, url))
+    const steps = readTask(database, id)!.state.steps
+    expect(inputOf(steps, steps[1])).toEqual({ stepNumber: 1, format: 'pull_request', url })
+  })
+
+  test('is null for the first step, after a step with no format, and two steps on', () => {
+    const id = prTask()
+    ok(complete(id, 'https://github.com/acme/api/pull/12'))
+    ok(completeMyStep(database, 'you', now(), id))
+    const steps = readTask(database, id)!.state.steps
+    expect(inputOf(steps, steps[0])).toBeNull()
+    expect(inputOf(steps, steps[2])).toBeNull()
   })
 })
 
@@ -227,17 +278,17 @@ describe('isWebAddress', () => {
 
 describe('The artifact invariant', () => {
   test('an artifact on a step that is not done, or has no format, is a violation', () => {
-    const id = reviewTask()
-    const state = readTask(database, id)!.state
-    const waiting = structuredClone(state)
-    waiting.steps[1].artifactUrl = 'https://example.com'
-    expect(taskViolations(waiting)).toEqual([
-      'T-001: artifact: step 2 has an artifact while waiting',
+    const id = prTask()
+    const running = structuredClone(readTask(database, id)!.state)
+    running.steps[0].artifactUrl = 'https://example.com'
+    expect(taskViolations(running)).toEqual([
+      'T-001: artifact: step 1 has an artifact while running',
     ])
-    const plain = structuredClone(state)
-    plain.steps[0].artifactUrl = 'https://example.com'
+    ok(complete(id, 'https://example.com/pr/1'))
+    const plain = structuredClone(readTask(database, id)!.state)
+    plain.steps[1].artifactUrl = 'https://example.com'
     expect(taskViolations(plain)).toEqual([
-      'T-001: artifact: step 1 has an artifact while done with no output format',
+      'T-001: artifact: step 2 has an artifact while waiting with no output format',
     ])
   })
 })

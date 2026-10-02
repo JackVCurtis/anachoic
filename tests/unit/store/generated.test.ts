@@ -76,7 +76,7 @@ describe('Random operations on a real database', () => {
           return {
             title: `Step ${index + 1}`,
             owner,
-            outputFormat: owner === 'you' && chance(0.5) ? pick(OUTPUT_FORMATS) : null,
+            outputFormat: owner === 'agent' && chance(0.5) ? pick(OUTPUT_FORMATS) : null,
           }
         })
 
@@ -255,15 +255,30 @@ describe('Random operations on a real database', () => {
             },
           ],
           [
-            'completeMyStep',
-            () => services.completeMyStep(database, 'you', now(), task, { note: 'Checked' }),
+            'completeStep of a formatted step',
+            () => {
+              const running = read(database, (sqlite) =>
+                sqlite
+                  .prepare(
+                    "SELECT task_id AS id FROM steps WHERE status = 'running' AND claimed_by = ? AND output_format IS NOT NULL"
+                  )
+                  .all(session)
+              ) as Array<{ id: number }>
+              return services.completeStep(
+                database,
+                session,
+                now(),
+                running.length > 0 ? pick(running).id : task,
+                {
+                  summary: 'Done',
+                  artifactUrl: pick(['https://example.com/pr/1', 'ftp://example.com/x', undefined]),
+                }
+              )
+            },
           ],
           [
-            'completeMyStep with a URL',
-            () =>
-              services.completeMyStep(database, 'you', now(), task, {
-                artifactUrl: pick(['https://example.com/pr/1', 'ftp://example.com/x']),
-              }),
+            'completeMyStep',
+            () => services.completeMyStep(database, 'you', now(), task, { note: 'Checked' }),
           ],
           [
             'completeMyStep of a handed-back task',
@@ -280,7 +295,7 @@ describe('Random operations on a real database', () => {
                 'you',
                 now(),
                 handed.length > 0 ? pick(handed).id : task,
-                { artifactUrl: 'https://example.com/pr/2' }
+                { note: 'Looks good' }
               )
             },
           ],
@@ -457,9 +472,9 @@ describe('Random operations on a real database', () => {
       'collectAnswer',
       'completeMyStep',
       'completeMyStep of a handed-back task',
-      'completeMyStep with a URL',
       'completeStep',
       'completeStep handing to you',
+      'completeStep of a formatted step',
       'moveToBacklog',
       'queueTask',
       'release of a blocked step',

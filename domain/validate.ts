@@ -83,7 +83,7 @@ function checkOutputFormat(step: StepInput, index: number): Refusal | null {
   if (!isOutputFormat(step.outputFormat)) {
     return invalid(`steps[${index}].outputFormat must be ${OUTPUT_FORMATS.join(', ')} or empty`)
   }
-  return step.owner === 'you' ? null : invalid('Only your steps can declare an output format')
+  return step.owner === 'agent' ? null : invalid('Only agent steps can declare an output format')
 }
 
 export function firstRefusal(...checks: Array<Refusal | null>): Refusal | null {

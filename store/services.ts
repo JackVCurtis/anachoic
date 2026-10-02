@@ -288,6 +288,8 @@ export function answerQuestion(
 export interface CompleteStepInput {
   summary: string
   links?: Link[]
+  /** Required when the step has an output format. */
+  artifactUrl?: string | null
 }
 
 export function completeStep(
@@ -321,8 +323,7 @@ export function completeMyStep(
     actor,
     now,
     task,
-    (state, ctx) =>
-      transitions.completeMyStep(state, ctx, { note, artifactUrl: input.artifactUrl }),
+    (state, ctx) => transitions.completeMyStep(state, ctx, { note }),
     checkOptionalText('note', note)
   )
 }

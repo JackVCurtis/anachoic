@@ -163,8 +163,7 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
         note: z.string().max(LIMITS.note.max).optional(),
         artifactUrl: z.string().optional(),
       },
-      ({ task: ref, note, artifactUrl }, at) =>
-        completeMyStep(database, YOU, at, ref, { note, artifactUrl }),
+      ({ task: ref, note }, at) => completeMyStep(database, YOU, at, ref, { note }),
       ({ state, events }) => viewActionText.completeMyStep(state, events)
     ),
     answer_question: register(

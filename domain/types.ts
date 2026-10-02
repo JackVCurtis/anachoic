@@ -159,6 +159,6 @@ export interface StepInput {
   title: string
   owner: Owner
   detail?: string | null
-  /** Your steps only. */
+  /** Agent steps only. */
   outputFormat?: OutputFormat | null
 }

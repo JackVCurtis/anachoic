@@ -722,6 +722,8 @@ function advance(state: TaskState, ctx: Context, completed: Event): Change {
 export interface CompleteInput {
   summary: string
   links?: readonly Link[]
+  /** Required when the step has an output format, and ignored when it has none. */
+  artifactUrl?: string | null
 }
 
 /**
@@ -731,12 +733,15 @@ export function completeStep(state: TaskState, ctx: Context, input: CompleteInpu
   const refused = preconditions.completeStep(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
+  const artifactUrl = artifactOf(state, step, input.artifactUrl)
+  if (isRefusal(artifactUrl)) return artifactUrl
   const done: Step = {
     ...closeInterval(step, ctx.now),
     status: 'done',
     claimedBy: null,
     summary: input.summary,
     links: mergeLinks(step.links, input.links),
+    artifactUrl,
     finishedAt: ctx.now,
   }
   const steps = withStep(state.steps, index, done)
@@ -752,12 +757,10 @@ export function completeStep(state: TaskState, ctx: Context, input: CompleteInpu
 
 export interface CompleteMyStepInput {
   note?: string | null
-  /** Required when the step has an output format, and ignored when it has none. */
-  artifactUrl?: string | null
 }
 
 /**
- * The artifact URL a step stores when it is marked done, or the refusal.
+ * The artifact URL an agent step stores when it is completed, or the refusal.
  */
 function artifactOf(state: TaskState, step: Step, given: string | null | undefined) {
   if (step.outputFormat === null) return null
@@ -767,8 +770,9 @@ function artifactOf(state: TaskState, step: Step, given: string | null | undefin
 }
 
 /**
- * You mark your waiting step done, with an optional note, and the artifact's
- * URL when the step has an output format.
+ * You mark your waiting step done, with an optional note. A format that a
+ * step of yours carries from before formats moved to agent steps is never
+ * required.
  */
 export function completeMyStep(
   state: TaskState,
@@ -778,13 +782,10 @@ export function completeMyStep(
   const refused = preconditions.completeMyStep(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
-  const artifactUrl = artifactOf(state, step, input.artifactUrl)
-  if (isRefusal(artifactUrl)) return artifactUrl
   const done: Step = {
     ...closeInterval(step, ctx.now),
     status: 'done',
     note: input.note ?? step.note,
-    artifactUrl,
     finishedAt: ctx.now,
   }
   return advance(

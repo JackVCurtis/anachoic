@@ -148,7 +148,9 @@ export function invalid(sentence: string): Refusal {
 }
 
 export function needsArtifact(taskId: number, stepNumber: number, format: OutputFormat): Refusal {
-  return invalid(`${stepOf(taskId, stepNumber)} needs ${OUTPUT_FORMAT_WORDS[format].needed}`)
+  return invalid(
+    `${stepOf(taskId, stepNumber)} needs ${OUTPUT_FORMAT_WORDS[format].needed} (artifact_url)`
+  )
 }
 
 export function notAWebAddress(): Refusal {

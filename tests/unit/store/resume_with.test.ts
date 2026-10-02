@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { checkBoard } from '../../../domain/invariants.js'
 import { isRefusal } from '../../../domain/refusal.js'
-import type { Owner, StepInput } from '../../../domain/types.js'
+import type { Owner } from '../../../domain/types.js'
 import { closeDatabase, openDatabase, type Database } from '../../../store/database.js'
 import { firstClaimable, readTask } from '../../../store/queries.js'
 import { read } from '../../../store/read.js'
@@ -61,11 +61,10 @@ function ok(result: ServiceResult): Acted {
   return result.value
 }
 
-function add(owners: Owner[], extra: Partial<StepInput> = {}, assignTo?: string): number {
+function add(owners: Owner[], assignTo?: string): number {
   const steps = owners.map((owner, index) => ({
     title: index === 1 ? 'Review the PR' : `Step ${index + 1}`,
     owner,
-    ...(owner === 'you' ? extra : {}),
   }))
   return ok(addTask(database, 'you', now(), { title: 'Task', steps, assignTo })).state.task.id
 }
@@ -77,8 +76,8 @@ function resumeWith(task: number) {
 /**
  * A completes step 1 of a task whose step 2 is yours.
  */
-function handToYou(owners: Owner[] = ['agent', 'you', 'agent'], extra: Partial<StepInput> = {}) {
-  const task = add(owners, extra)
+function handToYou(owners: Owner[] = ['agent', 'you', 'agent']) {
+  const task = add(owners)
   ok(claimStep(database, A, now(), task))
   ok(completeStep(database, A, now(), task, { summary: 'Opened the PR' }))
   return task
@@ -125,7 +124,7 @@ describe('firstClaimable with hand-backs', () => {
     ok(completeMyStep(database, 'you', now(), handedBack))
     expect(firstClaimable(database, A)).toMatchObject({ taskId: handedBack, handedBack: true })
 
-    const assigned = add(['agent'], {}, A)
+    const assigned = add(['agent'], A)
     expect(firstClaimable(database, A)).toMatchObject({ taskId: assigned, assigned: true })
 
     ok(claimStep(database, A, now(), assigned))
@@ -140,14 +139,9 @@ describe('firstClaimable with hand-backs', () => {
     expect(ok(claimStep(database, B, now())).state.task.id).toBe(task)
   })
 
-  test('names your step, with its artifact and note', () => {
-    const task = handToYou(['agent', 'you', 'agent'], { outputFormat: 'pull_request' })
-    ok(
-      completeMyStep(database, 'you', now(), task, {
-        note: 'Looks good',
-        artifactUrl: 'https://github.com/o/r/pull/7',
-      })
-    )
+  test('names your step, with its note', () => {
+    const task = handToYou()
+    ok(completeMyStep(database, 'you', now(), task, { note: 'Looks good' }))
     expect(firstClaimable(database, A)).toEqual({
       taskId: task,
       assigned: false,
@@ -156,7 +150,7 @@ describe('firstClaimable with hand-backs', () => {
         stepNumber: 2,
         title: 'Review the PR',
         note: 'Looks good',
-        artifactUrl: 'https://github.com/o/r/pull/7',
+        artifactUrl: null,
       },
     })
   })

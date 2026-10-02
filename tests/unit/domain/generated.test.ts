@@ -45,11 +45,12 @@ const OPERATIONS: Operation[] = [
   ['block', (s, a, t) => block(s, ctx(a, t), 'Needs credentials')],
   ['unblock', (s, a, t) => unblock(s, ctx(a, t), 'Resolved')],
   ['completeStep', (s, a, t) => completeStep(s, ctx(a, t), { summary: 'Done' })],
-  ['completeMyStep', (s, a, t) => completeMyStep(s, ctx(a, t), { note: 'Checked' })],
   [
-    'completeMyStep with a URL',
-    (s, a, t) => completeMyStep(s, ctx(a, t), { artifactUrl: 'https://example.com/pr/1' }),
+    'completeStep with a URL',
+    (s, a, t) =>
+      completeStep(s, ctx(a, t), { summary: 'Done', artifactUrl: 'https://example.com/pr/1' }),
   ],
+  ['completeMyStep', (s, a, t) => completeMyStep(s, ctx(a, t), { note: 'Checked' })],
   ['park', (s, a, t) => park(s, ctx(a, t))],
   ['moveToBacklog', (s, a, t) => moveToBacklog(s, ctx(a, t))],
   ['release', (s, a, t) => release(s, ctx(a, t))],
@@ -65,11 +66,11 @@ const OPERATIONS: Operation[] = [
       followUp(s, ctx(a, t), { placement: 'last', steps: [{ title: 'Check', owner: 'you' }] }),
   ],
   [
-    'followUp you with a format',
+    'followUp agent with a format',
     (s, a, t) =>
       followUp(s, ctx(a, t), {
         placement: 'first',
-        steps: [{ title: 'Review', owner: 'you', outputFormat: 'pull_request' }],
+        steps: [{ title: 'Open the PR', owner: 'agent', outputFormat: 'pull_request' }],
       }),
   ],
   ['archive', (s, a, t) => archive(s, ctx(a, t))],
@@ -179,7 +180,7 @@ const LIST_RULES: Record<BoardList, (state: TaskState) => boolean> = {
 }
 
 const AS_YOU: Record<keyof ReturnType<typeof canAct>, (state: TaskState) => Outcome> = {
-  complete: (s) => completeMyStep(s, ctx('you', 999), { artifactUrl: 'https://example.com' }),
+  complete: (s) => completeMyStep(s, ctx('you', 999)),
   answer: (s) => answer(s, ctx('you', 999), 'Yes'),
   park: (s) => park(s, ctx('you', 999)),
   reorder: (s) => reorder(s, ctx('you', 999), 1),

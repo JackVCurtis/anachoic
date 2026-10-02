@@ -1,7 +1,15 @@
 import { currentStep } from './chain.js'
 import { isRefusal } from './refusal.js'
 import { isBlocked, preconditions, type Context } from './transitions.js'
-import { YOU, type Instant, type Session, type Step, type Task, type TaskState } from './types.js'
+import {
+  YOU,
+  type Instant,
+  type OutputFormat,
+  type Session,
+  type Step,
+  type Task,
+  type TaskState,
+} from './types.js'
 
 /**
  * Facts the board shows that are computed from the rows and never stored.
@@ -108,6 +116,29 @@ export function yourSeconds(steps: readonly Step[]): number {
     (sum, step) => sum + (step.owner === 'you' ? step.elapsedSeconds : step.waitedSeconds),
     0
   )
+}
+
+export interface StepArtifact {
+  stepNumber: number
+  format: OutputFormat
+  url: string
+}
+
+/**
+ * The input a step takes: the artifact of the step before it, when that step
+ * is done and produced one, or null.
+ */
+export function inputOf(steps: readonly Step[], step: Pick<Step, 'number'>): StepArtifact | null {
+  const previous = steps.find((each) => each.number === step.number - 1)
+  if (
+    previous === undefined ||
+    previous.status !== 'done' ||
+    previous.outputFormat === null ||
+    previous.artifactUrl === null
+  ) {
+    return null
+  }
+  return { stepNumber: previous.number, format: previous.outputFormat, url: previous.artifactUrl }
 }
 
 export function linkCount(steps: readonly Step[]): number {
