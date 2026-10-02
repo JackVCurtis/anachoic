@@ -30,8 +30,9 @@ The manifest (version 0.3, which `mcpb validate` accepts):
 | `server.type` | `node` |
 | `server.entry_point` | `server/server.js` |
 | `server.mcp_config.command`, `args` | `node`, `["${__dirname}/server/server.js"]` |
-| `server.mcp_config.env` | `ANACHOIC_DATA_DIR` from `user_config.data_dir` |
-| `user_config.data_dir` | A directory, defaulting to `~/Library/Application Support/Anachoic MCP`. You can change it in the extension's settings. |
+| `version` | `package.json`'s version, which `pnpm run pack` writes in, and also gives the plugin and the server |
+| `icon` | `icon.png`, a plain 512 × 512 PNG |
+| `server.mcp_config.env` | None. The server uses its default data directory, which the worker plugin uses too. There is no `user_config`. |
 | `compatibility` | `platforms: ["darwin"]`, `runtimes.node: ">=24.0.0"` |
 
 **The runtime.** Desktop runs the server with its bundled runtime, `Claude Helper (Plugin)`, which reports Node 24.21.0. It starts the process with an empty environment and `/` as the working directory ([spike notes](../spikes/mcp-apps/notes.md#1-49-15-and-16-claude-desktop-chat)). The server depends on nothing but the manifest's `env`.
@@ -66,18 +67,18 @@ plugin/
       views/                          dist/views/*.html
 ```
 
-- **The MCP server.** `node ${CLAUDE_PLUGIN_ROOT}/server/server.js`, with `ANACHOIC_DATA_DIR` set to the data directory in the extension's manifest, so the worker opens the same `board.sqlite` as desktop.
-- **The SessionEnd hook.** `node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended` with the same `ANACHOIC_DATA_DIR` and a `timeout` of 5 s. It removes the worker from the board when its session ends ([13](13-ending-sessions.md#the-hook)).
+- **The MCP server.** `node ${CLAUDE_PLUGIN_ROOT}/server/server.js`, with no `ANACHOIC_DATA_DIR`, so the worker opens the default `board.sqlite`, the same as desktop.
+- **The SessionEnd hook.** `node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended`, also on the default data directory, with a `timeout` of 5 s. It removes the worker from the board when its session ends ([13](13-ending-sessions.md#the-hook)).
 - **Installing.** In Claude Code, `/plugin marketplace add <repository>/plugin`, then `/plugin install anachoic-worker@anachoic`. It replaces the `claude mcp add` below. After a new `pnpm run pack`, update the plugin from `/plugin`.
 - **Its build.** The plugin carries its own copy of the server, from the same `pnpm run pack` as the `.mcpb`. Install both from one pack, so the worker and desktop run the same build.
 
 **The alternative: `claude mcp add` and a settings snippet.** `pnpm print-worker-command` prints the command, with the installed path filled in:
 
 ```bash
-claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"
+claude mcp add --scope user anachoic -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"
 ```
 
-- **The data directory.** The script reads `ANACHOIC_DATA_DIR` from the installed `manifest.json`, so the worker opens the same `board.sqlite` as desktop.
+- **The data directory.** The command sets none, so the worker opens the default `board.sqlite`, the same as desktop.
 - **Not installed.** If the extension's folder is missing, the script says so in one line and exits non-zero.
 - **`--project`.** Prints the `--scope project` form, which writes the server into one repository's `.mcp.json` instead of adding it for every project.
 - **`--dev`.** Prints the command for `dist/server.js`, named `anachoic-dev`, with `.cache/dev-data` as its data directory. That is the board the reference host uses ([Development loop](#development-loop)).

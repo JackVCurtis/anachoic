@@ -7,15 +7,13 @@
   "author": {
     "name": "Jack Curtis"
   },
+  "icon": "icon.png",
   "server": {
     "type": "node",
     "entry_point": "server/server.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/server/server.js"],
-      "env": {
-        "ANACHOIC_DATA_DIR": "${HOME}/Library/Application Support/Anachoic MCP"
-      }
+      "args": ["${__dirname}/server/server.js"]
     }
   },
   "compatibility": {

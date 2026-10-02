@@ -45,7 +45,7 @@ export class DatabaseTooNewError extends Error {
     readonly newest: number
   ) {
     super(
-      `The board's database at ${file} is at version ${version}, but this server knows only up to ${newest}. A newer version of the server owns the database.`
+      `The board's database at ${file} is at version ${version}, but this server knows only up to ${newest}. A newer version of the server owns the database. Update Anachoic: reinstall anachoic.mcpb and update the anachoic-worker plugin, then restart this session.`
     )
   }
 }

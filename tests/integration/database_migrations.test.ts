@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import { copyFile, mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -55,21 +56,22 @@ test('the built server migrates the database with no .sql file beside it', async
   }
 })
 
-test('the built server refuses to start on a database a newer server owns', async () => {
+test('the built server exits non-zero on a database a newer server owns, saying to update', async () => {
   const database = new DatabaseSync(join(dataDir, 'board.sqlite'))
   database.exec('PRAGMA user_version = 999')
   database.close()
 
-  const client = new Client({ name: 'anachoic-integration', version: '0.0.0' })
-  await expect(
-    client.connect(
-      new StdioClientTransport({
-        command: process.execPath,
-        args: [SERVER],
-        cwd: '/',
-        env: { ANACHOIC_DATA_DIR: dataDir },
-        stderr: 'ignore',
-      })
-    )
-  ).rejects.toThrow()
+  const result = spawnSync(process.execPath, [SERVER], {
+    cwd: '/',
+    env: { ANACHOIC_DATA_DIR: dataDir },
+    input: '',
+    encoding: 'utf8',
+    timeout: 20_000,
+  })
+
+  expect(result.status).not.toBe(0)
+  expect(result.status).not.toBeNull()
+  expect(result.stderr).toContain(
+    'A newer version of the server owns the database. Update Anachoic'
+  )
 })

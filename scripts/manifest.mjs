@@ -10,12 +10,14 @@ export function withPrompts(manifest) {
 }
 
 /**
- * Rewrites the manifest file's prompts from shared/prompts.mjs, leaving the
- * file untouched when they already match. Returns the manifest.
+ * Rewrites the manifest file's version, when one is given, and its prompts
+ * from shared/prompts.mjs, leaving the file untouched when they already
+ * match. Returns the manifest.
  */
-export function writePrompts(path) {
+export function writeManifest(path, version) {
   const before = readFileSync(path, 'utf8')
-  const manifest = withPrompts(JSON.parse(before))
+  const parsed = JSON.parse(before)
+  const manifest = withPrompts(version === undefined ? parsed : { ...parsed, version })
   const after = `${JSON.stringify(manifest, null, 2)}\n`
   if (JSON.stringify(JSON.parse(before)) !== JSON.stringify(manifest)) {
     writeFileSync(path, after)

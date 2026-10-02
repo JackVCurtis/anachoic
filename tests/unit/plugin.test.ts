@@ -71,8 +71,7 @@ test('the plugin declares the MCP server and the SessionEnd hook, both on the se
   const [handler] = manifest.hooks.SessionEnd[0].hooks
   expect(handler).toEqual({
     type: 'command',
-    command:
-      'ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended',
+    command: 'node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended',
     timeout: 5,
   })
   const serverInHook = /node "([^"]+)" --session-ended$/.exec(handler.command)![1]

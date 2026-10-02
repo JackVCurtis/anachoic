@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { expect, test } from 'vitest'
-import { withPrompts, writePrompts } from '../../scripts/manifest.mjs'
+import { withPrompts, writeManifest } from '../../scripts/manifest.mjs'
 import { INSTRUCTIONS } from '../../server/instructions.js'
 import { manifestPrompts, PROMPTS } from '../../shared/prompts.mjs'
 
@@ -28,16 +28,38 @@ test('pack writes the prompts into a manifest, and leaves a matching one untouch
   try {
     const path = join(directory, 'manifest.json')
     writeFileSync(path, JSON.stringify({ name: 'anachoic', prompts: [{ name: 'old', text: 'x' }] }))
-    expect(writePrompts(path)).toEqual(withPrompts({ name: 'anachoic' }))
+    expect(writeManifest(path)).toEqual(withPrompts({ name: 'anachoic' }))
     const written = readFileSync(path, 'utf8')
     expect(JSON.parse(written).prompts).toEqual(manifestPrompts())
 
     writeFileSync(path, ` ${written}`)
-    writePrompts(path)
+    writeManifest(path)
     expect(readFileSync(path, 'utf8')).toBe(` ${written}`)
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
+})
+
+test('pack writes package.json’s version into the manifest', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'anachoic-manifest-'))
+  try {
+    const path = join(directory, 'manifest.json')
+    writeFileSync(path, JSON.stringify({ name: 'anachoic', version: '0.0.1' }))
+    expect(writeManifest(path, '1.2.3').version).toBe('1.2.3')
+    expect(JSON.parse(readFileSync(path, 'utf8')).version).toBe('1.2.3')
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+})
+
+test('the manifest names its icon and sets no data directory', () => {
+  const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'))
+  expect(manifest.icon).toBe('icon.png')
+  const icon = readFileSync(resolve(MANIFEST, '../icon.png'))
+  expect(icon.subarray(1, 4).toString()).toBe('PNG')
+  expect([icon.readUInt32BE(16), icon.readUInt32BE(20)]).toEqual([512, 512])
+  expect(manifest.server.mcp_config.env).toBeUndefined()
+  expect(manifest).not.toHaveProperty('user_config')
 })
 
 test.each(['dedicated', 'worker'] as const)(

@@ -6,7 +6,7 @@ There is one SQLite database for the whole board. Every server process opens it:
 
 | Source | Used when |
 |---|---|
-| `ANACHOIC_DATA_DIR` | Set. The `.mcpb` manifest sets it, and so does each worker's `claude mcp add` command ([08](08-packaging-and-hosts.md)). |
+| `ANACHOIC_DATA_DIR` | Set. Only tests and the development loop set it. The `.mcpb` manifest and the worker plugin never do, so desktop and workers share the default ([08](08-packaging-and-hosts.md)). |
 | `~/Library/Application Support/Anachoic MCP` on macOS, or `$XDG_DATA_HOME/anachoic-mcp` elsewhere | Otherwise |
 
 Desktop starts the server with an empty environment and `/` as the working directory. The server therefore never relies on `HOME`, the working directory or a relative path. If `ANACHOIC_DATA_DIR` is unset and the platform default cannot be resolved, the server refuses to start and writes the reason to stderr.
@@ -35,7 +35,7 @@ Each process opens one `DatabaseSync` from `node:sqlite` and keeps it for its li
 Migrations are numbered SQL files in `store/migrations/`, applied in order. `PRAGMA user_version` holds the number of the last one applied.
 
 - On open, a process reads `user_version`. If it is behind, the process takes the write lock with `BEGIN IMMEDIATE`, reads `user_version` again, and applies only the migrations still missing, then commits. Two processes that start together therefore never run the same migration twice, and never contend over DDL outside a transaction.
-- A process that finds `user_version` **ahead** of its own migrations refuses to start. It says that a newer version of the server owns the database. This is the case when a worker runs an old build.
+- A process that finds `user_version` **ahead** of its own migrations refuses to start. It says that a newer version of the server owns the database, and to update. This is the case when a worker runs an old build.
 
 ## Tables
 

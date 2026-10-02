@@ -10,15 +10,7 @@ import {
 const HOME = '/Users/someone'
 const FOLDER = `${HOME}/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic`
 const SERVER = `${FOLDER}/server/server.js`
-const MANIFEST = {
-  name: 'anachoic',
-  author: { name: 'Jack Curtis' },
-  server: {
-    mcp_config: {
-      env: { ANACHOIC_DATA_DIR: '${HOME}/Library/Application Support/Anachoic MCP' },
-    },
-  },
-}
+const MANIFEST = { name: 'anachoic', author: { name: 'Jack Curtis' } }
 
 function run(argv: string[], options: { installed?: boolean; nodeVersion?: string } = {}) {
   const { installed = true } = options
@@ -27,7 +19,6 @@ function run(argv: string[], options: { installed?: boolean; nodeVersion?: strin
     argv,
     home: HOME,
     exists: (path: string) => installed || path === DEV_SERVER,
-    readManifest: () => MANIFEST,
     nodeVersion: () => nodeVersion,
     manifest: MANIFEST,
   })
@@ -50,11 +41,11 @@ describe('quotePath', () => {
 })
 
 describe('the printed command', () => {
-  test('adds the installed server at user scope with the manifest data directory', () => {
+  test('adds the installed server at user scope with the server’s default data directory', () => {
     expect(run([])).toEqual({
       code: 0,
       stdout:
-        'claude mcp add --scope user anachoic -e ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"',
+        'claude mcp add --scope user anachoic -- node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js"',
       stderr: [],
     })
   })
@@ -104,7 +95,6 @@ test('the server path it checks is the one in the command', () => {
   printWorkerCommand({
     home: HOME,
     exists: (path: string) => (checked.push(path), true),
-    readManifest: () => MANIFEST,
     nodeVersion: () => 'v24.21.0',
     manifest: MANIFEST,
   })
@@ -123,7 +113,7 @@ describe('--hook', () => {
               {
                 type: 'command',
                 command:
-                  'ANACHOIC_DATA_DIR="$HOME/Library/Application Support/Anachoic MCP" node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js" --session-ended',
+                  'node "$HOME/Library/Application Support/Claude/Claude Extensions/local.mcpb.jack-curtis.anachoic/server/server.js" --session-ended',
                 timeout: 5,
               },
             ],

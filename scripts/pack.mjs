@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { writePrompts } from './manifest.mjs'
+import { writeManifest } from './manifest.mjs'
 import { buildPlugin } from './plugin.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
@@ -19,25 +19,15 @@ function run(command, args) {
   }
 }
 
-function versionOf(path) {
-  return JSON.parse(readFileSync(path, 'utf8')).version
-}
-
-const packageVersion = versionOf(join(ROOT, 'package.json'))
-const manifestVersion = versionOf(join(EXTENSION, 'manifest.json'))
-if (packageVersion !== manifestVersion) {
-  throw new Error(
-    `mcpb/manifest.json is at version ${manifestVersion} but package.json is at ${packageVersion}.`
-  )
-}
+const packageVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version
 
 /**
- * Writes the manifest's prompts from the server's, builds, lays the server
- * and its views out in mcpb/server/ as the extension runs them, packs mcpb/
- * into anachoic.mcpb, and lays out the worker plugin's local marketplace in
- * plugin/.
+ * Writes package.json's version and the server's prompts into the manifest,
+ * builds, lays the server and its views out in mcpb/server/ as the extension
+ * runs them, packs mcpb/ (with its icon) into anachoic.mcpb, and lays out the
+ * worker plugin's local marketplace in plugin/ at the same version.
  */
-writePrompts(join(EXTENSION, 'manifest.json'))
+writeManifest(join(EXTENSION, 'manifest.json'), packageVersion)
 run('pnpm', ['build'])
 
 rmSync(EXTENSION_SERVER, { recursive: true, force: true })

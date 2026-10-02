@@ -62,7 +62,7 @@ The heartbeat never revives a removed session, even if its server process is sti
 
 1. **A Claude Code plugin, `anachoic-worker`.** This is the preferred install. It replaces the plain `claude mcp add`.
    - **Contents.** A local marketplace folder that `pnpm run pack` builds beside the `.mcpb`. It holds the server, its views and a plugin manifest declaring both:
-     - the MCP server, with `ANACHOIC_DATA_DIR`
+     - the MCP server, on the default data directory
      - the `SessionEnd` hook
    - **Installing.** You install it with `/plugin marketplace add <folder>`, then `/plugin install anachoic-worker@anachoic`.
    - **Workers only.** It is for worker sessions. Desktop chat keeps using the `.mcpb`.

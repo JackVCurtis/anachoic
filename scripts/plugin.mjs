@@ -5,21 +5,11 @@ export const MARKETPLACE_NAME = 'anachoic'
 export const PLUGIN_NAME = 'anachoic-worker'
 
 /**
- * The data directory as the extension's manifest sets it, with `${HOME}`
- * written for the shell that runs a hook command.
- */
-function shellDataDir(manifest) {
-  return manifest.server.mcp_config.env.ANACHOIC_DATA_DIR.replaceAll('${HOME}', '$HOME')
-}
-
-/**
  * The plugin's manifest: the MCP server and the SessionEnd hook that removes
  * the worker from the board when its session ends, both running the server
- * bundled in the plugin against the extension's data directory. The MCP
- * server is given no ANACHOIC_DATA_DIR: whether Claude Code expands ${HOME}
- * in a plugin server's env is not documented, and the server's own default
- * is the extension's directory. The hook command runs in a shell, which
- * expands $HOME.
+ * bundled in the plugin. Neither sets ANACHOIC_DATA_DIR: the server's default
+ * data directory is the one desktop's extension uses too, so both share one
+ * board.
  */
 export function pluginManifest({ manifest, version }) {
   return {
@@ -41,7 +31,7 @@ export function pluginManifest({ manifest, version }) {
           hooks: [
             {
               type: 'command',
-              command: `ANACHOIC_DATA_DIR="${shellDataDir(manifest)}" node "\${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended`,
+              command: 'node "${CLAUDE_PLUGIN_ROOT}/server/server.js" --session-ended',
               timeout: 5,
             },
           ],

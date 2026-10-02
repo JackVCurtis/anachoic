@@ -35,20 +35,6 @@ export function extensionFolder(manifest, home) {
 }
 
 /**
- * The data directory an installed manifest gives the server, with `${HOME}`
- * filled in as desktop fills it. Returns undefined when it depends on
- * anything else, such as a user_config value only desktop knows.
- */
-export function dataDirOf(manifest, home) {
-  const value = manifest.server?.mcp_config?.env?.ANACHOIC_DATA_DIR
-  if (typeof value !== 'string') {
-    return undefined
-  }
-  const filled = value.replaceAll('${HOME}', home)
-  return filled.includes('${') ? undefined : filled
-}
-
-/**
  * One path as a double-quoted shell word. A path under `home` is written from
  * `$HOME`, which the shell expands inside double quotes; every other
  * character the shell treats specially inside double quotes is escaped.
@@ -62,15 +48,16 @@ export function quotePath(path, home) {
 }
 
 /**
- * The `claude mcp add` command that adds the server at `serverPath` with
- * `dataDir` as its data directory.
+ * The `claude mcp add` command that adds the server at `serverPath`, with
+ * `dataDir` as its data directory when one is given, and otherwise the
+ * server's default, which desktop's extension uses too.
  */
 export function workerCommand({ name, scope, serverPath, dataDir, home }) {
   return [
     'claude mcp add',
     `--scope ${scope}`,
     name,
-    `-e ANACHOIC_DATA_DIR=${quotePath(dataDir, home)}`,
+    ...(dataDir ? [`-e ANACHOIC_DATA_DIR=${quotePath(dataDir, home)}`] : []),
     '--',
     'node',
     quotePath(serverPath, home),
@@ -90,7 +77,7 @@ export function hookSettings({ serverPath, dataDir, home }) {
           hooks: [
             {
               type: 'command',
-              command: `ANACHOIC_DATA_DIR=${quotePath(dataDir, home)} node ${quotePath(serverPath, home)} --session-ended`,
+              command: `${dataDir ? `ANACHOIC_DATA_DIR=${quotePath(dataDir, home)} ` : ''}node ${quotePath(serverPath, home)} --session-ended`,
               timeout: 5,
             },
           ],
@@ -128,7 +115,6 @@ function readJson(path) {
  *   argv?: string[],
  *   home?: string,
  *   exists?: (path: string) => boolean,
- *   readManifest?: (path: string) => any,
  *   nodeVersion?: () => string | undefined,
  *   manifest?: any,
  * }} [options]
@@ -137,7 +123,6 @@ export function printWorkerCommand({
   argv = [],
   home = homedir(),
   exists = existsSync,
-  readManifest = readJson,
   nodeVersion = nodeOnPath,
   manifest = readJson(join(ROOT, 'mcpb', 'manifest.json')),
 } = {}) {
@@ -186,18 +171,7 @@ export function printWorkerCommand({
       ],
     }
   }
-  const dataDir = dataDirOf(readManifest(installedManifest), home)
-  if (!dataDir) {
-    return {
-      code: 1,
-      stdout: '',
-      stderr: [
-        ...stderr,
-        `${installedManifest} does not set ANACHOIC_DATA_DIR to a path this script can fill in.`,
-      ],
-    }
-  }
-  const command = output({ hook, name: manifest.name, scope, serverPath, dataDir, home })
+  const command = output({ hook, name: manifest.name, scope, serverPath, home })
   return { code: 0, stdout: command, stderr }
 }
 
