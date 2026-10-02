@@ -1,5 +1,6 @@
 import { currentStep } from '../../domain/chain.js'
 import type { Event, SessionKind, Step, TaskState } from '../../domain/types.js'
+import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import { formatTaskId } from '../../shared/task_id.js'
 
 /**
@@ -57,6 +58,20 @@ function chainLine(step: Step) {
 }
 
 /**
+ * One line for each step before `before` that has an artifact:
+ * "Step 2 (you): Pull request https://…".
+ */
+export function artifactLines(chain: readonly Step[], before: number): string[] {
+  return chain.flatMap((step) =>
+    step.number < before && step.outputFormat !== null && step.artifactUrl !== null
+      ? [
+          `Step ${step.number} (${step.owner}): ${OUTPUT_FORMAT_WORDS[step.outputFormat].shown} ${step.artifactUrl}`,
+        ]
+      : []
+  )
+}
+
+/**
  * The claimed step in full: what to do, whether the task is assigned to the
  * caller, the chain so far with each completed step's summary, the steps
  * after it, and what to call next.
@@ -66,6 +81,7 @@ export function claimStepText(state: TaskState, callerId?: string): string {
   const step = currentStep(state.steps)
   const done = state.steps.filter((each) => each.number < step.number)
   const later = state.steps.filter((each) => each.number > step.number)
+  const artifacts = artifactLines(state.steps, step.number)
   return [
     `Claimed ${id} step ${step.number} of ${state.steps.length}: "${step.title}"`,
     `Task: "${state.task.title}"`,
@@ -74,6 +90,7 @@ export function claimStepText(state: TaskState, callerId?: string): string {
       : []),
     ...(step.detail ? [`Detail: ${step.detail}`] : []),
     ...(done.length === 0 ? ['Done so far: none'] : ['Done so far:', ...done.map(chainLine)]),
+    ...(artifacts.length === 0 ? [] : ['Artifacts:', ...artifacts]),
     ...(later.length === 0 ? [] : ['After this step:', ...later.map(chainLine)]),
     `Next: do the step. Call update_step with task ${id} to note progress, ask_you if you need an answer from the person, and complete_step with task ${id}, a summary and links when it is done.`,
   ].join('\n')

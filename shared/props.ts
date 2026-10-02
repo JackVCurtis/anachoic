@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { OUTPUT_FORMATS } from './output_format.js'
 
 /**
  * The props the server sends the views, as zod schemas the server checks its
@@ -10,6 +11,22 @@ const instant = z.string().describe('An ISO 8601 instant')
 export const ownerSchema = z.enum(['agent', 'you'])
 
 export const stepStatusSchema = z.enum(['pending', 'running', 'waiting', 'done'])
+
+export const outputFormatSchema = z.enum(OUTPUT_FORMATS)
+
+/**
+ * A link to an artifact a done step of yours produced.
+ */
+export const artifactSchema = z.object({
+  stepNumber: z.number().int().positive(),
+  format: outputFormatSchema,
+  url: z.string(),
+})
+
+/**
+ * A task's artifacts, by step number. Absent when it has none.
+ */
+const artifacts = z.array(artifactSchema).optional()
 
 /**
  * A session the board names: a worker a task is assigned to, or one you can
@@ -34,6 +51,10 @@ export const pipSchema = z.object({
   status: stepStatusSchema,
   title: z.string(),
   sessionName: z.string().nullable(),
+  /** Present only on your steps that declare an output format. */
+  outputFormat: outputFormatSchema.optional(),
+  /** Present only once such a step is done. */
+  artifactUrl: z.string().optional(),
 })
 
 const pips = z.array(pipSchema)
@@ -45,6 +66,7 @@ export const yourTurnItemSchema = z.object({
     title: z.string(),
     owner: ownerSchema,
     question: z.string().optional(),
+    outputFormat: outputFormatSchema.optional(),
     waitingSince: instant,
   }),
   session: z.object({ id: z.string(), name: z.string() }).optional(),
@@ -66,6 +88,7 @@ export const workingItemSchema = z.object({
   }),
   session: z.object({ id: z.string(), name: z.string() }),
   steps: pips,
+  artifacts,
 })
 
 export const queueItemSchema = z.object({
@@ -73,12 +96,14 @@ export const queueItemSchema = z.object({
   position: z.number().int().positive(),
   nextOwner: ownerSchema,
   steps: pips,
+  artifacts,
   canAct: z.object({ reorder: z.boolean(), backlog: z.boolean() }),
 })
 
 export const backlogItemSchema = z.object({
   task: taskRefSchema,
   steps: pips,
+  artifacts,
   canAct: z.object({ queue: z.boolean(), archive: z.boolean() }),
 })
 
@@ -89,6 +114,7 @@ export const toSignOffItemSchema = z.object({
   yourSeconds: z.number().int().nonnegative(),
   linkCount: z.number().int().nonnegative(),
   steps: pips,
+  artifacts,
   canAct: z.object({ signOff: z.boolean(), followUp: z.boolean(), archive: z.boolean() }),
 })
 
@@ -157,6 +183,8 @@ export const unchangedSchema = z.object({
 
 export const getBoardResultSchema = z.union([unchangedSchema, boardPropsSchema])
 
+export type OutputFormat = z.infer<typeof outputFormatSchema>
+export type Artifact = z.infer<typeof artifactSchema>
 export type Worker = z.infer<typeof workerSchema>
 export type TaskRef = z.infer<typeof taskRefSchema>
 export type Pip = z.infer<typeof pipSchema>

@@ -25,6 +25,7 @@ import {
 import { asCaller, type ToolContext } from './context.js'
 import {
   assignToInput,
+  fromModelSteps,
   linksInput,
   noteInput,
   questionInput,
@@ -83,7 +84,12 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         const worker = assignTo === undefined ? undefined : resolveWorker(database, at, assignTo)
         if (isRefusal(worker)) return refusalResult(worker)
         return answer(
-          addTask(database, caller.id, at, { title, steps, queue, assignTo: worker?.id }),
+          addTask(database, caller.id, at, {
+            title,
+            steps: fromModelSteps(steps),
+            queue,
+            assignTo: worker?.id,
+          }),
           ({ state }) => addTaskText(state, worker?.name)
         )
       })
@@ -114,8 +120,12 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         }),
       },
       asCaller(context, 'add_follow_up', ({ task, steps, placement }, caller) =>
-        answer(addFollowUp(database, caller.id, now(), task, { steps, placement }), ({ state }) =>
-          addFollowUpText(state, steps.length)
+        answer(
+          addFollowUp(database, caller.id, now(), task, {
+            steps: fromModelSteps(steps),
+            placement,
+          }),
+          ({ state }) => addFollowUpText(state, steps.length)
         )
       )
     ),

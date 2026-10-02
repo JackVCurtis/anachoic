@@ -22,7 +22,7 @@ import { readBoardProps, taskRef } from '../props/board.js'
 import { guarded, refusalResult } from '../results.js'
 import { viewActionText } from '../text/view_actions.js'
 import type { ToolContext } from './context.js'
-import { stepsInput, taskInput, titleInput } from './inputs.js'
+import { taskInput, titleInput, viewStepsInput } from './inputs.js'
 
 export const VIEW_ACTION_TOOLS = [
   'add_task_from_view',
@@ -96,7 +96,7 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
       'Adds a task you created, to the queue or the backlog, assigned to the live worker whose session id is assignTo when given.',
       {
         title: titleInput,
-        steps: stepsInput,
+        steps: viewStepsInput,
         queue: z.boolean().default(true),
         assignTo: z.string().min(1).max(100).optional(),
       },
@@ -131,9 +131,14 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
     complete_my_step: register(
       'complete_my_step',
       'Mark your step done',
-      'Marks your waiting step done, with an optional note.',
-      { ...task, note: z.string().max(LIMITS.note.max).optional() },
-      ({ task: ref, note }, at) => completeMyStep(database, YOU, at, ref, { note }),
+      'Marks your waiting step done, with an optional note, and the artifact’s URL when the step has an output format.',
+      {
+        ...task,
+        note: z.string().max(LIMITS.note.max).optional(),
+        artifactUrl: z.string().optional(),
+      },
+      ({ task: ref, note, artifactUrl }, at) =>
+        completeMyStep(database, YOU, at, ref, { note, artifactUrl }),
       ({ state, events }) => viewActionText.completeMyStep(state, events)
     ),
     answer_question: register(
@@ -156,7 +161,7 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
       'add_follow_up_from_view',
       'Add follow-up steps',
       'Adds follow-up steps to a done task.',
-      { ...task, steps: stepsInput, placement: z.enum(['first', 'last']) },
+      { ...task, steps: viewStepsInput, placement: z.enum(['first', 'last']) },
       ({ task: ref, steps, placement }, at) =>
         addFollowUp(database, YOU, at, ref, { steps, placement }),
       ({ state }, { steps }) => viewActionText.addFollowUp(state, steps.length)

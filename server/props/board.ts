@@ -11,6 +11,7 @@ import {
 } from '../../domain/derived.js'
 import type { Instant, Step, Task, TaskState } from '../../domain/types.js'
 import type {
+  Artifact,
   BacklogItem,
   BoardProps,
   Pip,
@@ -63,6 +64,8 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
       title: step.title,
       sessionName:
         step.status === 'running' || step.status === 'waiting' ? nameOf(step.claimedBy) : null,
+      ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
+      ...(step.artifactUrl === null ? {} : { artifactUrl: step.artifactUrl }),
     }))
 
   const holder = (state: TaskState) => {
@@ -92,6 +95,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             ...(step.owner === 'agent' && step.question !== null
               ? { question: step.question }
               : {}),
+            ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
             waitingSince: step.waitingSince ?? step.startedAt ?? now,
           },
           ...(session ? { session } : {}),
@@ -114,6 +118,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             name: nameOf(step.claimedBy) ?? '',
           },
           steps: pips(steps),
+          ...artifactsOf(steps),
         })
         break
       case 'queue':
@@ -122,6 +127,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
           position: task.queuePosition ?? queue.length + 1,
           nextOwner: step.owner,
           steps: pips(steps),
+          ...artifactsOf(steps),
           canAct: { reorder: can.reorder, backlog: can.backlog },
         })
         break
@@ -129,6 +135,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
         backlog.push({
           task: ref(task),
           steps: pips(steps),
+          ...artifactsOf(steps),
           canAct: { queue: can.queue, archive: can.archive },
         })
         break
@@ -140,6 +147,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
           yourSeconds: yourSeconds(steps),
           linkCount: linkCount(steps),
           steps: pips(steps),
+          ...artifactsOf(steps),
           canAct: { signOff: can.signOff, followUp: can.followUp, archive: can.archive },
         })
         break
@@ -190,6 +198,19 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
       .map(({ session }) => ({ id: session.id, name: session.name })),
     counts: counts(snapshot.tasks),
   }
+}
+
+/**
+ * The links from a task's done steps that have an artifact, as an item's
+ * `artifacts` field, or nothing when there are none.
+ */
+function artifactsOf(steps: readonly Step[]): { artifacts?: Artifact[] } {
+  const artifacts = steps.flatMap((step): Artifact[] =>
+    step.status === 'done' && step.outputFormat !== null && step.artifactUrl !== null
+      ? [{ stepNumber: step.number, format: step.outputFormat, url: step.artifactUrl }]
+      : []
+  )
+  return artifacts.length === 0 ? {} : { artifacts }
 }
 
 /**

@@ -1,4 +1,5 @@
-import type { BoardProps, SessionItem, TaskRef } from '../../shared/props.js'
+import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
+import type { Artifact, BoardProps, SessionItem, TaskRef } from '../../shared/props.js'
 
 /**
  * The summary must stay under this many tokens for a board of 100 tasks and
@@ -23,6 +24,8 @@ export function estimateTokens(text: string): number {
 const LINE_CHARS = Math.floor((SUMMARY_TOKEN_BUDGET * CHARS_PER_TOKEN) / 7)
 const TITLE_CHARS = 60
 const QUESTION_CHARS = 80
+const URL_CHARS = 100
+const ARTIFACTS_SHOWN = 3
 
 const SEPARATOR = ' · '
 const NONE = 'none'
@@ -44,6 +47,23 @@ function assignee(task: TaskRef) {
 
 function titled(task: TaskRef) {
   return `${task.displayId} ${quoted(task.title)}${assignee(task)}`
+}
+
+/**
+ * A task's artifact links, to follow it: " (step 2: Pull request https://…)".
+ * Long URLs are cut and only the first few are listed, so one task cannot
+ * take its line's share of the budget.
+ */
+function withArtifacts(artifacts: readonly Artifact[] | undefined) {
+  if (!artifacts || artifacts.length === 0) return ''
+  const shown = artifacts
+    .slice(0, ARTIFACTS_SHOWN)
+    .map(
+      ({ stepNumber, format, url }) =>
+        `step ${stepNumber}: ${OUTPUT_FORMAT_WORDS[format].shown} ${cut(url, URL_CHARS)}`
+    )
+  const rest = artifacts.length - shown.length
+  return ` (${shown.join(', ')}${rest > 0 ? `, and ${rest} more` : ''})`
 }
 
 /**
@@ -112,24 +132,27 @@ export function boardSummary(board: BoardProps): string {
     list(
       'Working',
       board.working.map(
-        ({ task, step, session }) =>
-          `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)} (${session.name}, ${since(step.runningSince, board.now)})`
+        ({ task, step, session, artifacts }) =>
+          `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)} (${session.name}, ${since(step.runningSince, board.now)})${withArtifacts(artifacts)}`
       )
     ),
     list(
       'Queue',
       board.queue.map(
-        ({ task, position, nextOwner }) => `${position}. ${titled(task)} next: ${nextOwner}`
+        ({ task, position, nextOwner, artifacts }) =>
+          `${position}. ${titled(task)} next: ${nextOwner}${withArtifacts(artifacts)}`
       )
     ),
     list(
       'Backlog',
-      board.backlog.map(({ task }) => `${task.displayId}${assignee(task)}`),
+      board.backlog.map(
+        ({ task, artifacts }) => `${task.displayId}${assignee(task)}${withArtifacts(artifacts)}`
+      ),
       ', '
     ),
     list(
       'To sign off',
-      board.toSignOff.map(({ task }) => titled(task))
+      board.toSignOff.map(({ task, artifacts }) => `${titled(task)}${withArtifacts(artifacts)}`)
     ),
     sessions.length === 0 ? `Sessions: ${NONE}` : fitted('Sessions: ', sessions),
   ].join('\n')
