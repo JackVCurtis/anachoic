@@ -1,0 +1,29 @@
+/* Copied from anachoic inertia/components/board/backlog_card/backlog_card.module.css at fd99e0d */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+/* Under 600 px the button wraps below the meta line rather than squeezing it */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.meta {
+  flex: 1;
+}
+
+.queue {
+  flex: none;
+  margin-left: auto;
+}

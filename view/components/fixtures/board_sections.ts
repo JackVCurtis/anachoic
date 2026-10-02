@@ -3,6 +3,8 @@ import {
   BUSY_BOARD,
   DOCS,
   LONG_TEXT_BOARD,
+  MANY_BOARD,
+  parked,
   running,
   taskOf,
   THIS_CHAT,
@@ -246,4 +248,31 @@ export const WORKING = {
       before({ minutes: 12 - index })
     )
   ),
+} as const
+
+/**
+ * Queue: one card, starts and resumes, twenty cards and a long title.
+ */
+export const QUEUE = {
+  one: [BUSY_BOARD.queue[0]],
+  busy: BUSY_BOARD.queue,
+  twenty: MANY_BOARD.queue,
+  longTitle: [...LONG_TEXT_BOARD.queue, ...BUSY_BOARD.queue.slice(1)],
+} as const
+
+/**
+ * Backlog: a few tasks, fourteen that fold, a long title, and a task that
+ * cannot be queued.
+ */
+export const BACKLOG = {
+  busy: BUSY_BOARD.backlog,
+  fourteen: MANY_BOARD.backlog,
+  longTitle: [...LONG_TEXT_BOARD.backlog, ...BUSY_BOARD.backlog.slice(0, 2)],
+  cannotQueue: {
+    ...parked(35, 'Decide what the archive keeps', [
+      ['you', 'pending', 'List what the archive must keep'],
+      ['agent', 'pending', 'Write the archive job'],
+    ]),
+    canAct: { queue: false, archive: true },
+  },
 } as const

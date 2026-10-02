@@ -1,0 +1,27 @@
+/* Copied from anachoic inertia/components/board/queue_card/queue_card.module.css at fd99e0d */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.position {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-accent);
+}
+
+.title {
+  overflow-wrap: anywhere;
+}

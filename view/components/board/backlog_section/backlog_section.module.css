@@ -1,0 +1,5 @@
+/* Copied from anachoic inertia/components/board/backlog_section/backlog_section.module.css at fd99e0d */
+/* The board's sections stand --space-6 apart; this brings the space above the header to --space-8 */
+.section {
+  margin-top: calc(var(--space-8) - var(--space-6));
+}

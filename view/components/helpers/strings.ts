@@ -104,6 +104,8 @@ export const queue = {
   title: 'Queue',
   empty: 'The queue is empty',
   position: '#{n} in line',
+  starts: 'starts at step {n}/{m}',
+  resumes: 'resumes at step {n}/{m}',
   move: 'Move',
   drop: 'Drop',
   next: 'next: {owner}',

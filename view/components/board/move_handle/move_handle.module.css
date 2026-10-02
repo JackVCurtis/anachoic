@@ -1,0 +1,12 @@
+/* Copied from anachoic inertia/components/board/move_handle/move_handle.module.css at fd99e0d */
+.handle {
+  flex: none;
+}
+
+.handle:enabled {
+  cursor: grab;
+}
+
+.handle.lifted:enabled {
+  cursor: grabbing;
+}

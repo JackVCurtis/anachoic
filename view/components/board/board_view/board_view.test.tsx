@@ -148,6 +148,6 @@ describe('BoardView', () => {
     const queue = section('Queue')
 
     expect(within(queue).getAllByRole('listitem')).toHaveLength(14)
-    expect(within(queue).queryByRole('button')).toBeNull()
+    expect(within(queue).queryByRole('button', { name: /^Show all/ })).toBeNull()
   })
 })

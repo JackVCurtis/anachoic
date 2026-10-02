@@ -1,11 +1,13 @@
 import type { CSSProperties } from 'react'
-import { assistive, backlog, done, queue } from '../../helpers/strings'
+import { assistive, done } from '../../helpers/strings'
 import { EmptyState } from '../../patterns/empty_state/empty_state'
 import { Frame } from '../../primitives/frame/frame'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import type { BoardData, BoardTask } from '../board_data'
+import { BacklogSection } from '../backlog_section/backlog_section'
 import { BoardHeader } from '../board_header/board_header'
 import { BoardSection } from '../board_section/board_section'
+import { QueueSection } from '../queue_section/queue_section'
 import { SessionsSection } from '../sessions_section/sessions_section'
 import { WorkingSection } from '../working_section/working_section'
 import { YourTurnSection } from '../your_turn_section/your_turn_section'
@@ -14,6 +16,10 @@ import styles from './board_view.module.css'
 export interface BoardViewActions {
   /** A card's title was pressed. Nothing happens until the board has a task panel. */
   onOpenTask?: (taskId: string) => void
+  /** "Queue →" was pressed. Without it no Backlog card offers the button. */
+  onQueueTask?: (taskId: string) => void
+  /** The task open in the task panel, so its card shows as selected. */
+  selectedTaskId?: string | null
 }
 
 export type BoardViewProps = BoardData & BoardViewActions
@@ -68,6 +74,8 @@ export function BoardView({
   unreachable,
   safeAreaInsets,
   onOpenTask = ignore,
+  onQueueTask,
+  selectedTaskId = null,
 }: BoardViewProps) {
   return (
     <div className={styles.board} style={insetStyle(safeAreaInsets)}>
@@ -78,17 +86,12 @@ export function BoardView({
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
       <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} />
-      <BoardSection
-        title={queue.title}
-        count={queueTasks.length}
-        cards={taskLines(queueTasks)}
-        folds={false}
-        listElement="ol"
-      />
-      <BoardSection
-        title={backlog.title}
-        count={backlogTasks.length}
-        cards={taskLines(backlogTasks)}
+      <QueueSection tasks={queueTasks} selectedTaskId={selectedTaskId} onOpenTask={onOpenTask} />
+      <BacklogSection
+        tasks={backlogTasks}
+        selectedTaskId={selectedTaskId}
+        onOpenTask={onOpenTask}
+        onQueueTask={onQueueTask}
       />
       <BoardSection
         title={done.title}
