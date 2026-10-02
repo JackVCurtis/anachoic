@@ -155,9 +155,9 @@ The URL must parse as an absolute `http:` or `https:` URL. The format is not che
 
 | Where | What |
 |---|---|
-| Props | Every step in the props carries `outputFormat` and `artifactUrl`. Pips are unchanged. A task's cards carry `artifacts: [{stepNumber, format, url}]`, the links from its done steps. |
+| Props | Every step in the props, pips included, carries `outputFormat` and `artifactUrl` as optional fields, present only when set. A task's cards carry `artifacts: [{stepNumber, format, url}]`, the links from its done steps. |
 | TaskEntry and the follow-up composer | A step you own gains a field "Output", a native select: "None", "Pull request", "Ticket", "Document", "Link". Steps owned by an agent don't show it. |
-| YourTurnCard | For a step with a format, the card says what is needed: "Needs a pull request link". Its Mark done form gains a required URL field, labelled as in the formats table, above the optional note. Mark done stays disabled until the URL is valid. |
+| YourTurnCard | For a step with a format, the card says what is needed: "Needs a pull request link", or "Needs a link" for the `link` format. Its Mark done form gains a required URL field, labelled as in the formats table, above the optional note. Mark done stays disabled until the URL is valid. |
 | Working, Queue, Backlog and SignOffCard | One line of artifact links, each labelled with its format and step: "Pull request · step 2 ↗". A link opens through the host's `openLink`, because the view is sandboxed. |
 | Text summary | Done steps with artifacts show the link after the task |
 
