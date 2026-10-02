@@ -30,6 +30,8 @@ export interface TextFieldBaseProps<E extends HTMLInputElement | HTMLTextAreaEle
   disabled?: boolean
   /** Sets `aria-invalid`. The look does not change; the describing note explains. */
   invalid?: boolean
+  /** Sets `aria-required`, for a field its form cannot go without. */
+  required?: boolean
   /** The id of the note that describes the field. */
   describedBy?: string
   id?: string
@@ -52,6 +54,7 @@ export function textFieldAttributes<E extends HTMLInputElement | HTMLTextAreaEle
   fill = 'field',
   disabled,
   invalid,
+  required,
   describedBy,
   id,
   name,
@@ -71,6 +74,7 @@ export function textFieldAttributes<E extends HTMLInputElement | HTMLTextAreaEle
     'aria-labelledby': labelledBy,
     'aria-describedby': describedBy,
     'aria-invalid': invalid ? true : undefined,
+    'aria-required': required ? true : undefined,
     'onChange': (event: ChangeEvent<E>) => onChange(event.target.value),
     onKeyDown,
     'className': joinClasses(styles.field, fill === 'ground' && styles.ground, className),

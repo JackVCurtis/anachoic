@@ -252,6 +252,49 @@ describe('assigning a task to a worker', () => {
   })
 })
 
+describe('declaring an output format on your steps', () => {
+  test('the Output field is shown only on your steps, is cleared when the owner becomes an agent, and is sent per step', async () => {
+    const app = fakeApp(emptyBoardProps(3), {
+      add_task_from_view: actionResult(emptyBoardProps(4), {
+        task: ADDED,
+        status: 'backlog',
+        position: null,
+      }),
+    })
+    const { user } = await renderBoard(app)
+
+    await fillTask(user)
+    expect(screen.queryByRole('combobox', { name: 'Output of step 1' })).toBeNull()
+    const output = screen.getByRole('combobox', { name: 'Output of step 2' })
+    expect(output).toHaveValue('')
+    await user.selectOptions(output, 'Pull request')
+    expect(output).toHaveValue('pull_request')
+
+    const second = screen.getByRole('group', { name: 'Owner of step 2' })
+    await user.click(within(second).getByRole('radio', { name: 'Agent' }))
+    expect(screen.queryByRole('combobox', { name: 'Output of step 2' })).toBeNull()
+    await user.click(within(second).getByRole('radio', { name: 'You' }))
+    expect(screen.getByRole('combobox', { name: 'Output of step 2' })).toHaveValue('')
+
+    await user.click(screen.getByRole('button', { name: taskEntry.addStep }))
+    await user.type(screen.getByRole('textbox', { name: 'Title of step 3' }), 'File the ticket')
+    const third = screen.getByRole('group', { name: 'Owner of step 3' })
+    await user.click(within(third).getByRole('radio', { name: 'You' }))
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Output of step 3' }), 'Ticket')
+    await user.click(screen.getByRole('button', { name: taskEntry.add }))
+
+    expect(app.callsTo('add_task_from_view')[0].arguments).toEqual({
+      title: 'Add retries',
+      steps: [
+        { title: 'Write the policy', owner: 'agent' },
+        { title: 'Review it', owner: 'you' },
+        { title: 'File the ticket', owner: 'you', outputFormat: 'ticket' },
+      ],
+      queue: false,
+    })
+  })
+})
+
 describe('queueing a backlog task', () => {
   test('Queue → calls queue_task_from_view with the display id and draws the result', async () => {
     const app = fakeApp(boardWithBacklog(3, [BACKLOGGED]), {

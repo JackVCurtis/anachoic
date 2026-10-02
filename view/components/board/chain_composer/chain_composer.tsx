@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
+import { isOutputFormat, OUTPUT_OPTIONS } from '../../helpers/output_format'
 import { fillTemplate, taskEntry } from '../../helpers/strings'
 import {
   TASK_ENTRY_LIMITS,
@@ -11,6 +12,7 @@ import {
 import { padStep } from '../../helpers/words'
 import { Button } from '../../primitives/button/button'
 import { IconButton } from '../../primitives/icon_button/icon_button'
+import { Select } from '../../primitives/select/select'
 import { TextArea } from '../../primitives/text_area/text_area'
 import { TextInput } from '../../primitives/text_input/text_input'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
@@ -55,8 +57,8 @@ export function FieldError({ id, text }: { id: string; text: string }) {
 
 /**
  * The steps of a chain being written: an ordered list of 1 to 20 steps, each
- * with a title, an owner and an optional detail, and "Add step". The steps
- * belong to the parent.
+ * with a title, an owner, an optional detail and, on your steps, an output
+ * format, and "Add step". The steps belong to the parent.
  */
 export function ChainComposer({
   steps,
@@ -80,8 +82,10 @@ export function ChainComposer({
     }
   })
 
+  /** A step handed to an agent loses its output format, which only your steps may declare. */
   function changeStep(index: number, change: Partial<TaskEntryStep>) {
-    onChange(steps.map((step, at) => (at === index ? { ...step, ...change } : step)))
+    const cleared = change.owner === 'agent' ? { outputFormat: null } : {}
+    onChange(steps.map((step, at) => (at === index ? { ...step, ...change, ...cleared } : step)))
   }
 
   function addStep() {
@@ -208,6 +212,22 @@ function StepRow({
               </label>
             ))}
           </fieldset>
+          {step.owner === 'you' && (
+            <div className={styles.output}>
+              <span aria-hidden="true" className={joinClasses('text-label', styles.outputLabel)}>
+                {taskEntry.outputLabel}
+              </span>
+              <Select
+                label={fillTemplate(taskEntry.outputStepLabel, { n })}
+                options={OUTPUT_OPTIONS}
+                value={step.outputFormat ?? ''}
+                onChange={(value) =>
+                  onChange({ outputFormat: isOutputFormat(value) ? value : null })
+                }
+                className={styles.outputSelect}
+              />
+            </div>
+          )}
           {!detailShown && (
             <Button
               variant="ghost"

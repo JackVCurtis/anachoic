@@ -7,6 +7,7 @@ import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { StatusSquare } from '../../primitives/status_square/status_square'
+import { ArtifactLinks } from '../artifact_links/artifact_links'
 import { assignmentFact } from '../assignment'
 import type { WorkingTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
@@ -15,14 +16,16 @@ import styles from './working_card.module.css'
 export interface WorkingCardProps {
   item: WorkingTask
   onOpenTask: (taskId: string) => void
+  /** Asks the host to open an artifact link. Without it the card draws no links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
  * An active task whose current step is running: the session that claimed it,
  * how long it has run, the worker it is assigned to, the step, and the
- * session's latest note.
+ * session's latest note, and the links its done steps produced.
  */
-export function WorkingCard({ item, onOpenTask }: WorkingCardProps) {
+export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) {
   const now = useNow(LABEL_TICK.elapsed)
   const { task, step, sessionName, steps } = item
   const assignment = assignmentFact(task)
@@ -63,6 +66,9 @@ export function WorkingCard({ item, onOpenTask }: WorkingCardProps) {
         </p>
       )}
       {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
+      {item.artifacts && onOpenLink && (
+        <ArtifactLinks artifacts={item.artifacts} onOpenLink={onOpenLink} />
+      )}
     </ActionCard>
   )
 }

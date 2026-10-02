@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { DONE } from '../../fixtures/board_sections'
+import { DONE, OUTPUTS } from '../../fixtures/board_sections'
 import { FOLLOW_UP_DRAFTS } from '../../fixtures/follow_up'
 import type { FollowUpDraft } from '../../helpers/follow_up'
-import { done } from '../../helpers/strings'
+import { artifactLinkLabel } from '../../helpers/output_format'
+import { assistive, done } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { FollowUpComposer } from '../follow_up_composer/follow_up_composer'
 import { SignOffCard } from './sign_off_card'
@@ -192,4 +193,28 @@ export const ComposingNarrow: Story = {
     const [sideways] = await windowOverflow()
     await expect(sideways).toBe(0)
   },
+}
+
+export const WithArtifacts: Story = {
+  name: 'With artifact links',
+  args: { task: OUTPUTS.finished, onOpenLink: fn() },
+  play: async ({ args, canvasElement }) => {
+    const [first] = OUTPUTS.finished.artifacts
+    const link = within(canvasElement).getByRole('link', {
+      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+    })
+    await expect(link).toHaveAttribute('title', first.url)
+    await userEvent.click(link)
+    await expect(args.onOpenLink).toHaveBeenCalledWith(first.url)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+    const [sideways] = await windowOverflow()
+    await expect(sideways).toBe(0)
+  },
+}
+
+export const WithArtifactsNarrow: Story = {
+  ...WithArtifacts,
+  name: 'With artifact links, narrow',
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  parameters: { frame: 'narrow' },
 }

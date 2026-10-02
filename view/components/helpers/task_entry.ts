@@ -1,4 +1,4 @@
-import type { Owner } from '../types'
+import type { Owner, OutputFormat } from '../types'
 import { taskEntry } from './strings'
 
 /**
@@ -20,6 +20,8 @@ export interface TaskEntryStep {
   title: string
   owner: Owner
   detail: string
+  /** What a step of yours hands on when it is done. Absent or null for none, and on agent steps. */
+  outputFormat?: OutputFormat | null
 }
 
 export interface TaskEntryDraft {
@@ -92,14 +94,16 @@ export function stepsFilled(steps: readonly TaskEntryStep[]): boolean {
 }
 
 /**
- * The steps as the tools take them: every text trimmed, and a detail left
- * out when it is empty.
+ * The steps as the tools take them: every text trimmed, a detail left out
+ * when it is empty, and an output format only on a step of yours that has
+ * one.
  */
 export function submittedSteps(steps: readonly TaskEntryStep[]) {
-  return steps.map(({ title, owner, detail }) => ({
+  return steps.map(({ title, owner, detail, outputFormat }) => ({
     title: title.trim(),
     owner,
     ...(isFilled(detail) ? { detail: detail.trim() } : {}),
+    ...(owner === 'you' && outputFormat ? { outputFormat } : {}),
   }))
 }
 

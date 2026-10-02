@@ -17,6 +17,8 @@ export interface BacklogSectionProps {
   onArchive?: (taskId: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
+  /** Asks the host to open an artifact link. Without it no card draws its links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -30,6 +32,7 @@ export function BacklogSection({
   onQueueTask,
   onArchive,
   pending = null,
+  onOpenLink,
 }: BacklogSectionProps) {
   return (
     <BoardSection
@@ -47,6 +50,7 @@ export function BacklogSection({
             onQueueTask={onQueueTask}
             onArchive={onArchive}
             pending={pending?.taskId === task.task.id ? pending.action : null}
+            onOpenLink={onOpenLink}
           />
         ),
       }))}

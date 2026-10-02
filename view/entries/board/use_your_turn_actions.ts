@@ -12,9 +12,9 @@ import type { FailedWrite } from './use_board_messages'
 
 /**
  * The actions on the Your turn cards: Mark done, Answer and Park. Each calls
- * its tool through yourActions, which posts its sentence on success, and the
- * board is drawn from the result, which also resets the poll timer. A failure
- * goes to onFailure and posts nothing.
+ * its tool through yourActions, and the board is drawn from the result, which
+ * also resets the poll timer. Mark done sends the artifact link the step
+ * needs, if any. A failure goes to onFailure, and the card keeps its draft.
  */
 export function useYourTurnActions(
   yourActions: Pick<YourActions, 'completeMyStep' | 'answerQuestion' | 'moveToBacklog'>,
@@ -48,9 +48,9 @@ export function useYourTurnActions(
 
   return {
     yourTurnPending: pending,
-    onCompleteStep: (taskId, note) =>
+    onCompleteStep: (taskId, note, artifactUrl) =>
       void run(taskId, 'complete', ({ task, step }) =>
-        yourActions.completeMyStep(task, step, note)
+        yourActions.completeMyStep(task, step, note, artifactUrl)
       ),
     onAnswer: (taskId, answer) =>
       void run(taskId, 'answer', ({ task, step }) =>

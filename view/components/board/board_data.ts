@@ -1,4 +1,4 @@
-import type { Owner, StepStatus } from '../types'
+import type { OutputFormat, Owner, StepStatus } from '../types'
 
 /**
  * The shapes the board view is given, in the board's own terms. The entry
@@ -23,6 +23,16 @@ export interface BoardTask {
 }
 
 /**
+ * A link to what a done step of yours produced.
+ */
+export interface BoardArtifact {
+  /** From 1. */
+  stepNumber: number
+  format: OutputFormat
+  url: string
+}
+
+/**
  * One step of a chain as a row of pips draws it.
  */
 export interface BoardStep {
@@ -43,6 +53,8 @@ export interface YourTurnTask {
     owner: Owner
     /** An agent's question. Absent for your own step. */
     question?: string | null
+    /** What your step must link to when it is marked done. Absent when nothing. */
+    outputFormat?: OutputFormat | null
     /** An instant. */
     waitingSince: string
   }
@@ -64,6 +76,8 @@ export interface WorkingTask {
   }
   sessionName: string
   steps: readonly BoardStep[]
+  /** The links from its done steps. */
+  artifacts?: readonly BoardArtifact[]
 }
 
 export interface QueueTask {
@@ -72,12 +86,16 @@ export interface QueueTask {
   position: number
   nextOwner: Owner
   steps: readonly BoardStep[]
+  /** The links from its done steps. */
+  artifacts?: readonly BoardArtifact[]
   canAct: { reorder: boolean; backlog: boolean }
 }
 
 export interface BacklogTask {
   task: BoardTask
   steps: readonly BoardStep[]
+  /** The links from its done steps. */
+  artifacts?: readonly BoardArtifact[]
   canAct: { queue: boolean; archive: boolean }
 }
 
@@ -89,6 +107,8 @@ export interface SignOffTask {
   yourSeconds: number
   linkCount: number
   steps: readonly BoardStep[]
+  /** The links from its done steps. */
+  artifacts?: readonly BoardArtifact[]
   canAct: { signOff: boolean; followUp: boolean; archive: boolean }
 }
 

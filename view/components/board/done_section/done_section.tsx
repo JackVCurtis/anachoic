@@ -38,6 +38,8 @@ export interface DoneSectionProps {
   onArchive?: (taskId: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
+  /** Asks the host to open an artifact link. Without it no card draws its links. */
+  onOpenLink?: (url: string) => void
 }
 
 /** The one follow-up being written, and the card it is written on. */
@@ -62,6 +64,7 @@ export function DoneSection({
   onFollowUp,
   onArchive,
   pending = null,
+  onOpenLink,
 }: DoneSectionProps) {
   const [open, setOpen] = useState(false)
   const [composing, setComposing] = useState<Composing | null>(null)
@@ -114,6 +117,7 @@ export function DoneSection({
             onArchive={onArchive}
             composer={composerFor(task)}
             pending={pending?.taskId === task.task.id ? pending.action : null}
+            onOpenLink={onOpenLink}
           />
         ),
       }))}

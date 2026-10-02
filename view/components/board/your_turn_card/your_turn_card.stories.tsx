@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { YOUR_TURN } from '../../fixtures/board_sections'
+import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
 import { yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { YourTurnCard } from './your_turn_card'
@@ -201,5 +201,58 @@ export const NoActions: Story = {
   args: { item: { ...YOUR_TURN.yourStep, canAct: { complete: false, park: false } } },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('button', { name: yourTurn.park })).toBeNull()
+  },
+}
+
+export const NeedsPullRequest: Story = {
+  name: 'Your step needing a pull request link',
+  args: { item: OUTPUTS.needsPullRequest },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const markDone = canvas.getByRole('button', { name: yourTurn.markDone })
+    await expect(canvas.getByText('Needs a pull request link')).toBeVisible()
+    await expect(markDone).toBeDisabled()
+
+    const field = canvas.getByRole('textbox', { name: 'Pull request link' })
+    await userEvent.type(field, 'the PR')
+    await expect(canvas.getByText('That is not a web address')).toBeVisible()
+    await expect(markDone).toBeDisabled()
+
+    await userEvent.clear(field)
+    await userEvent.type(field, 'https://github.com/acme/billing/pull/412')
+    await expect(markDone).toBeEnabled()
+    await userEvent.click(markDone)
+    await expect(args.onCompleteStep).toHaveBeenCalledWith(
+      OUTPUTS.needsPullRequest.task.id,
+      undefined,
+      'https://github.com/acme/billing/pull/412'
+    )
+  },
+}
+
+export const NeedsPullRequestNarrow: Story = {
+  ...NeedsPullRequest,
+  name: 'Your step needing a pull request link, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const NeedsLink: Story = {
+  name: 'Your step needing a link',
+  args: { item: OUTPUTS.needsLink },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Needs a link')).toBeVisible()
+    await expect(canvas.getByRole('textbox', { name: 'Link' })).toBeVisible()
+  },
+}
+
+export const NeedsLinkWithoutMarkDone: Story = {
+  name: 'Your step needing a link, without Mark done',
+  args: { item: OUTPUTS.needsLink, onCompleteStep: undefined },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Needs a link')).toBeVisible()
+    await expect(canvas.queryByRole('textbox', { name: 'Link' })).toBeNull()
   },
 }

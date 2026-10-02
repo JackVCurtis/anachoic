@@ -57,6 +57,36 @@ export const taskEntry = {
   hint: 'Enter to add · ⇧Enter to queue',
   needsTitle: 'A task needs a title',
   stepNeedsTitle: 'A step needs a title',
+  outputLabel: 'Output',
+  outputStepLabel: 'Output of step {n}',
+  outputNone: 'None',
+} as const
+
+/**
+ * The words of each output format: how a card names it, the label of its
+ * field when you mark the step done, and what the step needs, as a sentence
+ * ends. The same as the server's (shared/output_format.ts, which components
+ * may not import).
+ */
+export const outputFormat = {
+  shown: {
+    pull_request: 'Pull request',
+    ticket: 'Ticket',
+    document: 'Document',
+    link: 'Link',
+  },
+  field: {
+    pull_request: 'Pull request link',
+    ticket: 'Ticket link',
+    document: 'Document link',
+    link: 'Link',
+  },
+  needed: {
+    pull_request: 'a pull request link',
+    ticket: 'a ticket link',
+    document: 'a document link',
+    link: 'a link',
+  },
 } as const
 
 /**
@@ -64,6 +94,9 @@ export const taskEntry = {
  */
 export const card = {
   assignedTo: 'Assigned to {name}',
+  artifactLink: '{format} · step {n} ↗',
+  artifactLinks: 'Links',
+  linkNotOpened: "Couldn't open the link",
 } as const
 
 export const yourTurn = {
@@ -86,6 +119,9 @@ export const yourTurn = {
   park: 'Park',
   parkQuestion: 'Park “{title}”? It moves to the backlog and its step is released.',
   keepStep: 'Keep step',
+  needs: 'Needs {needed}',
+  urlPlaceholder: 'https://…',
+  notWebAddress: 'That is not a web address',
 } as const
 
 export const sessions = {
@@ -239,6 +275,7 @@ export const assistive = {
   boardTitle: 'Board',
   close: 'Close',
   opensInNewTab: 'opens in a new tab',
+  opensInBrowser: 'opens in your browser',
   none: 'none',
   landmarkMessages: 'Messages',
   pipSummaryIntro: '{n steps}: {parts}',
@@ -264,6 +301,7 @@ export const strings = {
   message,
   boardHeader,
   taskEntry,
+  outputFormat,
   card,
   yourTurn,
   sessions,

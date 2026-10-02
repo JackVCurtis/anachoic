@@ -7,7 +7,9 @@ import {
 } from '../../bridge/board_source'
 import { connectToHost, type ConnectOptions, type HostConnection } from '../../bridge/connect'
 import { HostContextProvider, useHostContext } from '../../bridge/host_context'
+import { openLink } from '../../bridge/tools'
 import { createYourActions } from '../../bridge/wake'
+import { card } from '../../components/helpers/strings'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
@@ -96,6 +98,13 @@ function Board({ app, source }: LiveBoardProps) {
     }
   }
 
+  /** The host opens an artifact link in the browser, since the view cannot navigate. */
+  async function openArtifact(url: string) {
+    if (!(await openLink(app, url))) {
+      reportFailure({ ok: false, refusal: card.linkNotOpened })
+    }
+  }
+
   async function queueTask(taskId: string) {
     const item = board.backlog.find((backlogged) => backlogged.task.id === taskId)
     if (!item) {
@@ -119,6 +128,7 @@ function Board({ app, source }: LiveBoardProps) {
       onReorder={(taskId, position) => void reorder(taskId, position)}
       reordering={reordering}
       onQueueTask={(taskId) => void queueTask(taskId)}
+      onOpenLink={(url) => void openArtifact(url)}
       taskEntry={taskEntry}
       {...yourTurnActions}
       {...cardActions}
@@ -130,9 +140,9 @@ function Board({ app, source }: LiveBoardProps) {
 
 /**
  * The live board: drawn from the source, which polls while it is mounted.
- * Your actions call their app-only tools, the board is redrawn from each
- * result, and each success is posted to the dedicated session. Each failure
- * is shown in the message region.
+ * Your actions call their app-only tools and the board is redrawn from each
+ * result; nothing is posted to the dedicated chat. Artifact links are opened
+ * by the host. Each failure is shown in the message region.
  */
 export function BoardEntry({
   connection,

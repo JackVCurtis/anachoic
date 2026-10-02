@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { WORKING } from '../../fixtures/board_sections'
+import { OUTPUTS, WORKING } from '../../fixtures/board_sections'
+import { artifactLinkLabel } from '../../helpers/output_format'
+import { assistive } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { WorkingCard } from './working_card'
 
@@ -101,5 +103,29 @@ export const AssignedNarrow: Story = {
   ...Assigned,
   name: 'Assigned to the worker running it, narrow',
   globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
+export const WithArtifacts: Story = {
+  name: 'With artifact links',
+  args: { item: OUTPUTS.working, onOpenLink: fn() },
+  play: async ({ args, canvasElement }) => {
+    const [first] = OUTPUTS.working.artifacts
+    const link = within(canvasElement).getByRole('link', {
+      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+    })
+    await expect(link).toHaveAttribute('title', first.url)
+    await userEvent.click(link)
+    await expect(args.onOpenLink).toHaveBeenCalledWith(first.url)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+    const [sideways] = await windowOverflow()
+    await expect(sideways).toBe(0)
+  },
+}
+
+export const WithArtifactsNarrow: Story = {
+  ...WithArtifacts,
+  name: 'With artifact links, narrow',
+  globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
 }

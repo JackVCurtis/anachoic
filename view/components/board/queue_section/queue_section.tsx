@@ -31,6 +31,8 @@ export interface QueueSectionProps {
   onMoveToBacklog?: (taskId: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
+  /** Asks the host to open an artifact link. Without it no card draws its links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -125,6 +127,7 @@ export function QueueSection({
   onReorder,
   onMoveToBacklog,
   pending = null,
+  onOpenLink,
 }: QueueSectionProps) {
   const instructionsId = useId()
   const [lift, setLift] = useState<Lift | null>(null)
@@ -404,6 +407,7 @@ export function QueueSection({
             onMove={handleMove}
             onCancelMove={handleCancel}
             onMoveToBacklog={onMoveToBacklog}
+            onOpenLink={onOpenLink}
           />
         ),
       }))}

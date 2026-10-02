@@ -39,6 +39,8 @@ export interface BoardViewActions {
   onArchive?: (taskId: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
+  /** Asks the host to open an artifact link. Without it no card draws its links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -120,6 +122,7 @@ export function BoardView({
   onFollowUp,
   onArchive,
   pending = null,
+  onOpenLink,
   announcement = null,
   messages = [],
   onDismissMessage = ignore,
@@ -149,7 +152,7 @@ export function BoardView({
         pending={yourTurnPending}
       />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
-      <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} />
+      <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} onOpenLink={onOpenLink} />
       <QueueSection
         tasks={queueTasks}
         busy={reordering}
@@ -158,6 +161,7 @@ export function BoardView({
         onReorder={onReorder}
         onMoveToBacklog={onMoveToBacklog}
         pending={pending}
+        onOpenLink={onOpenLink}
       />
       <BacklogSection
         tasks={backlogTasks}
@@ -166,6 +170,7 @@ export function BoardView({
         onQueueTask={onQueueTask}
         onArchive={onArchive}
         pending={pending}
+        onOpenLink={onOpenLink}
       />
       <DoneSection
         toSignOff={toSignOff}
@@ -175,6 +180,7 @@ export function BoardView({
         onFollowUp={onFollowUp}
         onArchive={onArchive}
         pending={pending}
+        onOpenLink={onOpenLink}
       />
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">
         {announcement && <span key={announcement.key}>{announcement.text}</span>}

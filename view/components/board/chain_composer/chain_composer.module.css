@@ -101,6 +101,22 @@
   outline-color: var(--color-bg);
 }
 
+/* Your step's output format, its short label before the select */
+.output {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.outputLabel {
+  color: var(--color-text-subtle);
+}
+
+.outputSelect {
+  width: 9.5rem;
+}
+
 .addStep {
   align-self: flex-start;
 }

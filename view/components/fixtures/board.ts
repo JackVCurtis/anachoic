@@ -1,5 +1,5 @@
 // Adapted from anachoic inertia/components/fixtures/tasks.ts, task_lists.ts and slots.ts at fd99e0d
-import type { Owner, StepStatus } from '../types.js'
+import type { OutputFormat, Owner, StepStatus } from '../types.js'
 import { before, INSTANTS } from './clock.js'
 import { LONG_TEXT } from './long_text.js'
 import type { PipStepSample } from './pip_steps.js'
@@ -15,6 +15,12 @@ export interface WorkerSample {
   name: string
 }
 
+export interface ArtifactSample {
+  stepNumber: number
+  format: OutputFormat
+  url: string
+}
+
 export interface TaskSample {
   id: string
   displayId: string
@@ -24,7 +30,14 @@ export interface TaskSample {
 
 export interface YourTurnSample {
   task: TaskSample
-  step: { number: number; title: string; owner: Owner; question?: string; waitingSince: string }
+  step: {
+    number: number
+    title: string
+    owner: Owner
+    question?: string
+    outputFormat?: OutputFormat
+    waitingSince: string
+  }
   sessionName?: string
   steps: readonly PipStepSample[]
   canAct: { complete?: boolean; answer?: boolean; park: boolean }
@@ -35,6 +48,7 @@ export interface WorkingSample {
   step: { number: number; title: string; note?: string; runningSince: string }
   sessionName: string
   steps: readonly PipStepSample[]
+  artifacts?: ArtifactSample[]
 }
 
 export interface QueueSample {
@@ -42,12 +56,14 @@ export interface QueueSample {
   position: number
   nextOwner: Owner
   steps: readonly PipStepSample[]
+  artifacts?: ArtifactSample[]
   canAct: { reorder: boolean; backlog: boolean }
 }
 
 export interface BacklogSample {
   task: TaskSample
   steps: readonly PipStepSample[]
+  artifacts?: ArtifactSample[]
   canAct: { queue: boolean; archive: boolean }
 }
 
@@ -58,6 +74,7 @@ export interface SignOffSample {
   yourSeconds: number
   linkCount: number
   steps: readonly PipStepSample[]
+  artifacts?: ArtifactSample[]
   canAct: { signOff: boolean; followUp: boolean; archive: boolean }
 }
 
@@ -235,6 +252,23 @@ export function assigned<Item extends { task: TaskSample }>(
   worker: WorkerSample
 ): Item {
   return { ...item, task: { ...item.task, assignedTo: worker } }
+}
+
+/**
+ * The item with the links its done steps produced.
+ */
+export function withArtifacts<Item extends { artifacts?: ArtifactSample[] }>(
+  item: Item,
+  artifacts: ArtifactSample[]
+): Item & { artifacts: ArtifactSample[] } {
+  return { ...item, artifacts }
+}
+
+/**
+ * Your waiting step, declaring the output format it needs to be marked done.
+ */
+export function needing(item: YourTurnSample, outputFormat: OutputFormat): YourTurnSample {
+  return { ...item, step: { ...item.step, outputFormat } }
 }
 
 /**

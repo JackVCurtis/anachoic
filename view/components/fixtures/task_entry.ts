@@ -1,8 +1,14 @@
 import type { TaskEntryDraft, TaskEntryStep, TaskEntryWorker } from '../helpers/task_entry'
 import { LONG_TEXT } from './long_text'
 
-function step(index: number, title: string, owner: TaskEntryStep['owner'], detail = '') {
-  return { id: `draft-step-${index}`, title, owner, detail }
+function step(
+  index: number,
+  title: string,
+  owner: TaskEntryStep['owner'],
+  detail = '',
+  outputFormat: TaskEntryStep['outputFormat'] = null
+) {
+  return { id: `draft-step-${index}`, title, owner, detail, outputFormat }
 }
 
 /**
@@ -42,6 +48,14 @@ export const TASK_ENTRY_DRAFTS = {
   longTitle: {
     title: LONG_TEXT.title,
     steps: [step(1, LONG_TEXT.title, 'agent')],
+  },
+  withOutput: {
+    title: 'Add retries to the billing webhook',
+    steps: [
+      step(1, 'Draft the retry policy', 'agent'),
+      step(2, 'Open the PR', 'you', '', 'pull_request'),
+      step(3, 'File the follow-up ticket', 'you'),
+    ],
   },
   assigned: {
     title: 'Add retries to the billing webhook',

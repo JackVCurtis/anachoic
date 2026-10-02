@@ -10,6 +10,7 @@ import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
 import type { BoardStep, CardAction, QueueTask } from '../board_data'
+import { ArtifactLinks } from '../artifact_links/artifact_links'
 import { assignmentFact } from '../assignment'
 import { MoveHandle, type HandleMove } from '../move_handle/move_handle'
 import { pipsOf } from '../pips'
@@ -36,6 +37,8 @@ export interface QueueCardProps {
   onCancelMove?: (taskId: string) => void
   /** Sends the task back to the Backlog. Without it the card offers no "Move to backlog". */
   onMoveToBacklog?: (taskId: string) => void
+  /** Asks the host to open an artifact link. Without it the card draws no links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -58,7 +61,8 @@ function resumeLine(steps: readonly BoardStep[], nextOwner: QueueTask['nextOwner
 
 /**
  * One queued task: where it stands in line, the way to move it, its chain,
- * where it will pick up and the worker it is assigned to.
+ * where it will pick up, the worker it is assigned to and the links its done
+ * steps produced.
  */
 export function QueueCard({
   task,
@@ -74,6 +78,7 @@ export function QueueCard({
   onMove,
   onCancelMove,
   onMoveToBacklog,
+  onOpenLink,
 }: QueueCardProps) {
   const titleId = useId()
   const handle = useRef<HTMLButtonElement>(null)
@@ -148,6 +153,9 @@ export function QueueCard({
           </Button>
         )}
       </div>
+      {task.artifacts && onOpenLink && (
+        <ArtifactLinks artifacts={task.artifacts} onOpenLink={onOpenLink} />
+      )}
     </ActionCard>
   )
 }

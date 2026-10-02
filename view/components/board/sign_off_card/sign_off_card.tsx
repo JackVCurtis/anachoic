@@ -8,6 +8,7 @@ import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
 import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { Button } from '../../primitives/button/button'
 import { Frame } from '../../primitives/frame/frame'
+import { ArtifactLinks } from '../artifact_links/artifact_links'
 import type { CardAction, SignOffTask } from '../board_data'
 import styles from './sign_off_card.module.css'
 
@@ -24,6 +25,8 @@ export interface SignOffCardProps {
   composer?: ReactNode
   /** The action in flight on this card, whose button is busy while the others are disabled. */
   pending?: CardAction | null
+  /** Asks the host to open an artifact link. Without it the card draws no links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -42,10 +45,11 @@ function hasFocus(element: Element | null): boolean {
 }
 
 /**
- * One finished task that waits for your sign-off, with when it finished and
- * the time it took, and its actions: "Sign off", "Follow up", which the
- * composer replaces while it is open, and "Archive", which asks first. The
- * card as a whole is not clickable; its title is.
+ * One finished task that waits for your sign-off, with when it finished, the
+ * time it took and the links its done steps produced, and its actions: "Sign
+ * off", "Follow up", which the composer replaces while it is open, and
+ * "Archive", which asks first. The card as a whole is not clickable; its
+ * title is.
  */
 export function SignOffCard({
   task,
@@ -55,6 +59,7 @@ export function SignOffCard({
   onArchive,
   composer,
   pending = null,
+  onOpenLink,
 }: SignOffCardProps) {
   const now = useNow(LABEL_TICK.finished)
   const timeZone = useTimeZone()
@@ -161,6 +166,9 @@ export function SignOffCard({
           </button>
         </h3>
         <MetaLine tone="detail" facts={signOffStats(task)} />
+        {task.artifacts && onOpenLink && (
+          <ArtifactLinks artifacts={task.artifacts} onOpenLink={onOpenLink} />
+        )}
       </div>
       {actions()}
     </Frame>

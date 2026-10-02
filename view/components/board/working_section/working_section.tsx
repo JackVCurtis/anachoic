@@ -8,12 +8,14 @@ export interface WorkingSectionProps {
   /** In the server's order. */
   tasks: readonly WorkingTask[]
   onOpenTask: (taskId: string) => void
+  /** Asks the host to open an artifact link. Without it no card draws its links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
  * The active tasks whose current step is running. It folds after eight cards.
  */
-export function WorkingSection({ tasks, onOpenTask }: WorkingSectionProps) {
+export function WorkingSection({ tasks, onOpenTask, onOpenLink }: WorkingSectionProps) {
   return (
     <BoardSection
       title={working.title}
@@ -21,7 +23,7 @@ export function WorkingSection({ tasks, onOpenTask }: WorkingSectionProps) {
       empty={<EmptyState variant="dashed" message={working.nothingWorking} />}
       cards={tasks.map((item) => ({
         id: item.task.id,
-        card: <WorkingCard item={item} onOpenTask={onOpenTask} />,
+        card: <WorkingCard item={item} onOpenTask={onOpenTask} onOpenLink={onOpenLink} />,
       }))}
     />
   )

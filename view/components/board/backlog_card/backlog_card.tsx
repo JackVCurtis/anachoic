@@ -8,6 +8,7 @@ import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
 import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
+import { ArtifactLinks } from '../artifact_links/artifact_links'
 import { assignmentFact } from '../assignment'
 import type { BacklogTask, CardAction } from '../board_data'
 import styles from './backlog_card.module.css'
@@ -25,6 +26,8 @@ export interface BacklogCardProps {
   onArchive?: (taskId: string) => void
   /** The action in flight on this card, whose button is busy while the others are disabled. */
   pending?: CardAction | null
+  /** Asks the host to open an artifact link. Without it the card draws no links. */
+  onOpenLink?: (url: string) => void
 }
 
 /**
@@ -39,6 +42,7 @@ export function BacklogCard({
   onQueueTask,
   onArchive,
   pending = null,
+  onOpenLink,
 }: BacklogCardProps) {
   const titleId = useId()
   const archiveButton = useRef<HTMLButtonElement>(null)
@@ -92,6 +96,9 @@ export function BacklogCard({
           </div>
         )}
       </div>
+      {task.artifacts && onOpenLink && (
+        <ArtifactLinks artifacts={task.artifacts} onOpenLink={onOpenLink} />
+      )}
       {confirming && archivable && (
         <div data-raised>
           <InlineConfirm

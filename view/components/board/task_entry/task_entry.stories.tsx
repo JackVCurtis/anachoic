@@ -204,6 +204,19 @@ export const LongWorkerName: Story = {
   },
 }
 
+export const WithOutput: Story = {
+  name: 'Your steps with an Output field',
+  args: { draft: TASK_ENTRY_DRAFTS.withOutput },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('combobox', { name: 'Output of step 1' })).toBeNull()
+    await expect(canvas.getByRole('combobox', { name: 'Output of step 2' })).toHaveValue(
+      'pull_request'
+    )
+    await expect(canvas.getByRole('combobox', { name: 'Output of step 3' })).toHaveValue('')
+  },
+}
+
 export const CollapsedNarrow = narrow(Collapsed, 'Collapsed')
 export const EmptyNarrow = narrow(Empty, 'Empty')
 export const TypedNarrow = narrow(Default, 'Typed')
@@ -217,3 +230,4 @@ export const LongTitleNarrow = narrow(LongTitle, 'Long title')
 export const WithWorkersNarrow = narrow(WithWorkers, 'With live workers')
 export const AssignedNarrow = narrow(Assigned, 'Assigned to a worker')
 export const LongWorkerNameNarrow = narrow(LongWorkerName, 'A worker named with 40 characters')
+export const WithOutputNarrow = narrow(WithOutput, 'Your steps with an Output field')

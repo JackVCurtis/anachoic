@@ -1,10 +1,12 @@
 // Copied from anachoic inertia/components/board/backlog_card/backlog_card.stories.tsx at fd99e0d
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { BACKLOG } from '../../fixtures/board_sections'
+import { BACKLOG, OUTPUTS } from '../../fixtures/board_sections'
 import { LONG_TEXT } from '../../fixtures/long_text'
+import { artifactLinkLabel } from '../../helpers/output_format'
+import { assistive } from '../../helpers/strings'
 import { resolvedColor } from '../../testing/resolved_color'
-import { ViewFrame } from '../../testing/view_frame'
+import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { BacklogCard } from './backlog_card'
 
 const [RENAME] = BACKLOG.busy
@@ -143,6 +145,30 @@ export const Assigned: Story = {
 export const AssignedNarrow: Story = {
   ...Assigned,
   name: 'Assigned to a worker, narrow',
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  parameters: { frame: 'narrow' },
+}
+
+export const WithArtifacts: Story = {
+  name: 'With artifact links',
+  args: { task: OUTPUTS.parked, onOpenLink: fn() },
+  play: async ({ args, canvasElement }) => {
+    const [first] = OUTPUTS.parked.artifacts
+    const link = within(canvasElement).getByRole('link', {
+      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+    })
+    await expect(link).toHaveAttribute('title', first.url)
+    await userEvent.click(link)
+    await expect(args.onOpenLink).toHaveBeenCalledWith(first.url)
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+    const [sideways] = await windowOverflow()
+    await expect(sideways).toBe(0)
+  },
+}
+
+export const WithArtifactsNarrow: Story = {
+  ...WithArtifacts,
+  name: 'With artifact links, narrow',
   globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
 }

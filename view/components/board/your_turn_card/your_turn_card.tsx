@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type FormEvent } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
-import { fillTemplate, yourTurn } from '../../helpers/strings'
+import { artifactUrlProblem, ARTIFACT_URL_MAX } from '../../helpers/output_format'
+import { fillTemplate, outputFormat as formatWords, yourTurn } from '../../helpers/strings'
 import { formatWaited } from '../../helpers/time'
 import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
@@ -9,6 +10,7 @@ import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
 import { StatusSquare } from '../../primitives/status_square/status_square'
 import { TextArea } from '../../primitives/text_area/text_area'
+import { TextInput } from '../../primitives/text_input/text_input'
 import type { YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
@@ -25,8 +27,12 @@ export interface YourTurnPending {
 export interface YourTurnCardProps {
   item: YourTurnTask
   onOpenTask: (taskId: string) => void
-  /** "Mark done" on your step, with the note trimmed, or none. Without it the card offers no Mark done. */
-  onCompleteStep?: (taskId: string, note?: string) => void
+  /**
+   * "Mark done" on your step, with the note trimmed, or none, and the
+   * artifact link trimmed when the step has an output format. Without it the
+   * card offers no Mark done.
+   */
+  onCompleteStep?: (taskId: string, note?: string, artifactUrl?: string) => void
   /** "Answer" to an agent's question, trimmed. Without it the card offers no answer field. */
   onAnswer?: (taskId: string, answer: string) => void
   /** A confirmed "Park". Without it the card offers no Park. */
@@ -97,6 +103,11 @@ export function YourTurnCard({
         </p>
       )}
       {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
+      {step.owner === 'you' && step.outputFormat && !completesHere(item, onCompleteStep) && (
+        <p className={joinClasses('text-hint', styles.needs)}>
+          {fillTemplate(yourTurn.needs, { needed: formatWords.needed[step.outputFormat] })}
+        </p>
+      )}
       <YourTurnActions
         item={item}
         onCompleteStep={onCompleteStep}
@@ -112,23 +123,37 @@ type YourTurnActionsProps = Omit<YourTurnCardProps, 'onOpenTask' | 'busy'> & {
   busy: YourTurnAction | null
 }
 
+/** Whether the card offers Mark done, which then says what link the step needs. */
+function completesHere(
+  { step, canAct }: YourTurnTask,
+  onCompleteStep: YourTurnCardProps['onCompleteStep']
+): boolean {
+  return step.owner === 'you' && canAct.complete === true && onCompleteStep !== undefined
+}
+
 /**
  * The card's actions, offered only where the server says they can act: Mark
- * done with an optional note on your step, an answer field on an agent's
- * question, and Park behind a confirmation on either. The draft is kept by
- * step, so a new step on the same task starts empty.
+ * done with an optional note on your step, after the link the step needs when
+ * it has an output format, an answer field on an agent's question, and Park
+ * behind a confirmation on either. The draft is kept by step, so a new step
+ * on the same task starts empty.
  */
 function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourTurnActionsProps) {
   const { task, step, canAct, sessionName } = item
   const labelId = useId()
   const noteId = useId()
+  const urlLabelId = useId()
+  const urlNoteId = useId()
   const parkButton = useRef<HTMLButtonElement>(null)
   const [confirming, setConfirming] = useState(false)
   const stepKey = `${task.id}:${step.number}`
-  const [draft, setDraft] = useState({ stepKey, text: '' })
+  const [draft, setDraft] = useState({ stepKey, text: '', url: '' })
   const text = draft.stepKey === stepKey ? draft.text : ''
+  const url = draft.stepKey === stepKey ? draft.url : ''
 
-  const completes = step.owner === 'you' && canAct.complete === true && onCompleteStep !== undefined
+  const completes = completesHere(item, onCompleteStep)
+  const format = step.owner === 'you' ? (step.outputFormat ?? null) : null
+  const urlProblem = format === null ? null : artifactUrlProblem(format, url)
   const answers = step.owner === 'agent' && canAct.answer === true && onAnswer !== undefined
   const parks = canAct.park && onPark !== undefined
   if (!completes && !answers && !parks) {
@@ -143,12 +168,23 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
       : yourTurn.answerReadyUnnamed
 
   function edit(next: string) {
-    setDraft({ stepKey, text: next.slice(0, answers ? ANSWER_MAX : NOTE_MAX) })
+    setDraft({ stepKey, text: next.slice(0, answers ? ANSWER_MAX : NOTE_MAX), url })
+  }
+
+  function editUrl(next: string) {
+    setDraft({ stepKey, text, url: next.slice(0, ARTIFACT_URL_MAX) })
   }
 
   function complete() {
-    const note = text.trim()
-    onCompleteStep?.(task.id, note === '' ? undefined : note)
+    if (urlProblem !== null) {
+      return
+    }
+    const note = text.trim() === '' ? undefined : text.trim()
+    if (format === null) {
+      onCompleteStep?.(task.id, note)
+    } else {
+      onCompleteStep?.(task.id, note, url.trim())
+    }
   }
 
   function answer(event?: FormEvent) {
@@ -175,7 +211,10 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
         <Button
           variant="inverse-solid"
           busy={busy === 'complete'}
-          disabled={busy !== null && busy !== 'complete'}
+          disabled={
+            (busy !== null && busy !== 'complete') || (urlProblem !== null && busy === null)
+          }
+          aria-describedby={format === null ? undefined : urlNoteId}
           onPress={complete}
         >
           {yourTurn.markDone}
@@ -230,6 +269,39 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
 
   return (
     <div data-raised className={styles.actions}>
+      {completes && format !== null && (
+        <>
+          <div className={styles.fieldHeader}>
+            <span id={urlLabelId} className={joinClasses('text-label', styles.label)}>
+              {formatWords.field[format]}
+            </span>
+            <span
+              id={urlNoteId}
+              aria-live="polite"
+              className={joinClasses('text-hint', styles.note)}
+            >
+              {urlProblem}
+            </span>
+          </div>
+          <TextInput
+            labelledBy={urlLabelId}
+            describedBy={urlNoteId}
+            required
+            invalid={urlProblem !== null && url.trim() !== ''}
+            value={url}
+            placeholder={yourTurn.urlPlaceholder}
+            onChange={editUrl}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                if (busy === null) {
+                  complete()
+                }
+              }
+            }}
+          />
+        </>
+      )}
       {completes && (
         <>
           <span id={labelId} className={joinClasses('text-label', styles.label)}>
