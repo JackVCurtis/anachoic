@@ -34,16 +34,42 @@ The server writes its log to `~/Library/Application Support/Anachoic MCP/logs/`.
 3. Within 5 s of each call, the board shows it without a reload: the task in the queue, then in Working with the worker's session name.
 4. Stop the worker. Within the dead window, the board shows the session as ended and the task back at the front of the queue.
 
-## F. Each action posts its message (phase 2)
+## F. Working the board, with workers (phase 2)
 
-Do each action in the board, and check that a user message with the sentence from [06](architecture/06-tools-and-views.md#waking-the-dedicated-session) appears in the chat, and that Claude replies to it.
+Set up first:
+1. Reinstall `anachoic.mcpb` (section A).
+2. Install the worker plugin in Claude Code, so that each worker removes itself when its session ends ([08](architecture/08-packaging-and-hosts.md#worker-sessions)):
+   - Run `/plugin marketplace add <repository>/plugin`, then `/plugin install anachoic-worker@anachoic`.
+   - If an earlier `claude mcp add` entry named `anachoic` exists, remove it with `claude mcp remove anachoic -s user`.
+3. Start two workers, `claude` in two different project folders. Tell each: "Join the Anachoic board and wait for work."
 
-1. Add a task, and add another to the queue.
-2. Reorder the queue, queue a backlog task, and move a queued task to the backlog.
-3. Mark one of your steps done, with a note.
-4. Answer a worker's question. The worker's `wait_for_answer` returns the answer.
-5. Park a task from Your turn.
-6. Sign off a finished task, add a follow-up to another, and archive a third.
+Then check each item. **Nothing may be posted into the desktop chat** at any step: no user message, and no Claude reply caused by the board.
+
+1. **Adding and moving.**
+   - Add a task to the backlog and another to the queue.
+   - Reorder the queue, queue a backlog task, and move a queued task to the backlog.
+   - Each change shows on the board at once.
+2. **Assignment.**
+   - Add a task with one agent step, assigned to the first worker in the Worker field.
+   - Its card says "Assigned to …". Only that worker picks it up, and the other keeps waiting.
+3. **An output, and the hand-back.**
+   - Add a task with three steps: an agent step, then your step with Output "Pull request", then another agent step.
+   - A worker takes step 1, completes it, and keeps waiting.
+   - On the board, Mark done stays disabled until a valid link is entered.
+   - Mark it done with a link and a note. **The same worker continues with step 3 without anything typed in its terminal.**
+   - The link shows on the task's card, opens in the browser, and the worker's text names it.
+4. **A question.** Have a worker ask you something ("Claim the next step, then ask me which colour to use"). Answer on the board, and the worker continues with your answer.
+5. **Blocked.**
+   - Have a worker block a step ("Claim the next step, then block it: you need AWS credentials").
+   - The board shows a Blocked card with the worker, step and reason, and no buttons. The worker's Sessions card says "Blocked on …".
+   - Talk to the worker in its terminal until it unblocks. The card leaves Your turn.
+6. **Park, sign off, follow-up and archive.** Park a task from Your turn. Sign off a finished task, add a follow-up to another, and archive a third.
+7. **Removing workers.**
+   - End one worker with `/exit`. It disappears from Sessions within one poll, and its step, if it held one, goes back to the queue.
+   - Press Remove on the other worker's card. It asks first if the worker holds a step, then the card disappears.
+8. **What the docs leave open.** Note the answers in [13](architecture/13-ending-sessions.md#what-claude-code-offers):
+   - Did the hook remove the worker, as opposed to the 2-minute liveness check? The board would show it as "ended" if liveness did it.
+   - Does deleting a session in desktop's Code tab remove it?
 
 ## G. The task view (phase 3)
 
