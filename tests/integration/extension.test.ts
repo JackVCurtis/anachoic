@@ -36,7 +36,10 @@ test('the server laid out for the extension starts as desktop starts it and show
   expect(content.text.startsWith('Board, revision 1\n')).toBe(true)
   expect(boardPropsSchema.parse(result.structuredContent).revision).toBe(1)
 
-  const { contents } = await client.readResource({ uri: 'ui://anachoic/board.html' })
+  const { tools } = await client.listTools()
+  const uri = tools.find(({ name }) => name === 'show_board')?._meta?.ui as { resourceUri: string }
+  expect(uri.resourceUri).toMatch(/^ui:\/\/anachoic\/board-[0-9a-f]{12}\.html$/)
+  const { contents } = await client.readResource({ uri: uri.resourceUri })
   expect('text' in contents[0] && contents[0].text).toMatch(/^<!doctype html>/i)
 
   await client.close()

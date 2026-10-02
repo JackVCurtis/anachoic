@@ -139,7 +139,7 @@ The extension was installed from `anachoic-probe.mcpb`, and a new chat was opene
 - `toolInfo` with the tool-call id (for example `cblk_017U…`) and the tool definition
 - Host capabilities: `openLinks`, `downloadFile`, `serverTools`, `serverResources`, `logging`, `sandbox`, `updateModelContext` (text and image) and `message` (text)
 
-**Resources.** The `ui://` resource was read only once per server process, so the host caches the HTML.
+**Resources.** The `ui://` resource was read only once per server process, so the host caches the HTML. A later observation corrected this: on 2026-10-02, after the Anachoic extension was reinstalled, the new server process served `show_board` but its board resource was never read. Desktop drew the cached HTML of the previous build. The cache is keyed by the resource's address and outlives the server process. That is why the app's view addresses carry a hash of their HTML ([06](../../architecture/06-tools-and-views.md#views)).
 
 **Fonts.** All three probes loaded under the default CSP: a CSS `@font-face` with a `data:` URL, `FontFace` with a `data:` URL, and `FontFace` with an `ArrayBuffer`. No `securitypolicyviolation` fired. So the CSP desktop applies is not the spec's suggested default with no `font-src`. Barlow can be inlined.
 

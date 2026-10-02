@@ -7,6 +7,7 @@ import type { ClientInfo } from '../identity.js'
 import type { Logger } from '../logger.js'
 import { guarded, refusalResult } from '../results.js'
 import type { WaitTimings } from '../wait_timings.js'
+import type { ViewUris } from '../views.js'
 
 /**
  * What every tool handler needs from its server and process.
@@ -19,6 +20,8 @@ export interface ToolContext {
   client: () => ClientInfo | undefined
   now: () => Instant
   wait: WaitTimings
+  /** Each view's ui:// address, which changes whenever the view's HTML does. */
+  views: ViewUris
 }
 
 /**

@@ -23,7 +23,7 @@ import { registerModelTools } from './tools/model.js'
 import { registerViewActions } from './tools/view_actions.js'
 import { registerWaitForAnswer } from './tools/wait_for_answer.js'
 import { VERSION } from './version.js'
-import { registerViews } from './views.js'
+import { registerViews, viewUris } from './views.js'
 import { waitTimings } from './wait_timings.js'
 
 const VIEWS_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), 'views')
@@ -46,7 +46,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     { instructions: INSTRUCTIONS[kind] }
   )
   const context: ToolContext = { ...shared, client: () => server.server.getClientVersion() }
-  registerViews(server, VIEWS_DIRECTORY, logger)
+  registerViews(server, shared.views, VIEWS_DIRECTORY, logger)
   describeTools(kind, {
     ...registerBoardTools(server, context),
     join_board: registerJoinBoard(server, context),
@@ -170,6 +170,7 @@ const shared: Shared = {
   callers,
   now: () => new Date().toISOString(),
   wait: waitTimings(process.env),
+  views: viewUris(VIEWS_DIRECTORY),
 }
 
 if (transport === 'http') {

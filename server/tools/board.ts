@@ -7,7 +7,6 @@ import { readRevision } from '../../store/queries.js'
 import { readBoardProps } from '../props/board.js'
 import { guarded } from '../results.js'
 import { boardSummary } from '../text/board_summary.js'
-import { VIEWS } from '../views.js'
 import { asCaller, type ToolContext } from './context.js'
 import { sessionInput } from './session_input.js'
 
@@ -26,7 +25,7 @@ export function registerBoardTools(server: McpServer, context: ToolContext) {
       description: TOOL_DESCRIPTIONS.worker.show_board,
       inputSchema: z.object({ ...sessionInput }),
       outputSchema: boardPropsSchema,
-      _meta: { ui: { resourceUri: VIEWS.board } },
+      _meta: { ui: { resourceUri: context.views.board } },
     },
     asCaller(context, 'show_board', () => {
       const props = board()

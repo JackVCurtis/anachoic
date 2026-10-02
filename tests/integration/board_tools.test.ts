@@ -25,9 +25,12 @@ test('lists show_board with its view and get_board for the view only', async () 
   const showBoard = tools.find(({ name }) => name === 'show_board')
   const getBoard = tools.find(({ name }) => name === 'get_board')
 
+  const { resources } = await client.listResources()
+  const boardUri = resources.find(({ uri }) => uri.startsWith('ui://anachoic/board-'))?.uri
+  expect(boardUri).toMatch(/^ui:\/\/anachoic\/board-[0-9a-f]{12}\.html$/)
   expect(showBoard?._meta).toMatchObject({
-    'ui': { resourceUri: 'ui://anachoic/board.html' },
-    'ui/resourceUri': 'ui://anachoic/board.html',
+    'ui': { resourceUri: boardUri },
+    'ui/resourceUri': boardUri,
   })
   expect(getBoard?._meta).toMatchObject({ ui: { visibility: ['app'] } })
   expect(getBoard?._meta?.ui).not.toHaveProperty('resourceUri')

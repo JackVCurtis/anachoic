@@ -93,10 +93,10 @@ test('lists both views and reads each as an MCP App resource that prefers a bord
   })
 
   const { resources } = await client.listResources()
-  expect(resources.map(({ uri }) => uri).sort()).toEqual([
-    'ui://anachoic/board.html',
-    'ui://anachoic/task.html',
-  ])
+  const uris = resources.map(({ uri }) => uri).sort()
+  expect(uris).toHaveLength(2)
+  expect(uris[0]).toMatch(/^ui:\/\/anachoic\/board-[0-9a-f]{12}\.html$/)
+  expect(uris[1]).toMatch(/^ui:\/\/anachoic\/task-[0-9a-f]{12}\.html$/)
 
   for (const { uri } of resources) {
     const { contents } = await client.readResource({ uri })
