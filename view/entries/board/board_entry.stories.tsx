@@ -33,10 +33,10 @@ const meta = {
       }),
   ],
   render: (_args, { loaded }) => {
-    const { connection, board } = loaded as LoadedBoard
+    const { connection, source } = loaded as LoadedBoard
     return (
       <ViewFrame>
-        <BoardEntry connection={connection} board={board!} />
+        <BoardEntry connection={connection} source={source!} />
       </ViewFrame>
     )
   },

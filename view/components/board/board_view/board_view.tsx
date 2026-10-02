@@ -20,7 +20,20 @@ export interface BoardViewActions {
   selectedTaskId?: string | null
 }
 
-export type BoardViewProps = BoardData & BoardViewActions
+/**
+ * What the polite live region says. A new key says the text again, even when
+ * it is the same as before.
+ */
+export interface BoardAnnouncement {
+  key: number
+  text: string
+}
+
+export interface BoardViewAnnouncement {
+  announcement?: BoardAnnouncement | null
+}
+
+export type BoardViewProps = BoardData & BoardViewActions & BoardViewAnnouncement
 
 function ignore() {}
 
@@ -53,17 +66,18 @@ export function BoardView({
   signedOff,
   sessions: sessionList,
   counts,
-  updated,
+  updatedAt,
   unreachable,
   safeAreaInsets,
   onOpenTask = ignore,
   onQueueTask,
   selectedTaskId = null,
+  announcement = null,
 }: BoardViewProps) {
   return (
     <div className={styles.board} style={insetStyle(safeAreaInsets)}>
       <VisuallyHidden element="h1">{assistive.boardTitle}</VisuallyHidden>
-      <BoardHeader counts={counts} updated={updated} unreachable={unreachable} />
+      <BoardHeader counts={counts} updatedAt={updatedAt} unreachable={unreachable} />
       <section aria-label={assistive.landmarkMessages} className={styles.messages} />
       <div className={styles.entry} />
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
@@ -78,7 +92,7 @@ export function BoardView({
       />
       <DoneSection toSignOff={toSignOff} signedOff={signedOff} onOpenTask={onOpenTask} />
       <VisuallyHidden role="status" aria-live="polite" aria-atomic="true">
-        {null}
+        {announcement && <span key={announcement.key}>{announcement.text}</span>}
       </VisuallyHidden>
     </div>
   )

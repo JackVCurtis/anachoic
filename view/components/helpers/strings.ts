@@ -220,6 +220,8 @@ export const assistive = {
   moveCancelled: 'Move cancelled. “{title}” is back at position {n} of {m}',
   moveLeftQueue: '“{title}” left the queue. Move ended',
   waitingOnYou: '“{title}” is waiting on you',
+  sessionAsks: '{session} asks about “{title}”',
+  questionForYou: '“{title}” has a question for you',
   waitingForSignOff: '“{title}” is finished and waiting for sign-off',
 } as const
 

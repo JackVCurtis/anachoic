@@ -1,49 +1,92 @@
-import type { BoardProps } from '../../../shared/props'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import type { YourTurnItem } from '../../../shared/props'
+import {
+  openBoardSource,
+  type BoardSource,
+  type BoardSourceOptions,
+} from '../../bridge/board_source'
 import { connectToHost, type ConnectOptions, type HostConnection } from '../../bridge/connect'
 import { HostContextProvider, useHostContext } from '../../bridge/host_context'
-import { getBoard } from '../../bridge/tools'
-import { BoardView } from '../../components/board/board_view/board_view'
+import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
+import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
 
 export interface LoadedBoard {
   connection: HostConnection
   /** Nothing when the first get_board did not return the board. */
-  board: BoardProps | null
+  source: BoardSource | null
 }
 
 /**
  * Connects to the host and fetches the board once. The tool result the host
  * replays is never drawn, because it may be old.
  */
-export async function loadBoard(options: ConnectOptions = {}): Promise<LoadedBoard> {
-  const connection = await connectToHost(options)
-  const outcome = await getBoard(connection.app)
-  const board = outcome.ok && !('changed' in outcome.props) ? outcome.props : null
-  return { connection, board }
+export async function loadBoard(
+  options: ConnectOptions & BoardSourceOptions = {}
+): Promise<LoadedBoard> {
+  const { now, ...connectOptions } = options
+  const connection = await connectToHost(connectOptions)
+  const source = await openBoardSource(connection.app, { now })
+  return { connection, source }
 }
 
-function Board({ board }: { board: BoardProps }) {
+/**
+ * The sentences for the tasks a poll brought into Your turn, one per card.
+ */
+function arrivalAnnouncement(
+  items: readonly YourTurnItem[],
+  key: number
+): BoardAnnouncement | null {
+  const sentences = items.flatMap(({ task, step, session }) => {
+    const sentence = announcement(
+      step.owner === 'you'
+        ? { kind: 'your-step', title: task.title }
+        : { kind: 'question', title: task.title, sessionName: session?.name }
+    )
+    return sentence === null ? [] : [sentence]
+  })
+  return sentences.length === 0 ? null : { key, text: sentences.join('. ') }
+}
+
+function Board({ source }: { source: BoardSource }) {
   const { safeAreaInsets } = useHostContext()
+  const { board, updatedAt, unreachable, arrived, arrivals } = useSyncExternalStore(
+    source.subscribe,
+    source.getSnapshot
+  )
+
+  useEffect(() => {
+    source.start()
+    return () => source.stop()
+  }, [source])
+
+  const lists = useMemo(() => toBoardData(board), [board])
+  const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
+
   return (
     <BoardView
-      {...toBoardData(board)}
-      updated={false}
-      unreachable={false}
+      {...lists}
+      updatedAt={updatedAt}
+      unreachable={unreachable}
       safeAreaInsets={safeAreaInsets}
+      announcement={said}
     />
   )
 }
 
+/**
+ * The live board: drawn from the source, which polls while it is mounted.
+ */
 export function BoardEntry({
   connection,
-  board,
+  source,
 }: {
   connection: HostConnection
-  board: BoardProps
+  source: BoardSource
 }) {
   return (
     <HostContextProvider store={connection.hostContext}>
-      <Board board={board} />
+      <Board source={source} />
     </HostContextProvider>
   )
 }

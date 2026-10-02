@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
+import { before, FIXED_NOW } from '../../fixtures/clock'
 import { boardHeader } from '../../helpers/strings'
 import { ViewFrame } from '../../testing/view_frame'
 import { BoardHeader } from './board_header'
@@ -9,7 +10,7 @@ const meta = {
   component: BoardHeader,
   args: {
     counts: { yourTurn: 0, working: 0, queue: 0, toSignOff: 0 },
-    updated: false,
+    updatedAt: null,
     unreachable: false,
   },
   parameters: {
@@ -40,7 +41,7 @@ export const ZeroCounts: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Your turn: 0 tasks')).toBeInTheDocument()
-    await expect(canvas.queryByText(boardHeader.updated)).toBeNull()
+    await expect(canvas.queryByText(/^Updated/)).toBeNull()
     await expect(canvas.queryByText(boardHeader.cantReach)).toBeNull()
   },
 }
@@ -57,9 +58,20 @@ export const MixedCounts: Story = {
 
 export const Updated: Story = {
   name: 'Just updated',
-  args: { counts: { yourTurn: 1, working: 2, queue: 4, toSignOff: 0 }, updated: true },
+  args: { counts: { yourTurn: 1, working: 2, queue: 4, toSignOff: 0 }, updatedAt: FIXED_NOW },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(boardHeader.updated)).toBeVisible()
+    await expect(within(canvasElement).getByText('Updated just now')).toBeVisible()
+  },
+}
+
+export const UpdatedAWhileAgo: Story = {
+  name: 'Updated a while ago',
+  args: {
+    counts: { yourTurn: 1, working: 2, queue: 4, toSignOff: 0 },
+    updatedAt: before({ minutes: 12 }),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('Updated 12m ago')).toBeVisible()
   },
 }
 

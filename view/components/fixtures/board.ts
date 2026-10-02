@@ -83,7 +83,7 @@ export interface BoardSample {
   signedOff: readonly SignedOffSample[]
   sessions: readonly SessionSample[]
   counts: { yourTurn: number; working: number; queue: number; toSignOff: number }
-  updated: boolean
+  updatedAt: string | null
   unreachable: boolean
 }
 
@@ -251,7 +251,7 @@ export const EMPTY_BOARD: BoardSample = {
   signedOff: [],
   sessions: [],
   counts: { yourTurn: 0, working: 0, queue: 0, toSignOff: 0 },
-  updated: false,
+  updatedAt: null,
   unreachable: false,
 }
 
@@ -413,7 +413,7 @@ export const BUSY_BOARD: BoardSample = {
     },
   ],
   counts: countsOf(BUSY_LISTS),
-  updated: false,
+  updatedAt: null,
   unreachable: false,
 }
 
@@ -451,7 +451,7 @@ export const MANY_BOARD: BoardSample = {
   signedOff: [],
   sessions: [{ id: 'dedicated', kind: 'dedicated', name: THIS_CHAT, live: true }],
   counts: countsOf(MANY_LISTS),
-  updated: false,
+  updatedAt: null,
   unreachable: false,
 }
 
@@ -518,7 +518,7 @@ export const LONG_TEXT_BOARD: BoardSample = {
     },
   ],
   counts: countsOf(LONG_LISTS),
-  updated: false,
+  updatedAt: null,
   unreachable: false,
 }
 

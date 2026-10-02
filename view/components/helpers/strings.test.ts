@@ -95,7 +95,7 @@ describe('the words of 07', () => {
     )
   })
 
-  test('the assistive strings keep the pip summary, the moves and the two waits', () => {
+  test('the assistive strings keep the pip summary, the moves, the waits and the questions', () => {
     expect(Object.keys(assistive)).toEqual(
       expect.arrayContaining([
         'pipSummaryIntro',
@@ -110,6 +110,8 @@ describe('the words of 07', () => {
         'moveCancelled',
         'moveLeftQueue',
         'waitingOnYou',
+        'sessionAsks',
+        'questionForYou',
         'waitingForSignOff',
       ])
     )

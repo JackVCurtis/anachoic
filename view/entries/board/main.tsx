@@ -6,14 +6,14 @@ import '../../css/app.css'
 const root = createRoot(document.getElementById('app')!)
 
 loadBoard().then(
-  ({ connection, board }) => {
-    if (board === null) {
+  ({ connection, source }) => {
+    if (source === null) {
       console.error('The board could not be fetched.')
       return
     }
     root.render(
       <StrictMode>
-        <BoardEntry connection={connection} board={board} />
+        <BoardEntry connection={connection} source={source} />
       </StrictMode>
     )
   },

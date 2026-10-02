@@ -1,7 +1,7 @@
 import type { BoardProps } from '../../../shared/props'
 import type { BoardData } from '../../components/board/board_data'
 
-export type BoardLists = Omit<BoardData, 'updated' | 'unreachable' | 'safeAreaInsets'>
+export type BoardLists = Omit<BoardData, 'updatedAt' | 'unreachable' | 'safeAreaInsets'>
 
 /**
  * The server's board props in the board view's own terms.

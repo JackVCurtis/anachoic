@@ -11,7 +11,7 @@ export const EMPTY_BOARD_VIEW = {
   signedOff: [],
   sessions: [],
   counts: { yourTurn: 0, working: 0, queue: 0, toSignOff: 0 },
-  updated: false,
+  updatedAt: null,
   unreachable: false,
   safeAreaInsets: null,
 }

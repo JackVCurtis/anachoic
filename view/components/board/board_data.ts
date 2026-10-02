@@ -134,8 +134,8 @@ export interface BoardData {
   signedOff: readonly SignedOffTask[]
   sessions: readonly BoardSession[]
   counts: BoardCounts
-  /** A poll has just brought a newer board. */
-  updated: boolean
+  /** The instant a poll last brought a newer board. Null before one has. */
+  updatedAt: string | null
   /** The last poll failed. */
   unreachable: boolean
   /** The host's safe-area insets, in pixels. */

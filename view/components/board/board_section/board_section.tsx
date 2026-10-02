@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react'
 import { FOLD_AFTER } from '../../helpers/constants'
 import { joinClasses } from '../../helpers/join_classes'
 import { fillTemplate, fold } from '../../helpers/strings'
@@ -52,14 +52,46 @@ export function BoardSection({
   footer,
 }: BoardSectionProps) {
   const [open, setOpen] = useState(false)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const focusedCard = useRef<HTMLLIElement | null>(null)
+
+  function onFocus(event: FocusEvent<HTMLElement>) {
+    focusedCard.current =
+      event.target instanceof Element ? event.target.closest<HTMLLIElement>('li[data-card]') : null
+  }
+
+  /*
+   * A focused element that is removed takes focus with it to the body. When
+   * the card that held it left the list, focus goes to the heading instead,
+   * without scrolling.
+   */
+  useLayoutEffect(() => {
+    const card = focusedCard.current
+    if (!card || card.isConnected) {
+      return
+    }
+    focusedCard.current = null
+    if (document.activeElement === null || document.activeElement === document.body) {
+      headingRef.current?.focus({ preventScroll: true })
+    }
+  })
+
   const folded = folds && cards.length > FOLD_AFTER
   const shown = folded ? cards.slice(0, FOLD_AFTER) : cards
   const rest = folded ? cards.slice(FOLD_AFTER) : []
 
-  const header = <SectionHeader headingLevel={2} title={title} summary={count} spacing="roomy" />
+  const header = (
+    <SectionHeader
+      headingLevel={2}
+      headingRef={headingRef}
+      title={title}
+      summary={count}
+      spacing="roomy"
+    />
+  )
 
   return (
-    <section className={joinClasses(styles.section, className)}>
+    <section className={joinClasses(styles.section, className)} onFocus={onFocus}>
       {inverseHeader ? (
         <Frame tone="inverse" className={styles.inverseHeader}>
           {header}
@@ -72,7 +104,9 @@ export function BoardSection({
       ) : (
         <List className={joinClasses(styles.list, cardGap === 'loose' && styles.loose)}>
           {shown.map(({ id, card }) => (
-            <li key={id}>{card}</li>
+            <li key={id} data-card>
+              {card}
+            </li>
           ))}
         </List>
       )}
@@ -87,7 +121,9 @@ export function BoardSection({
         >
           <List className={joinClasses(styles.list, cardGap === 'loose' && styles.loose)}>
             {rest.map(({ id, card }) => (
-              <li key={id}>{card}</li>
+              <li key={id} data-card>
+                {card}
+              </li>
             ))}
           </List>
         </Disclosure>
