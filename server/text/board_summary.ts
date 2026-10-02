@@ -117,8 +117,22 @@ function sessionText(session: SessionItem, now: string) {
 }
 
 /**
+ * The signed-off tasks the board holds, by id, and when there are more, that
+ * show_history lists them all. No line when none are signed off.
+ */
+function doneLines(board: BoardProps): string[] {
+  const total = board.signedOffTotal ?? board.signedOff.length
+  if (total === 0) return []
+  const shown = board.signedOff.map(({ task }) => task.displayId)
+  const line = `Done (${total}): ${shown.join(', ')}`
+  const rest = total - shown.length
+  return [rest > 0 ? `${line}, and ${rest} more; show_history lists every completed task` : line]
+}
+
+/**
  * The board as compact text for the model: a revision line, then one line
- * for each list with its count, and a line for the sessions.
+ * for each list with its count, the signed-off tasks when there are any, and
+ * a line for the sessions.
  */
 export function boardSummary(board: BoardProps): string {
   const sessions = board.sessions.map((session) => sessionText(session, board.now))
@@ -162,6 +176,7 @@ export function boardSummary(board: BoardProps): string {
       'To sign off',
       board.toSignOff.map(({ task, artifacts }) => `${titled(task)}${withArtifacts(artifacts)}`)
     ),
+    ...doneLines(board),
     sessions.length === 0 ? `Sessions: ${NONE}` : fitted('Sessions: ', sessions),
   ].join('\n')
 }

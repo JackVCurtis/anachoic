@@ -27,6 +27,7 @@ import { INSTRUCTIONS, TOOL_DESCRIPTIONS } from '../../../server/instructions.js
 import { emptyBoard } from '../../../server/props/empty_board.js'
 import { taskProps } from '../../../server/props/task.js'
 import { boardSummary } from '../../../server/text/board_summary.js'
+import { historyText } from '../../../server/text/history.js'
 import { joinBoardText } from '../../../server/text/join_board.js'
 import {
   addFollowUpText,
@@ -207,6 +208,22 @@ function templates(): string[] {
           canAct: { complete: true, park: true },
         },
       ],
+      signedOff: [
+        {
+          task: { id: '3', displayId: 'T-003', title: 'Ship it' },
+          signedOffAt: '2026-10-01T12:00:00Z',
+        },
+      ],
+      signedOffTotal: 38,
+    }),
+    historyText({
+      revision: 1,
+      now: '2026-10-01T12:00:00.000Z',
+      page: 1,
+      pageCount: 2,
+      total: 38,
+      filter: 'login',
+      rows: [],
     }),
   ]
 }

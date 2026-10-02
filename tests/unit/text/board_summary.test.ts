@@ -206,6 +206,11 @@ describe('the board summary', () => {
         ...EXAMPLE.toSignOff[0],
         task: ref(index + 81, long),
       })),
+      signedOff: Array.from({ length: 10 }, (_, index) => ({
+        task: ref(index + 101, long),
+        signedOffAt: minutesAgo(index),
+      })),
+      signedOffTotal: 38,
       sessions,
     }
 
@@ -216,6 +221,35 @@ describe('the board summary', () => {
     expect(lines[3]).toMatch(/^Queue \(20\): 1\. T-041 "x{59}…" next: agent · .* · and \d+ more$/)
     expect(lines[4]).toBe(
       `Backlog (20): ${Array.from({ length: 20 }, (_, index) => ref(index + 61).displayId).join(', ')}`
+    )
+  })
+})
+
+describe('the Done line', () => {
+  const signedOff = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      task: ref(count - index),
+      signedOffAt: minutesAgo(index),
+    }))
+
+  test('is left out while nothing is signed off', () => {
+    expect(boardSummary(boardPropsSchema.parse(EXAMPLE))).not.toMatch(/^Done/m)
+  })
+
+  test('lists the signed-off tasks by id, before the sessions', () => {
+    const lines = boardSummary(
+      boardPropsSchema.parse({ ...EXAMPLE, signedOff: signedOff(3), signedOffTotal: 3 })
+    ).split('\n')
+    expect(lines.at(-2)).toBe('Done (3): T-003, T-002, T-001')
+    expect(lines.at(-1)).toMatch(/^Sessions: /)
+  })
+
+  test('mentions the history when more than 10 tasks are signed off', () => {
+    const lines = boardSummary(
+      boardPropsSchema.parse({ ...EXAMPLE, signedOff: signedOff(10), signedOffTotal: 38 })
+    ).split('\n')
+    expect(lines.at(-2)).toBe(
+      'Done (38): T-010, T-009, T-008, T-007, T-006, T-005, T-004, T-003, T-002, T-001, and 28 more; show_history lists every completed task'
     )
   })
 })
