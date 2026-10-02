@@ -1,0 +1,28 @@
+id: UIS-20
+title: "The blocked card in Your turn, and blocked workers in Sessions"
+area: UIS
+phase: "2"
+summary: >
+  Show a blocked step as a third kind of Your turn card: a Blocked tag, the worker, the step, the full
+  reason, how long it has been blocked and where to unblock it, with no buttons. The worker's Sessions
+  card says what it is blocked on, and a poll that brings a block is announced.
+requirements:
+  - "YourTurnCard gains a blocked kind: a Tag 'Blocked', the worker's name, 'Step 2 · Deploy', the reason in full (wrapping, never truncated), 'Blocked 14m' ticking each minute, and the line 'Unblock it in api-server’s session'; no buttons and no Park"
+  - "The card keeps Your turn's inverse band styling and passes contrast on it; the Tag variant used must pass on inverse (the outline Tag does not)"
+  - "SessionCard shows 'Blocked on T-012 step 2' for a session holding a blocked step, with the attention StatusSquare"
+  - "BoardView's arrival announcement says 'T-012 is blocked in api-server' for a task that arrives in Your turn blocked"
+  - "New strings follow the content rules; the strings test passes"
+acceptance_criteria:
+  - "ui suite: the blocked card shows every part listed and has no button; a long reason wraps within 600 px"
+  - "ui suite: the Sessions card wording and the announcement for a blocked arrival"
+  - "Stories: a blocked card, a board with a question, your step and a block together; every story passes the axe check, with color contrast on, at 735 and 600 px"
+  - "Manual desktop check: a worker blocks a step; the board shows it within 5 s; after unblocking in the worker's session the card leaves Your turn"
+depends_on:
+  - "UIS-09"
+  - "MCP-19"
+external_dependencies: []
+docs:
+  - "12-blocked-steps.md#board"
+  - "07-ui-port.md#what-is-new"
+  - "anachoic:ui/16-accessibility.md#live-regions"
+  - "anachoic:ui/17-content-rules.md#rules"

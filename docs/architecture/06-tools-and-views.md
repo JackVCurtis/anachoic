@@ -2,7 +2,7 @@
 
 ## Kinds of tool
 
-[11](11-assignment-and-outputs.md) adds `wait_for_work`, assignment on the tools that add tasks, output formats on steps, and an artifact URL on `complete_my_step`. Its tables extend the ones below.
+[11](11-assignment-and-outputs.md) adds `wait_for_work`, assignment on the tools that add tasks, output formats on steps, and an artifact URL on `complete_my_step`. Its tables extend the ones below. [12](12-blocked-steps.md#tools) adds `block_step` and `unblock_step`.
 
 | Kind | Visible to | Declared with | Used by |
 |---|---|---|---|

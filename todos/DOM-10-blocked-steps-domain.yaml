@@ -1,0 +1,30 @@
+id: DOM-10
+title: "Blocked steps in the domain and store - block, unblock and their refusals"
+area: DOM
+phase: "2"
+summary: >
+  Let the claiming session block a running agent step with a reason, and unblock it later. A blocked
+  step is waiting, so its task is in Your turn; it carries blockedReason and blockedAt, which release,
+  park and archive clear. Completing, asking or noting a blocked step is refused until it is unblocked.
+requirements:
+  - "A new migration (store/migrations/005_blocked_steps.sql) adds steps.blocked_reason and steps.blocked_at, both nullable, and the event kinds blocked and unblocked"
+  - "Block: by the claiming session only, running to waiting, sets blocked_reason and blocked_at, records a blocked event with the reason; refused with wrong_status and 'Step 2 of T-012 is not running' otherwise, and with not_yours for another session"
+  - "Unblock: by the claiming session only, a blocked step goes from waiting to running, clears both fields and records an unblocked event with the optional note; refused with 'Step 2 of T-012 is not blocked' otherwise"
+  - "complete_step, ask_you and update_step on a blocked step are refused with wrong_status and 'Step 2 of T-012 is blocked. Call unblock_step first.'"
+  - "Release, park and archive clear blocked_reason and blocked_at"
+  - "The two invariants from 12 are added to the invariant checker, and the generated and random-operation tests include block and unblock"
+  - "Derived facts: a blocked step's task is in Your turn and counts towards it; the session's holding reports it as blocked"
+  - "Time: the interval spent blocked counts as waitedSeconds, as for a question"
+acceptance_criteria:
+  - "Unit suite: every transition and refusal in 12, with codes and sentences, and rows and revision unchanged after a refusal"
+  - "Unit suite: the random-operations test reaches block, unblock and release of a blocked step, and the invariants hold after every operation"
+  - "Unit suite: listOf puts a blocked task in Your turn and counts include it"
+depends_on:
+  - "DOM-06"
+external_dependencies: []
+docs:
+  - "12-blocked-steps.md#domain"
+  - "12-blocked-steps.md#how-it-differs-from-a-question"
+  - "03-domain-model.md#the-step-state-machine"
+  - "03-domain-model.md#list-membership"
+  - "04-persistence.md#migrations"

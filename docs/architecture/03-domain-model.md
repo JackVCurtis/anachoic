@@ -83,7 +83,7 @@ Nothing adds a step to a chain except a follow-up, and a step's number never cha
 
 ## Invariants
 
-[11](11-assignment-and-outputs.md) adds two invariants: one for assignment and one for artifacts.
+[11](11-assignment-and-outputs.md) adds two invariants: one for assignment and one for artifacts. [12](12-blocked-steps.md#domain) adds two more, for blocked steps.
 
 These hold after every transaction for every task that is not archived. An archived task keeps the status it had, but is held only to invariant 8. A test checks them after every operation in the domain's test suite.
 

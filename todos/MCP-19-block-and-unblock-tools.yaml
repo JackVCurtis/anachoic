@@ -1,0 +1,29 @@
+id: MCP-19
+title: "block_step and unblock_step, with blocked steps in the props, texts and instructions"
+area: MCP
+phase: "2"
+summary: >
+  Expose blocking to workers: block_step with a reason and unblock_step with an optional note. Board
+  props mark blocked Your turn items with their reason and time, the texts name blocks, and the worker
+  instructions say when to block and that unblocking happens when the person comes to the session.
+requirements:
+  - "Register block_step (task, reason 1-2,000 characters) and unblock_step (task, note up to 500 characters) as model tools with the text results from 12; domain refusals come back as isError with their sentences"
+  - "shared/props.ts: Your turn items gain blocked {reason, since} or null; session holdings gain a blocked status; backward compatible"
+  - "The board summary shows a blocked item as in 12; claim_step and open_task texts mention a past block in the step's history"
+  - "server/instructions.ts: the worker rule for blocking and unblocking from 12, and tool descriptions for both tools; the dedicated instructions say a blocked card is unblocked in the worker's session, not by this chat"
+  - "Neither tool posts or triggers any message to the dedicated chat"
+acceptance_criteria:
+  - "Integration suite: a worker blocks a step; get_board shows it in Your turn with the reason; complete_step is refused until unblock_step; after unblock the step runs and leaves Your turn"
+  - "Integration suite: another session's block_step or unblock_step on the step is refused with not_yours"
+  - "Unit suite: board props and the summary for a blocked item, within the token budget"
+depends_on:
+  - "DOM-10"
+  - "MCP-17"
+  - "MCP-18"
+external_dependencies: []
+docs:
+  - "12-blocked-steps.md#tools"
+  - "12-blocked-steps.md#board"
+  - "06-tools-and-views.md#worker-tools"
+  - "06-tools-and-views.md#server-instructions"
+  - "06-tools-and-views.md#text-results"
