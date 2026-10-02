@@ -125,6 +125,21 @@ export const boardPropsSchema = z.object({
   counts: boardCountsSchema,
 })
 
+/**
+ * The task an action of yours changed, as it now stands: what the view
+ * cannot read from the board alone, such as a new task's id.
+ */
+export const actedSchema = z.object({
+  task: taskRefSchema,
+  status: z.enum(['backlog', 'queue', 'active', 'done']),
+  position: z.number().int().positive().nullable(),
+})
+
+/**
+ * What each of your actions returns: the fresh board, and the task acted on.
+ */
+export const actionResultSchema = boardPropsSchema.extend({ acted: actedSchema })
+
 export const unchangedSchema = z.object({
   changed: z.literal(false),
   revision: z.number().int().nonnegative(),
@@ -143,5 +158,7 @@ export type SignedOffItem = z.infer<typeof signedOffItemSchema>
 export type SessionItem = z.infer<typeof sessionItemSchema>
 export type BoardCounts = z.infer<typeof boardCountsSchema>
 export type BoardProps = z.infer<typeof boardPropsSchema>
+export type Acted = z.infer<typeof actedSchema>
+export type ActionResult = z.infer<typeof actionResultSchema>
 export type Unchanged = z.infer<typeof unchangedSchema>
 export type GetBoardResult = z.infer<typeof getBoardResultSchema>

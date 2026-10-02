@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { isRefusal } from '../../domain/refusal.js'
 import { YOU } from '../../domain/types.js'
 import { LIMITS } from '../../shared/limits.js'
-import { boardPropsSchema } from '../../shared/props.js'
+import { actionResultSchema, type ActionResult } from '../../shared/props.js'
 import {
   addFollowUp,
   addTask,
@@ -18,7 +18,7 @@ import {
   type Acted,
   type ServiceResult,
 } from '../../store/services.js'
-import { readBoardProps } from '../props/board.js'
+import { readBoardProps, taskRef } from '../props/board.js'
 import { guarded, refusalResult } from '../results.js'
 import { viewActionText } from '../text/view_actions.js'
 import type { ToolContext } from './context.js'
@@ -61,16 +61,21 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
         title,
         description: `${description} For the board view only.`,
         inputSchema: z.object(input),
-        outputSchema: boardPropsSchema,
+        outputSchema: actionResultSchema,
         _meta: { ui: { visibility: ['app'] } },
       },
       guarded(logger, name, (args: z.infer<z.ZodObject<Shape>>): CallToolResult => {
         const at = now()
         const result = act(args, at)
         if (isRefusal(result)) return refusalResult(result)
+        const { task } = result.value.state
+        const structured: ActionResult = {
+          ...readBoardProps(database, at),
+          acted: { task: taskRef(task), status: task.status, position: task.queuePosition },
+        }
         return {
           content: [{ type: 'text', text: text(result.value, args) }],
-          structuredContent: readBoardProps(database, at),
+          structuredContent: structured,
         }
       })
     )

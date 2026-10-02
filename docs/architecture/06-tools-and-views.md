@@ -172,6 +172,7 @@ After each successful action you take in the view, the view calls `sendMessage` 
 | Add a task | "I added T-015, “Add retries”, to the queue." or "…to the backlog." |
 | Reorder | "I moved T-015 to position 1 in the queue." |
 | Queue | "I queued T-015 at position 4." |
+| Queue, when the task's next step is yours, so it starts at once | "I queued T-015, and its next step is mine." |
 | Move to backlog | "I moved T-015 to the backlog." For an active task, "I parked T-015 and moved it to the backlog." |
 | Park your step or a question | "I parked T-012 and moved it to the backlog." |
 | Sign off | "I signed off T-006." |

@@ -125,6 +125,20 @@ export default configApp(
     rules: { 'no-restricted-properties': ['error', ...STDOUT_CONSOLE] },
   },
   {
+    name: 'Anachoic the view never calls updateModelContext',
+    files: VIEW_FILES,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "MemberExpression[property.name='updateModelContext']",
+          message:
+            'Desktop accepts updateModelContext but the model never sees it. Post a sentence with sendMessage (view/bridge/wake.ts).',
+        },
+      ],
+    },
+  },
+  {
     name: 'Anachoic lucide-react only in the Icon primitive',
     files: VIEW_FILES,
     rules: {

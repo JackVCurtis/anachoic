@@ -56,6 +56,11 @@ describe('lint refuses', () => {
       "import { start } from '../../../server/main.js'",
     ],
     ['console.log in server/', 'server/example.ts', "console.log('hello')"],
+    [
+      'updateModelContext in view/',
+      'view/bridge/example.ts',
+      "app.updateModelContext({ content: [{ type: 'text', text: 'hi' }] })",
+    ],
   ])('%s', async (_name, filePath, code) => {
     expect(await errors(filePath, code)).not.toEqual([])
   })

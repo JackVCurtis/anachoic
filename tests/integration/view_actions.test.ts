@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Client } from '@modelcontextprotocol/client'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { boardPropsSchema } from '../../shared/props.js'
+import { actionResultSchema } from '../../shared/props.js'
 import { connect, query, textOf } from './support/server.js'
 
 const VIEW_ACTIONS = [
@@ -72,7 +72,7 @@ async function act(name: string, args: Record<string, unknown>) {
   const text = textOf(result)
   expect(result.isError, text).toBeFalsy()
   expect(text).not.toContain('\n')
-  const props = boardPropsSchema.parse(result.structuredContent)
+  const props = actionResultSchema.parse(result.structuredContent)
   expect(props.revision).toBe(before + 1)
   const events = query<{ kind: string; session_id: string }>(
     dataDir,
@@ -127,6 +127,11 @@ test('each action performs its transition as you and returns the next board', as
   })
   expect(added.text).toBe('Added T-001 to the backlog')
   expect(added.kinds).toEqual(['added'])
+  expect(added.props.acted).toEqual({
+    task: { id: '1', displayId: 'T-001', title: 'Add retries' },
+    status: 'backlog',
+    position: null,
+  })
   expect(added.props.backlog.map((item) => item.task.displayId)).toEqual(['T-001'])
   expect(task(1)).toMatchObject({ status: 'backlog', created_by: 'you' })
 
@@ -139,6 +144,7 @@ test('each action performs its transition as you and returns the next board', as
 
   const reordered = await act('reorder_queue', { task: 'T-002', position: 1 })
   expect(reordered.kinds).toEqual(['reordered'])
+  expect(reordered.props.acted).toMatchObject({ status: 'queue', position: 1 })
   expect(reordered.props.queue.map(({ task: ref, position }) => [ref.displayId, position])).toEqual(
     [
       ['T-002', 1],
