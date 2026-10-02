@@ -14,7 +14,7 @@ export function registerJoinBoard(server: McpServer, context: ToolContext) {
     'join_board',
     {
       title: 'Join the board',
-      description: TOOL_DESCRIPTIONS.join_board,
+      description: TOOL_DESCRIPTIONS.worker.join_board,
       inputSchema: z.object({
         name: z.string().min(LIMITS.sessionName.min).max(LIMITS.sessionName.max).optional(),
         ...sessionInput,

@@ -10,7 +10,9 @@ import {
   resolveDataDirectory,
 } from './data_directory.js'
 import { createCallers, type Callers } from './callers.js'
+import { chooseTextsByClient } from './client_texts.js'
 import { hostVariableNames, kindOfClient } from './identity.js'
+import { INSTRUCTIONS } from './instructions.js'
 import { createLifecycle } from './lifecycle.js'
 import { createLogger, describeError } from './logger.js'
 import { registerBoardTools } from './tools/board.js'
@@ -31,12 +33,17 @@ type Shared = Omit<ToolContext, 'client'>
 
 function createServer(shared: Shared) {
   const { logger } = shared
-  const server = new McpServer({ name: 'anachoic', version: VERSION })
+  const server = new McpServer(
+    { name: 'anachoic', version: VERSION },
+    { instructions: INSTRUCTIONS.worker }
+  )
   const context: ToolContext = { ...shared, client: () => server.server.getClientVersion() }
   registerViews(server, VIEWS_DIRECTORY, logger)
-  registerBoardTools(server, context)
-  registerJoinBoard(server, context)
-  registerModelTools(server, context)
+  chooseTextsByClient(server, {
+    ...registerBoardTools(server, context),
+    join_board: registerJoinBoard(server, context),
+    ...registerModelTools(server, context),
+  })
   server.server.oninitialized = () => {
     const client = context.client()
     // Names only, never values: they show what each host passes to the server.

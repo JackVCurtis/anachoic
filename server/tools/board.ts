@@ -18,12 +18,12 @@ import { sessionInput } from './session_input.js'
 export function registerBoardTools(server: McpServer, context: ToolContext) {
   const board = () => readBoardProps(context.database, context.now())
 
-  registerAppTool(
+  const showBoard = registerAppTool(
     server,
     'show_board',
     {
       title: 'Show the board',
-      description: TOOL_DESCRIPTIONS.show_board,
+      description: TOOL_DESCRIPTIONS.worker.show_board,
       inputSchema: z.object({ ...sessionInput }),
       outputSchema: boardPropsSchema,
       _meta: { ui: { resourceUri: VIEWS.board } },
@@ -66,4 +66,6 @@ export function registerBoardTools(server: McpServer, context: ToolContext) {
       }
     })
   )
+
+  return { show_board: showBoard }
 }

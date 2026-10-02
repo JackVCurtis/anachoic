@@ -67,7 +67,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'add_task',
       {
         title: 'Add a task',
-        description: TOOL_DESCRIPTIONS.add_task,
+        description: TOOL_DESCRIPTIONS.worker.add_task,
         inputSchema: z.object({
           title: titleInput,
           steps: stepsInput,
@@ -86,7 +86,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'queue_task',
       {
         title: 'Queue a task',
-        description: TOOL_DESCRIPTIONS.queue_task,
+        description: TOOL_DESCRIPTIONS.worker.queue_task,
         inputSchema: z.object({ task: taskInput, ...sessionInput }),
       },
       asCaller(context, 'queue_task', ({ task }, caller) =>
@@ -98,7 +98,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'add_follow_up',
       {
         title: 'Add follow-up steps',
-        description: TOOL_DESCRIPTIONS.add_follow_up,
+        description: TOOL_DESCRIPTIONS.worker.add_follow_up,
         inputSchema: z.object({
           task: taskInput,
           steps: stepsInput,
@@ -117,7 +117,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'claim_step',
       {
         title: 'Claim a step',
-        description: TOOL_DESCRIPTIONS.claim_step,
+        description: TOOL_DESCRIPTIONS.worker.claim_step,
         inputSchema: z.object({ task: taskInput.optional(), ...sessionInput }),
       },
       asCaller(context, 'claim_step', ({ task }, caller) =>
@@ -129,7 +129,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'update_step',
       {
         title: 'Note progress on a step',
-        description: TOOL_DESCRIPTIONS.update_step,
+        description: TOOL_DESCRIPTIONS.worker.update_step,
         inputSchema: z.object({
           task: taskInput,
           note: noteInput,
@@ -148,7 +148,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'ask_you',
       {
         title: 'Ask the person a question',
-        description: TOOL_DESCRIPTIONS.ask_you,
+        description: TOOL_DESCRIPTIONS.worker.ask_you,
         inputSchema: z.object({ task: taskInput, question: questionInput, ...sessionInput }),
       },
       asCaller(context, 'ask_you', ({ task, question }, caller) =>
@@ -162,7 +162,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       'complete_step',
       {
         title: 'Complete a step',
-        description: TOOL_DESCRIPTIONS.complete_step,
+        description: TOOL_DESCRIPTIONS.worker.complete_step,
         inputSchema: z.object({
           task: taskInput,
           summary: summaryInput,
