@@ -55,3 +55,36 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* The actions take their own presses, never the card's */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  cursor: auto;
+}
+
+.fieldHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.label {
+  color: inherit;
+  opacity: var(--dim-2);
+}
+
+.note {
+  color: inherit;
+  opacity: var(--dim-3);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

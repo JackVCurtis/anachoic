@@ -56,7 +56,7 @@ function Harness({
         <InlineConfirm
           question={QUESTION}
           confirmLabel={yourTurn.park}
-          dismissLabel={yourTurn.keepTask}
+          dismissLabel={yourTurn.keepStep}
           layout={layout}
           busy={busy}
           onConfirm={() => {
@@ -88,7 +88,7 @@ function renderAlone(props: { busy?: boolean; layout?: InlineConfirmLayout } = {
     <InlineConfirm
       question={QUESTION}
       confirmLabel={yourTurn.park}
-      dismissLabel={yourTurn.keepTask}
+      dismissLabel={yourTurn.keepStep}
       onConfirm={onConfirm}
       onCancel={onCancel}
       {...props}
@@ -99,7 +99,7 @@ function renderAlone(props: { busy?: boolean; layout?: InlineConfirmLayout } = {
     onConfirm,
     onCancel,
     confirm: screen.getByRole('button', { name: yourTurn.park }),
-    dismiss: screen.getByRole('button', { name: yourTurn.keepTask }),
+    dismiss: screen.getByRole('button', { name: yourTurn.keepStep }),
   }
 }
 
@@ -127,7 +127,7 @@ describe('InlineConfirm', () => {
   describe.each([
     {
       how: 'the dismiss button',
-      press: () => userEvent.click(screen.getByText(yourTurn.keepTask)),
+      press: () => userEvent.click(screen.getByText(yourTurn.keepStep)),
     },
     { how: 'Enter on the dismiss button', press: () => userEvent.keyboard('{Enter}') },
     { how: 'Escape', press: () => userEvent.keyboard('{Escape}') },
@@ -137,7 +137,7 @@ describe('InlineConfirm', () => {
       renderComponent(<Harness onCancel={onCancel} />)
 
       await openQuestion()
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: yourTurn.keepTask }))
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: yourTurn.keepStep }))
       await inAct(press)
       expect(onCancel).toHaveBeenCalledOnce()
       expect(screen.queryByRole('group')).toBeNull()
@@ -204,7 +204,7 @@ describe('InlineConfirm', () => {
         <InlineConfirm
           question={QUESTION}
           confirmLabel={yourTurn.park}
-          dismissLabel={yourTurn.keepTask}
+          dismissLabel={yourTurn.keepStep}
           onConfirm={onConfirm}
           onCancel={() => {}}
         />
@@ -216,7 +216,7 @@ describe('InlineConfirm', () => {
         <InlineConfirm
           question={QUESTION}
           confirmLabel={yourTurn.park}
-          dismissLabel={yourTurn.keepTask}
+          dismissLabel={yourTurn.keepStep}
           busy
           onConfirm={onConfirm}
           onCancel={() => {}}
@@ -302,7 +302,7 @@ describe('InlineConfirm', () => {
         <InlineConfirm
           question={QUESTION}
           confirmLabel={yourTurn.park}
-          dismissLabel={yourTurn.keepTask}
+          dismissLabel={yourTurn.keepStep}
           layout="stack"
           onConfirm={() => {}}
           onCancel={() => {}}
@@ -311,7 +311,7 @@ describe('InlineConfirm', () => {
     )
     const question = screen.getByText(QUESTION)
     const confirm = screen.getByRole('button', { name: yourTurn.park })
-    const dismiss = screen.getByRole('button', { name: yourTurn.keepTask })
+    const dismiss = screen.getByRole('button', { name: yourTurn.keepStep })
     const frame = question.closest('[data-layout]') as HTMLElement
     const frameBox = frame.getBoundingClientRect()
     const questionBox = question.getBoundingClientRect()

@@ -13,6 +13,7 @@ import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
 import { useTaskEntry } from './use_task_entry'
+import { useYourTurnActions } from './use_your_turn_actions'
 
 export interface LoadedBoard {
   connection: HostConnection
@@ -72,6 +73,7 @@ function Board({ app, source }: LiveBoardProps) {
 
   const { messages, dismiss, reportFailure } = useBoardMessages(source)
   const taskEntry = useTaskEntry(yourActions, source, reportFailure)
+  const yourTurnActions = useYourTurnActions(yourActions, source, board, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
@@ -116,6 +118,7 @@ function Board({ app, source }: LiveBoardProps) {
       reordering={reordering}
       onQueueTask={(taskId) => void queueTask(taskId)}
       taskEntry={taskEntry}
+      {...yourTurnActions}
       messages={messages}
       onDismissMessage={dismiss}
     />

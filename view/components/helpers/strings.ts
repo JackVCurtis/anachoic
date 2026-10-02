@@ -72,9 +72,11 @@ export const yourTurn = {
   answerPlaceholder: 'Your answer to the agent',
   answer: 'Answer',
   needsAnswer: 'An answer needs some text',
+  answerReady: '{session} resumes with this',
+  answerReadyUnnamed: 'The session resumes with this',
   park: 'Park',
   parkQuestion: 'Park “{title}”? It moves to the backlog and its step is released.',
-  keepTask: 'Keep task',
+  keepStep: 'Keep step',
 } as const
 
 export const sessions = {

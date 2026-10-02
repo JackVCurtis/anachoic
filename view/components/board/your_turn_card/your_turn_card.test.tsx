@@ -1,12 +1,13 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import { YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
+import { yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
-import { YourTurnCard } from './your_turn_card'
+import { YourTurnCard, type YourTurnAction } from './your_turn_card'
 
 function renderCard(item: YourTurnTask) {
   const onOpenTask = vi.fn()
@@ -101,5 +102,158 @@ describe('YourTurnCard', () => {
     )
     await userEvent.hover(screen.getByRole('button', { name: YOUR_TURN.yourStep.task.title }))
     expect(getComputedStyle(card).backgroundColor).toBe(fill)
+  })
+})
+
+describe('YourTurnCard actions', () => {
+  function renderActions(item: YourTurnTask, busy: YourTurnAction | null = null) {
+    const callbacks = {
+      onOpenTask: vi.fn(),
+      onCompleteStep: vi.fn(),
+      onAnswer: vi.fn(),
+      onPark: vi.fn(),
+    }
+    const rendered = renderComponent(<YourTurnCard item={item} busy={busy} {...callbacks} />)
+    return { ...rendered, ...callbacks }
+  }
+
+  const button = (name: string) => screen.getByRole('button', { name })
+
+  test.each([
+    ['  Merged, with one nit  ', 'Merged, with one nit'],
+    ['   ', undefined],
+  ])('Mark done with the note "%s" reports %s', async (typed, note) => {
+    const { user, onCompleteStep, onOpenTask } = renderActions(YOUR_TURN.yourStep)
+
+    await user.type(screen.getByRole('textbox', { name: yourTurn.noteLabel }), typed)
+    await user.click(button(yourTurn.markDone))
+
+    expect(onCompleteStep).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.yourStep.task.id, note)
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('Answer is disabled while the answer is empty or spaces, and reports it trimmed', async () => {
+    const { user, onAnswer, onOpenTask } = renderActions(YOUR_TURN.question)
+    const field = screen.getByRole('textbox', { name: yourTurn.answerLabel })
+
+    expect(button(yourTurn.answer)).toBeDisabled()
+    expect(field).toHaveAccessibleDescription(yourTurn.needsAnswer)
+    await user.type(field, '   ')
+    expect(button(yourTurn.answer)).toBeDisabled()
+
+    await user.type(field, 'Redis{Enter}with a 5 m TTL  ')
+    expect(field).toHaveValue('   Redis\nwith a 5 m TTL  ')
+    expect(onAnswer).not.toHaveBeenCalled()
+    expect(field).toHaveAccessibleDescription('This chat resumes with this')
+
+    await user.click(button(yourTurn.answer))
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(
+      YOUR_TURN.question.task.id,
+      'Redis\nwith a 5 m TTL'
+    )
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('Park reports only after its confirmation, which does not open the task', async () => {
+    const { user, onPark, onOpenTask } = renderActions(YOUR_TURN.yourStep)
+
+    await user.click(button(yourTurn.park))
+    expect(onPark).not.toHaveBeenCalled()
+    expect(button(yourTurn.keepStep)).toHaveFocus()
+    expect(
+      screen.getByText(`Park “${YOUR_TURN.yourStep.task.title}”?`, { exact: false })
+    ).toBeVisible()
+
+    await user.click(button(yourTurn.park))
+    expect(onPark).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.yourStep.task.id)
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    [
+      'Keep step',
+      async (user: ReturnType<typeof renderComponent>['user']) => {
+        await user.click(screen.getByRole('button', { name: yourTurn.keepStep }))
+      },
+    ],
+    [
+      'Escape',
+      async (user: ReturnType<typeof renderComponent>['user']) => {
+        await user.keyboard('{Escape}')
+      },
+    ],
+  ])('%s reports nothing and returns focus to Park', async (_, dismiss) => {
+    const { user, onPark } = renderActions(YOUR_TURN.question)
+
+    await user.click(button(yourTurn.park))
+    await dismiss(user)
+
+    expect(onPark).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: yourTurn.keepStep })).toBeNull()
+    expect(button(yourTurn.park)).toHaveFocus()
+  })
+
+  test('an action absent from canAct has no button', () => {
+    renderActions({ ...YOUR_TURN.yourStep, canAct: { complete: false, park: true } })
+    expect(screen.queryByRole('button', { name: yourTurn.markDone })).toBeNull()
+    expect(screen.queryByRole('textbox')).toBeNull()
+    expect(button(yourTurn.park)).toBeEnabled()
+
+    cleanup()
+    renderActions({ ...YOUR_TURN.question, canAct: { answer: true, park: false } })
+    expect(screen.queryByRole('button', { name: yourTurn.park })).toBeNull()
+    expect(button(yourTurn.answer)).toBeDisabled()
+  })
+
+  test.each([
+    ['complete', YOUR_TURN.yourStep, yourTurn.markDone],
+    ['answer', YOUR_TURN.question, yourTurn.answer],
+  ] as const)(
+    'while %s is in flight its button is busy, the others disabled, the field editable',
+    (busy, item, label) => {
+      renderActions(item, busy)
+
+      expect(button(label)).toHaveAttribute('aria-busy', 'true')
+      expect(button(yourTurn.park)).toBeDisabled()
+      expect(screen.getByRole('textbox')).toBeEnabled()
+    }
+  )
+
+  test('while a park is in flight its confirmation is busy and the other button is disabled', async () => {
+    const onPark = vi.fn()
+    const { user, rerender } = renderComponent(
+      <YourTurnCard
+        item={YOUR_TURN.yourStep}
+        onOpenTask={vi.fn()}
+        onCompleteStep={vi.fn()}
+        onPark={onPark}
+      />
+    )
+    await user.click(button(yourTurn.park))
+    await user.click(button(yourTurn.park))
+    rerender(
+      <YourTurnCard
+        item={YOUR_TURN.yourStep}
+        onOpenTask={vi.fn()}
+        onCompleteStep={vi.fn()}
+        onPark={onPark}
+        busy="park"
+      />
+    )
+
+    expect(button(yourTurn.park)).toHaveAttribute('aria-busy', 'true')
+    expect(button(yourTurn.keepStep)).toBeDisabled()
+    expect(screen.queryByRole('button', { name: yourTurn.markDone })).toBeNull()
+  })
+
+  test('a draft is kept by step: a new step of the same task starts empty', async () => {
+    const { user, rerender } = renderComponent(
+      <YourTurnCard item={YOUR_TURN.question} onOpenTask={vi.fn()} onAnswer={vi.fn()} />
+    )
+    await user.type(screen.getByRole('textbox'), 'Redis')
+    const next = { ...YOUR_TURN.question, step: { ...YOUR_TURN.question.step, number: 3 } }
+    rerender(<YourTurnCard item={next} onOpenTask={vi.fn()} onAnswer={vi.fn()} />)
+
+    expect(screen.getByRole('textbox')).toHaveValue('')
   })
 })

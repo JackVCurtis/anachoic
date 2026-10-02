@@ -12,7 +12,7 @@ import { InlineConfirm, type InlineConfirmProps } from './inline_confirm'
 const PARK = {
   question: fillTemplate(yourTurn.parkQuestion, { title: YOUR_TURN.yourStep.task.title }),
   confirmLabel: yourTurn.park,
-  dismissLabel: yourTurn.keepTask,
+  dismissLabel: yourTurn.keepStep,
 }
 
 const ARCHIVE = {
@@ -81,7 +81,7 @@ export const Default: Story = {
   name: 'Park on a Your turn card, on one row',
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const dismiss = canvas.getByRole('button', { name: yourTurn.keepTask })
+    const dismiss = canvas.getByRole('button', { name: yourTurn.keepStep })
 
     await expect(dismiss).toHaveFocus()
     await userEvent.click(canvas.getByRole('button', { name: yourTurn.park }))

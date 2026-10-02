@@ -11,6 +11,7 @@ import { QueueSection } from '../queue_section/queue_section'
 import { SessionsSection } from '../sessions_section/sessions_section'
 import { TaskEntry, type TaskEntryProps } from '../task_entry/task_entry'
 import { WorkingSection } from '../working_section/working_section'
+import type { YourTurnCardProps, YourTurnPending } from '../your_turn_card/your_turn_card'
 import { YourTurnSection } from '../your_turn_section/your_turn_section'
 import styles from './board_view.module.css'
 
@@ -42,6 +43,15 @@ export interface BoardViewAnnouncement {
   announcement?: BoardAnnouncement | null
 }
 
+/** Your actions on the Your turn cards. Without one, no card offers it. */
+export interface BoardViewYourTurn extends Pick<
+  YourTurnCardProps,
+  'onCompleteStep' | 'onAnswer' | 'onPark'
+> {
+  /** The Your turn action in flight, if any. */
+  yourTurnPending?: YourTurnPending | null
+}
+
 export interface BoardViewMessages {
   /** What went wrong with your last actions: none, or one of each kind. */
   messages?: readonly FlashMessageData[]
@@ -51,7 +61,8 @@ export interface BoardViewMessages {
 export type BoardViewProps = BoardData &
   BoardViewActions &
   BoardViewAnnouncement &
-  BoardViewMessages
+  BoardViewMessages &
+  BoardViewYourTurn
 
 function ignore() {}
 
@@ -96,6 +107,10 @@ export function BoardView({
   announcement = null,
   messages = [],
   onDismissMessage = ignore,
+  onCompleteStep,
+  onAnswer,
+  onPark,
+  yourTurnPending = null,
 }: BoardViewProps) {
   const heading = useRef<HTMLHeadingElement>(null)
 
@@ -109,7 +124,14 @@ export function BoardView({
         <FlashMessages messages={messages} onDismiss={onDismissMessage} focusTarget={heading} />
       </section>
       <div className={styles.entry}>{taskEntry && <TaskEntry {...taskEntry} />}</div>
-      <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
+      <YourTurnSection
+        tasks={yourTurnTasks}
+        onOpenTask={onOpenTask}
+        onCompleteStep={onCompleteStep}
+        onAnswer={onAnswer}
+        onPark={onPark}
+        pending={yourTurnPending}
+      />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
       <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} />
       <QueueSection
