@@ -11,6 +11,7 @@ import { createYourActions } from '../../bridge/wake'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement } from '../../components/helpers/announcement'
 import { toBoardData } from './to_board_data'
+import { useTaskEntry } from './use_task_entry'
 
 export interface LoadedBoard {
   connection: HostConnection
@@ -69,6 +70,7 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
     return () => source.stop()
   }, [source])
 
+  const taskEntry = useTaskEntry(yourActions, source, onRefusal)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
@@ -89,6 +91,19 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
     }
   }
 
+  async function queueTask(taskId: string) {
+    const item = board.backlog.find((backlogged) => backlogged.task.id === taskId)
+    if (!item) {
+      return
+    }
+    const outcome = await yourActions.queueTask(item.task)
+    if (outcome.ok) {
+      source.replace(outcome.props)
+    } else if ('refusal' in outcome) {
+      onRefusal(outcome.refusal)
+    }
+  }
+
   return (
     <BoardView
       {...lists}
@@ -98,6 +113,8 @@ function Board({ app, source, onRefusal }: LiveBoardProps) {
       announcement={said}
       onReorder={(taskId, position) => void reorder(taskId, position)}
       reordering={reordering}
+      onQueueTask={(taskId) => void queueTask(taskId)}
+      taskEntry={taskEntry}
     />
   )
 }

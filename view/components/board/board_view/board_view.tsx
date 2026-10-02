@@ -7,6 +7,7 @@ import { BoardHeader } from '../board_header/board_header'
 import { DoneSection } from '../done_section/done_section'
 import { QueueSection } from '../queue_section/queue_section'
 import { SessionsSection } from '../sessions_section/sessions_section'
+import { TaskEntry, type TaskEntryProps } from '../task_entry/task_entry'
 import { WorkingSection } from '../working_section/working_section'
 import { YourTurnSection } from '../your_turn_section/your_turn_section'
 import styles from './board_view.module.css'
@@ -22,6 +23,8 @@ export interface BoardViewActions {
   reordering?: boolean
   /** The task open in the task panel, so its card shows as selected. */
   selectedTaskId?: string | null
+  /** Task entry, below the messages. Without it the board offers no "Add task". */
+  taskEntry?: TaskEntryProps
 }
 
 /**
@@ -78,6 +81,7 @@ export function BoardView({
   onReorder,
   reordering = false,
   selectedTaskId = null,
+  taskEntry,
   announcement = null,
 }: BoardViewProps) {
   return (
@@ -85,7 +89,7 @@ export function BoardView({
       <VisuallyHidden element="h1">{assistive.boardTitle}</VisuallyHidden>
       <BoardHeader counts={counts} updatedAt={updatedAt} unreachable={unreachable} />
       <section aria-label={assistive.landmarkMessages} className={styles.messages} />
-      <div className={styles.entry} />
+      <div className={styles.entry}>{taskEntry && <TaskEntry {...taskEntry} />}</div>
       <YourTurnSection tasks={yourTurnTasks} onOpenTask={onOpenTask} />
       <SessionsSection sessions={sessionList} onOpenTask={onOpenTask} />
       <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} />
