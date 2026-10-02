@@ -79,6 +79,7 @@ export default configApp(
       'docs/**',
       'dist/**',
       'mcpb/**',
+      'plugin/**',
       'storybook-static/**',
       'test-results/**',
     ],

@@ -15,6 +15,7 @@ import { announcement, type AnnouncementFact } from '../../components/helpers/an
 import { toBoardData } from './to_board_data'
 import { useBoardMessages } from './use_board_messages'
 import { useCardActions } from './use_card_actions'
+import { useRemoveSession } from './use_remove_session'
 import { useTaskEntry } from './use_task_entry'
 import { useYourTurnActions } from './use_your_turn_actions'
 
@@ -86,6 +87,7 @@ function Board({ app, source }: LiveBoardProps) {
   const taskEntry = useTaskEntry(yourActions, source, reportFailure, board.workers)
   const yourTurnActions = useYourTurnActions(yourActions, source, board, reportFailure)
   const cardActions = useCardActions(yourActions, source, board, reportFailure)
+  const removeSession = useRemoveSession(yourActions, source, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
 
@@ -140,6 +142,7 @@ function Board({ app, source }: LiveBoardProps) {
       taskEntry={taskEntry}
       {...yourTurnActions}
       {...cardActions}
+      {...removeSession}
       messages={messages}
       onDismissMessage={dismiss}
     />

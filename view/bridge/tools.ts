@@ -1,4 +1,4 @@
-import type { ActionResult, GetBoardResult, OutputFormat } from '../../shared/props'
+import type { ActionResult, BoardProps, GetBoardResult, OutputFormat } from '../../shared/props'
 import type { HostApp } from './connect'
 
 /**
@@ -94,6 +94,8 @@ export const actions = {
   ) => callAppTool<ActionResult>(app, 'add_follow_up_from_view', { task, ...input }),
   archiveTask: (app: App, task: TaskArg) =>
     callAppTool<ActionResult>(app, 'archive_task', { task }),
+  removeSession: (app: App, session: string) =>
+    callAppTool<BoardProps>(app, 'remove_session', { session }),
 }
 
 /**

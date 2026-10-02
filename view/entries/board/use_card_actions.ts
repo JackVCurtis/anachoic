@@ -14,8 +14,7 @@ type CardActionProps = Required<
 
 /**
  * The actions on the Queue, Backlog and Done cards: each calls its tool
- * through yourActions, which posts its sentence on success, and the board is
- * drawn from the result. While one is in flight its card shows it as pending.
+ * through yourActions, and the board is drawn from the result. While one is in flight its card shows it as pending.
  * A failure goes to onFailure, and a follow-up's draft stays in its composer.
  */
 export function useCardActions(
