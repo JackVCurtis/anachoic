@@ -203,6 +203,8 @@ describe('voice and punctuation', () => {
     'yourTurn.parkQuestion',
     'done.archiveQuestion',
     'sessions.removeQuestion',
+    'taskView.parkQuestion',
+    'taskView.archiveQuestion',
   ])
 
   test.each(ALL.filter(({ path }) => !FULL_SENTENCES.has(path) && !path.startsWith('assistive.')))(

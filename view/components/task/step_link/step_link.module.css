@@ -1,0 +1,16 @@
+/* A link is told from plain text by its underline and arrow, never by colour */
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.link:hover {
+  opacity: var(--dim-1);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}

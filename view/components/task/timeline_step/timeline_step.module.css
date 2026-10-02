@@ -1,0 +1,160 @@
+/* The rail column, then the step; the rail's line runs the full height of the row */
+.step {
+  display: grid;
+  grid-template-columns: var(--size-rail-column) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.marker {
+  flex: none;
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  margin-top: 6px;
+  border: var(--border-hairline) solid var(--color-accent-700);
+  background: var(--color-bg);
+}
+
+.line {
+  flex: 1 1 auto;
+  width: 1px;
+  min-height: 12px;
+  background: var(--color-divider);
+}
+
+.column {
+  min-width: 0;
+  padding-bottom: var(--space-6);
+}
+
+.block {
+  padding: var(--space-3) var(--space-4);
+}
+
+/* A step not yet reached is drawn quieter, in the muted text colour */
+.quiet {
+  color: var(--color-neutral-700);
+}
+
+.heading {
+  margin: 0;
+}
+
+.toggle {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 2px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.number {
+  opacity: var(--dim-3);
+}
+
+.status {
+  margin-left: auto;
+  opacity: var(--dim-1);
+}
+
+.title {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  margin-top: var(--space-3);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  opacity: var(--dim-2);
+}
+
+.value {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Questions, answers and summaries keep the lines they were written with */
+.text {
+  white-space: pre-wrap;
+}
+
+.dim,
+.unblock {
+  opacity: var(--dim-3);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-rows);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+[data-appearance='done'] .marker {
+  border-color: var(--color-accent-700);
+  background: var(--color-accent);
+}
+
+[data-appearance='done'] .line {
+  background: var(--color-accent-700);
+}
+
+[data-appearance='current-agent-running'] .marker,
+[data-appearance='current-agent-pending'] .marker {
+  background: var(--color-accent-300);
+}
+
+[data-appearance='current-waiting'] .marker,
+[data-appearance='current-you-pending'] .marker {
+  background: var(--color-accent-900);
+}
+
+[data-appearance='pending'] .marker {
+  border-color: var(--color-neutral-400);
+  background: var(--color-bg);
+}
