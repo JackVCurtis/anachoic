@@ -13,15 +13,6 @@ import {
   type ButtonVariant,
 } from './button'
 
-/*
- * White text on the accent fill is 3.71:1, below 4.5:1 by design (ui/16,
- * "Built as designed"). Stories that show the primary button turn only that
- * rule off; the fix is one token, not this component.
- */
-const ACCENT_FILL_CONTRAST = {
-  a11y: { config: { rules: [{ id: 'color-contrast', enabled: false }] } },
-}
-
 const LONG_LABEL = LONG_TEXT.title
 
 function Row({ children }: { children: ReactNode }) {
@@ -88,12 +79,10 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   name: 'Primary, medium',
-  parameters: ACCENT_FILL_CONTRAST,
 }
 
 export const PrimarySmall: Story = {
   name: 'Primary, small',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { size: 'sm', children: 'Add task' },
 }
 
@@ -212,7 +201,6 @@ export const Stretch: Story = {
 
 export const Submit: Story = {
   name: 'Submit type, inside a form',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { type: 'submit', children: 'Add task', size: 'sm' },
   render: (args) => (
     <form onSubmit={(event) => event.preventDefault()}>
@@ -223,7 +211,6 @@ export const Submit: Story = {
 
 export const Disabled: Story = {
   name: 'Disabled',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { disabled: true, children: 'Sign off' },
   play: async ({ args, canvasElement }) => {
     const button = within(canvasElement).getByRole('button', { name: 'Sign off' })
@@ -237,7 +224,6 @@ export const Disabled: Story = {
 
 export const Busy: Story = {
   name: 'Busy, keeping its label',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { busy: true, children: 'Sign off' },
   play: async ({ args, canvasElement }) => {
     const button = within(canvasElement).getByRole('button', { name: 'Sign off' })
@@ -275,7 +261,6 @@ export const DisabledInverse: Story = {
 
 export const LongLabel: Story = {
   name: 'Long label, primary, in a narrow parent',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { children: LONG_LABEL },
   decorators: [
     (Story) => (
@@ -315,7 +300,6 @@ export const LongLabelInverse: Story = {
 
 export const EveryLightLook: Story = {
   name: 'Every light variant at every size, enabled and disabled',
-  parameters: ACCENT_FILL_CONTRAST,
   render: () => <EveryLook surface="light" />,
 }
 
@@ -326,7 +310,6 @@ export const EveryInverseLook: Story = {
 
 export const Narrow: Story = {
   name: 'Every light variant at the narrow width',
-  parameters: ACCENT_FILL_CONTRAST,
   render: () => (
     <ViewFrame width="narrow">
       <EveryLook surface="light" />
@@ -345,7 +328,6 @@ export const NarrowInverse: Story = {
 
 export const NarrowLongLabel: Story = {
   name: 'Long label at the narrow width',
-  parameters: ACCENT_FILL_CONTRAST,
   args: { children: LONG_LABEL },
   decorators: [
     (Story) => (

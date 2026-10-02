@@ -13,16 +13,6 @@ const meta = {
     updatedAt: null,
     unreachable: false,
   },
-  parameters: {
-    a11y: {
-      /*
-       * The labels and the updated cue show --color-text-subtle, which is
-       * below 4.5:1 by design (ui/16, "Built as designed"). The contrast of
-       * the text roles belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>

@@ -10,6 +10,15 @@ import condensed600 from '@fontsource/barlow-condensed/files/barlow-condensed-la
 type Declarations = Map<string, string>
 
 /**
+ * The text roles the classes name through tone tokens, so a label on the
+ * inverted field takes the field's colours (07, theme).
+ */
+const TONED: Record<string, string> = {
+  '--color-text': '--tone-fg',
+  '--color-text-subtle': '--tone-fg-subtle',
+}
+
+/**
  * The tables of anachoic ui/04-typography-and-fonts.md, "The named scale",
  * at fd99e0d, which this repo does not carry. Only the headings and table rows
  * are kept.
@@ -172,7 +181,7 @@ function expectedDeclarations({ section, cells }: StyleRow) {
   if (tracking !== undefined) expected.set('letter-spacing', tracking)
 
   const color = cells.get('Usual color')?.match(/^`(--[a-z-]+)`$/)?.[1]
-  expected.set('color', color ? `var(${color})` : undefined)
+  expected.set('color', color ? `var(${TONED[color] ?? color})` : undefined)
   expected.set('text-transform', section === 'Labels' ? 'uppercase' : undefined)
   return expected
 }
@@ -291,11 +300,11 @@ describe('Text styles', () => {
     }
   })
 
-  test('colors come from text role tokens only', () => {
+  test('colors come from text role or text tone tokens only', () => {
     for (const [name, declarations] of parseClasses(typography)) {
       const color = declarations.get('color')
       if (color === undefined) continue
-      expect(color, `.${name}`).toMatch(/^var\(--color-text(-[a-z-]+)?\)$/)
+      expect(color, `.${name}`).toMatch(/^var\(--(?:color-text|tone-fg)(-[a-z-]+)?\)$/)
     }
   })
 

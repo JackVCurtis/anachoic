@@ -88,16 +88,6 @@ function TypeScale() {
 
 export default {
   title: 'Foundations/Typography',
-  parameters: {
-    a11y: {
-      /*
-       * The labels show --color-text-subtle, which is below 4.5:1 by design
-       * (ui/16, "Built as designed"). The contrast of the text roles belongs
-       * to the tokens, not to this scale, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
 }
 
 export const NamedScale = {

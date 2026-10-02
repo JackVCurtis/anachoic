@@ -9,8 +9,7 @@
   padding: var(--space-3) var(--space-4);
 }
 
-/* The text roles name light colors, so the header's title and count take the tone's */
-.inverseHeader h2,
+/* On the inverse band the count is as strong as the title */
 .inverseHeader span {
   color: var(--tone-fg);
 }

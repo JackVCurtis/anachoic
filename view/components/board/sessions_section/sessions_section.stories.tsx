@@ -20,17 +20,6 @@ const meta = {
     onOpenTask: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The count, the state labels and the released ids show
-       * --color-text-subtle, below 4.5:1 by design (ui/16, "Built as
-       * designed"). The contrast of the text roles belongs to the tokens, so
-       * only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>

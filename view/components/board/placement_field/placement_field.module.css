@@ -51,7 +51,7 @@
 }
 
 .input:checked + .label {
-  background-color: var(--color-accent);
+  background-color: var(--color-accent-700);
   color: var(--color-text-on-fill);
 }
 

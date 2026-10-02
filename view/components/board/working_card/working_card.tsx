@@ -13,6 +13,7 @@ import { assignmentFact } from '../assignment'
 import type { WorkingTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './working_card.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface WorkingCardProps {
   item: WorkingTask
@@ -60,7 +61,9 @@ export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) 
         )}
       </span>
       <p className={styles.stepLine}>
-        {joinFacts([stepCounter(step.number, stepCount(steps, step.number), 'long'), step.title])}
+        <SymbolText>
+          {joinFacts([stepCounter(step.number, stepCount(steps, step.number), 'long'), step.title])}
+        </SymbolText>
       </p>
       {step.outputFormat && (
         <p className={joinClasses('text-hint', styles.produces)}>

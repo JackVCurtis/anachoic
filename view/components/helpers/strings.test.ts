@@ -213,6 +213,23 @@ describe('voice and punctuation', () => {
       expect(value.endsWith('.')).toBe(false)
     }
   )
+
+  test.each(ALL.filter(({ path }) => !FULL_SENTENCES.has(path) && !path.startsWith('assistive.')))(
+    '$path has no full stop between sentences',
+    ({ value }) => {
+      expect(value).not.toMatch(/\.\s/)
+    }
+  )
+
+  /**
+   * "Cancel" closes something: the task entry and the follow-up composer.
+   */
+  const CLOSES = new Set(['taskEntry.cancel', 'done.cancel'])
+
+  test('"Cancel" is only the label of a button that closes something', () => {
+    const cancels = ALL.filter(({ value }) => /^cancel\b/i.test(value)).map(({ path }) => path)
+    expect(new Set(cancels)).toEqual(CLOSES)
+  })
 })
 
 describe('symbols', () => {

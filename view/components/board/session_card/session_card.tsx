@@ -12,6 +12,7 @@ import { StatusSquare, type StatusSquareState } from '../../primitives/status_sq
 import { Tag } from '../../primitives/tag/tag'
 import type { BoardSession } from '../board_data'
 import styles from './session_card.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface SessionCardProps {
   session: BoardSession
@@ -145,10 +146,12 @@ function HoldingCard({ session, holding, onOpenTask, remove }: HoldingCardProps)
       titleClassName={joinClasses('text-title-3', styles.title)}
     >
       <p className={styles.stepLine}>
-        {fillTemplate(sessions.holdingStep, {
-          'n': holding.step.number,
-          'step title': holding.step.title,
-        })}
+        <SymbolText>
+          {fillTemplate(sessions.holdingStep, {
+            'n': holding.step.number,
+            'step title': holding.step.title,
+          })}
+        </SymbolText>
       </p>
       {remove}
     </ActionCard>

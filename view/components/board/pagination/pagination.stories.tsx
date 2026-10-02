@@ -32,16 +32,6 @@ const meta = {
     busy: false,
     onPageChange: fn(),
   },
-  parameters: {
-    a11y: {
-      /*
-       * The page label shows --color-text-subtle in text-status, below 4.5:1
-       * at its size by design (ui/16, "Built as designed"). The contrast of the
-       * text roles belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story) => (
       <div style={{ maxWidth: 1040, padding: 'var(--space-4)' }}>

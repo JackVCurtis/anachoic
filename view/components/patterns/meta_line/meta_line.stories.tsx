@@ -13,15 +13,6 @@ const QUEUE_FACTS = ['3 steps', '1 for the user']
 /** A Done card's facts. */
 const DONE_FACTS = ['3 steps', 'Finished 08:05', '3 links']
 
-/*
- * The meta tone shows --color-text-meta, which is below 4.5:1 by design
- * (ui/16, "Built as designed"). The contrast of the text roles belongs to the
- * tokens, so only that rule is off, and only for the meta tone.
- */
-const META_TONE = {
-  a11y: { config: { rules: [{ id: 'color-contrast', enabled: false }] } },
-}
-
 const meta = {
   title: 'Patterns/MetaLine',
   component: MetaLine,
@@ -41,7 +32,6 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   name: 'Meta, a Working card',
-  parameters: META_TONE,
   play: async ({ canvasElement }) => {
     const step = within(canvasElement).getByText('Step 2/3')
     await expect(step.parentElement?.textContent).toBe('Step 2/3 · This chat · 14m 03s')
@@ -51,13 +41,11 @@ export const Default: Story = {
 
 export const Queue: Story = {
   name: 'Meta, a Queue card',
-  parameters: META_TONE,
   args: { facts: QUEUE_FACTS },
 }
 
 export const LongSessionName: Story = {
   name: 'Meta, a session name of 40 characters',
-  parameters: META_TONE,
   args: { facts: ['Step 2/3', LONG_TEXT.name, '14m 03s'] },
 }
 

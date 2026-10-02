@@ -3,7 +3,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--gap-stack);
   margin: 0;
   padding: var(--space-2) calc(var(--space-3) * 1.2);
   border: var(--border-hairline) solid transparent;
@@ -53,17 +53,17 @@
 /* Variants. Hover and pressed skip a button that is disabled or busy. */
 
 .primary {
-  border-color: var(--color-accent);
-  background-color: var(--color-accent);
+  border-color: var(--color-accent-700);
+  background-color: var(--color-accent-700);
   color: var(--color-text-on-fill);
 }
 
 .primary:enabled:not([aria-disabled='true']):hover {
-  background-color: var(--color-accent-600);
+  background-color: var(--color-accent-800);
 }
 
 .primary:enabled:not([aria-disabled='true']):active {
-  background-color: var(--color-accent-700);
+  background-color: var(--color-accent-900);
 }
 
 .secondary {

@@ -3,6 +3,7 @@ import type { ReactNode, Ref } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
 import { Rule } from '../../primitives/rule/rule'
 import styles from './section_header.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
 
@@ -148,7 +149,7 @@ function HeaderRow({
                 noteAccent ? styles.noteAccent : styles.subtle
               )}
             >
-              {note}
+              <SymbolText>{note}</SymbolText>
             </span>
           )}
           {trailing}

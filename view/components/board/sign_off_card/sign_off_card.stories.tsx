@@ -8,6 +8,7 @@ import { assistive, done } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { FollowUpComposer } from '../follow_up_composer/follow_up_composer'
 import { SignOffCard } from './sign_off_card'
+import { fullText, spoken } from '../../testing/text'
 
 const ACTIONS = { onSignOff: fn(), onStartFollowUp: fn(), onArchive: fn() }
 
@@ -33,17 +34,6 @@ const meta = {
     onOpenTask: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The task id shows --color-text-subtle and the stats line
-       * --color-text-muted, below 4.5:1 by design (ui/16, "Built as
-       * designed"). The contrast of the text roles belongs to the tokens, so
-       * only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -72,7 +62,7 @@ export const NoLinks: Story = {
   name: 'No links, finished yesterday',
   args: { task: DONE.noLinks },
   play: async ({ canvasElement }) => {
-    await expect(canvasElement).toHaveTextContent('agent 5m · user — · 0 links')
+    await expect(canvasElement).toHaveTextContent(`agent 5m · user —${assistive.none} · 0 links`)
   },
 }
 
@@ -128,7 +118,7 @@ export const FrontChosen: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('radio', { name: done.placementFirst })).toBeChecked()
-    await expect(canvas.getByText(done.followUpReady)).toBeVisible()
+    await expect(canvas.getByText(fullText(done.followUpReady))).toBeVisible()
   },
 }
 
@@ -201,7 +191,7 @@ export const WithArtifacts: Story = {
   play: async ({ args, canvasElement }) => {
     const [first] = OUTPUTS.finished.artifacts
     const link = within(canvasElement).getByRole('link', {
-      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+      name: `${spoken(artifactLinkLabel(first.format, first.stepNumber))} ${assistive.opensInBrowser}`,
     })
     await expect(link).toHaveAttribute('title', first.url)
     await userEvent.click(link)

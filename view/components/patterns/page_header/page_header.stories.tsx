@@ -11,16 +11,6 @@ const meta = {
     title: 'Write the release notes for the billing webhooks',
     summary: 'Step 2/3 · This chat',
   },
-  parameters: {
-    a11y: {
-      /*
-       * The summary shows --color-text-faint, which is below 4.5:1 by design
-       * (ui/16, "Built as designed"). The contrast of the text roles belongs to
-       * the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
 } satisfies Meta<typeof PageHeader>
 
 export default meta

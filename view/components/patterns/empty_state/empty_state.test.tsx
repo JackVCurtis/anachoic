@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import { EmptyState } from './empty_state'
+import { fullText } from '../../testing/text'
 
 function boxOf(message: string): HTMLElement {
   return screen.getByText(message).parentElement as HTMLElement
@@ -42,7 +43,7 @@ describe('EmptyState', () => {
   test('the message is shown as given; the uppercase comes from CSS', () => {
     renderComponent(<EmptyState variant="framed" message="No chain yet · describe it in chat" />)
 
-    expect(screen.getByText('No chain yet · describe it in chat').textContent).toBe(
+    expect(screen.getByText(fullText('No chain yet · describe it in chat')).textContent).toBe(
       'No chain yet · describe it in chat'
     )
   })

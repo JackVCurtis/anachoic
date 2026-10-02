@@ -7,6 +7,7 @@ import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { WorkingTask } from '../board_data'
 import { WorkingCard } from './working_card'
+import { fullText } from '../../testing/text'
 
 function renderCard(item: WorkingTask) {
   const onOpenTask = vi.fn()
@@ -36,7 +37,7 @@ describe('WorkingCard', () => {
   test('the step line reads "Step 2 of 4 · …" for a four-step chain on step 2', () => {
     renderCard(WORKING.fourSteps)
 
-    expect(screen.getByText('Step 2 of 4 · Draft the migration')).toBeVisible()
+    expect(screen.getByText(fullText('Step 2 of 4 · Draft the migration'))).toBeVisible()
     expect(screen.getByText('billing')).toBeVisible()
     expect(screen.getByText('T-031')).toBeVisible()
   })

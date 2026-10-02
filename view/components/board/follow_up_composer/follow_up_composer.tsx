@@ -8,6 +8,7 @@ import { Frame } from '../../primitives/frame/frame'
 import { ChainComposer } from '../chain_composer/chain_composer'
 import { PlacementField } from '../placement_field/placement_field'
 import styles from './follow_up_composer.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface FollowUpComposerProps {
   draft: FollowUpDraft
@@ -93,7 +94,7 @@ export function FollowUpComposer({
             {done.cancel}
           </Button>
           <p id={noteId} aria-live="polite" className={joinClasses('text-hint', styles.note)}>
-            {followUpNote(draft)}
+            <SymbolText>{followUpNote(draft)}</SymbolText>
           </p>
         </div>
       </form>

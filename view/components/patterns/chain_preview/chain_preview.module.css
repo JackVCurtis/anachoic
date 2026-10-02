@@ -11,12 +11,12 @@
 .framed {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gap-stack);
   padding: var(--space-3);
 }
 
 .rows {
-  gap: 6px;
+  gap: var(--gap-stack);
 }
 
 .bare {
@@ -34,7 +34,7 @@
   flex: none;
   font-family: var(--font-mono);
   font-size: 10.5px;
-  color: var(--color-text-subtle);
+  color: var(--tone-fg-subtle);
 }
 
 .title {

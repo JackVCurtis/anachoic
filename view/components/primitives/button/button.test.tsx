@@ -90,10 +90,10 @@ const LOOKS: Array<{
 }> = [
   {
     variant: 'primary',
-    fill: '--color-accent',
-    border: '--color-accent',
+    fill: '--color-accent-700',
+    border: '--color-accent-700',
     text: '--color-text-on-fill',
-    hover: '--color-accent-600',
+    hover: '--color-accent-800',
   },
   {
     variant: 'secondary',

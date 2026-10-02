@@ -9,6 +9,7 @@ import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden
 import { resolvedColor } from '../../testing/resolved_color'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { QueueCard } from './queue_card'
+import { spoken } from '../../testing/text'
 
 const INSTRUCTIONS_ID = 'move-instructions'
 
@@ -31,16 +32,6 @@ const meta = {
     onDrop: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The meta line shows --color-text-meta, which is below 4.5:1 by design
-       * (ui/16, "Built as designed"). The contrast of the text roles belongs
-       * to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -192,7 +183,7 @@ export const WithArtifacts: Story = {
   play: async ({ args, canvasElement }) => {
     const [first] = OUTPUTS.queued.artifacts
     const link = within(canvasElement).getByRole('link', {
-      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+      name: `${spoken(artifactLinkLabel(first.format, first.stepNumber))} ${assistive.opensInBrowser}`,
     })
     await expect(link).toHaveAttribute('title', first.url)
     await userEvent.click(link)

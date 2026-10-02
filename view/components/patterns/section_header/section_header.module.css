@@ -31,11 +31,11 @@
 }
 
 .subtle {
-  color: var(--color-text-subtle);
+  color: var(--tone-fg-subtle);
 }
 
 .noteAccent {
-  color: var(--color-text-accent);
+  color: var(--tone-fg-accent);
 }
 
 /* Without a rule to fill the row, the auto margin pushes the trailing items to its end */

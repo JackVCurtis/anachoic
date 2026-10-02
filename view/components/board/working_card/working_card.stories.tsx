@@ -5,6 +5,7 @@ import { artifactLinkLabel } from '../../helpers/output_format'
 import { assistive } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { WorkingCard } from './working_card'
+import { spoken } from '../../testing/text'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
@@ -21,16 +22,6 @@ const meta = {
     onOpenTask: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The elapsed time, the task id and the dimmed note are below 4.5:1 by
-       * design (ui/16, "Built as designed"). The contrast of the text roles
-       * belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -113,7 +104,7 @@ export const WithArtifacts: Story = {
     await expect(within(canvasElement).getByText('Produces a document')).toBeVisible()
     const [first] = OUTPUTS.working.artifacts
     const link = within(canvasElement).getByRole('link', {
-      name: `${artifactLinkLabel(first.format, first.stepNumber)} ${assistive.opensInBrowser}`,
+      name: `${spoken(artifactLinkLabel(first.format, first.stepNumber))} ${assistive.opensInBrowser}`,
     })
     await expect(link).toHaveAttribute('title', first.url)
     await userEvent.click(link)

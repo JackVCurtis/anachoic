@@ -29,7 +29,7 @@
 
 .time {
   text-align: right;
-  opacity: var(--dim-4);
+  color: var(--tone-fg-subtle);
 }
 
 .what {

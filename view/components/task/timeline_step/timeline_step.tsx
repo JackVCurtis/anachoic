@@ -12,6 +12,7 @@ import { Frame } from '../../primitives/frame/frame'
 import { StepLink } from '../step_link/step_link'
 import type { TimelineStepData } from '../task_data'
 import styles from './timeline_step.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface TimelineStepProps {
   step: TimelineStepData
@@ -89,7 +90,7 @@ export function TimelineStep({ step, isCurrent, open, onToggle, onOpenLink }: Ti
                     sessionName={step.sessionName}
                   />
                   <span className={joinClasses('text-status', 'text-tabular', styles.status)}>
-                    {statusLabel(step, now)}
+                    <SymbolText>{statusLabel(step, now)}</SymbolText>
                   </span>
                 </span>
                 <span className={joinClasses('text-title-2', styles.title)}>{step.title}</span>

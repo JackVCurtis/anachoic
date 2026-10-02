@@ -4,6 +4,7 @@ import { ARTIFACT_ARROW } from '../../helpers/output_format'
 import { assistive } from '../../helpers/strings'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import styles from './step_link.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface StepLinkProps {
   url: string
@@ -39,7 +40,7 @@ export function StepLink({ url, label, onOpenLink, className }: StepLinkProps) {
       onAuxClick={(event) => event.preventDefault()}
       className={joinClasses(styles.link, className)}
     >
-      {label}
+      <SymbolText>{label}</SymbolText>
       <span aria-hidden="true">{` ${ARTIFACT_ARROW}`}</span>
       <VisuallyHidden>{` ${assistive.opensInNewTab}`}</VisuallyHidden>
     </a>

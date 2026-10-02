@@ -48,12 +48,12 @@
   --shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
 
-  /* Text color roles; subtle, faint, meta and column are below 4.5:1 on the ground by design */
+  /* Text color roles; every secondary role is neutral-700, at least 4.5:1 on the ground and the surface */
   --color-text-muted: var(--color-neutral-700);
-  --color-text-subtle: var(--color-neutral-600);
-  --color-text-faint: color-mix(in srgb, var(--color-text) 55%, transparent);
-  --color-text-meta: color-mix(in srgb, var(--color-text) 50%, transparent);
-  --color-text-column: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --color-text-subtle: var(--color-neutral-700);
+  --color-text-faint: var(--color-neutral-700);
+  --color-text-meta: var(--color-neutral-700);
+  --color-text-column: var(--color-neutral-700);
   --color-text-accent: var(--color-accent-700);
   --color-text-on-fill: var(--color-bg);
   --color-text-on-tint: var(--color-accent-800);
@@ -73,6 +73,7 @@
   /* Inverted surface values */
   --inverse-bg: var(--color-accent-900);
   --inverse-fg: var(--color-bg);
+  --inverse-fg-subtle: rgba(242, 242, 243, 0.75);
   --inverse-rule: rgba(255, 255, 255, 0.28);
   --inverse-border-quiet: rgba(255, 255, 255, 0.4);
   --inverse-border: rgba(255, 255, 255, 0.45);
@@ -86,6 +87,8 @@
   /* Tone tokens, light values; [data-tone='inverse'] re-points them */
   --tone-bg: transparent;
   --tone-fg: var(--color-text);
+  --tone-fg-subtle: var(--color-text-subtle);
+  --tone-fg-accent: var(--color-text-accent);
   --tone-border: var(--color-divider);
   --tone-rule: var(--color-divider);
   --tone-well-bg: var(--color-surface);
@@ -157,6 +160,8 @@
 [data-tone='inverse'] {
   --tone-bg: var(--inverse-bg);
   --tone-fg: var(--inverse-fg);
+  --tone-fg-subtle: var(--inverse-fg-subtle);
+  --tone-fg-accent: var(--color-accent-300);
   --tone-border: var(--inverse-bg);
   --tone-rule: var(--inverse-rule);
   --tone-well-bg: var(--inverse-well);
@@ -186,6 +191,8 @@
 [data-tone='light'] {
   --tone-bg: transparent;
   --tone-fg: var(--color-text);
+  --tone-fg-subtle: var(--color-text-subtle);
+  --tone-fg-accent: var(--color-text-accent);
   --tone-border: var(--color-divider);
   --tone-rule: var(--color-divider);
   --tone-well-bg: var(--color-surface);

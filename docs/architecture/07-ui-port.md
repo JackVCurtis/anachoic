@@ -8,7 +8,7 @@ Each copied file records its source and commit ([02](02-stack-and-structure.md#c
 
 | Layer | Copied unchanged | Notes |
 |---|---|---|
-| CSS (`view/css/`) | `app.css` (layer order), `tokens.css`, `base.css`, `typography.css` | `fonts.css` is rewritten to inline the woff2 files ([fonts](#fonts)). Terminal tokens are dropped. In `base.css` the rule giving `html`, `body` and `#app` `height: 100%` is removed, so the document grows with its content and auto-resize can report it ([layout](#layout)). The `--layout-min-*` tokens stay but nothing uses them. In `tokens.css` the owner-chip tokens `--tone-chip-human-*` are renamed `--tone-chip-you-*`, matching the `you` owner. |
+| CSS (`view/css/`) | `app.css` (layer order), `tokens.css`, `base.css`, `typography.css` | `fonts.css` is rewritten to inline the woff2 files ([fonts](#fonts)). Terminal tokens are dropped. The contrast fixes in [contrast](#contrast) change `tokens.css` and `typography.css`. In `base.css` the rule giving `html`, `body` and `#app` `height: 100%` is removed, so the document grows with its content and auto-resize can report it ([layout](#layout)). The `--layout-min-*` tokens stay but nothing uses them. In `tokens.css` the owner-chip tokens `--tone-chip-human-*` are renamed `--tone-chip-you-*`, matching the `you` owner. |
 | Types | `types.ts`, trimmed to `Owner`, `StepStatus`, `TaskStatus`, `Tone` | `Owner` becomes `'agent' \| 'you'` to match [03](03-domain-model.md#step). Slot, pickup, placement and step-action types go. |
 | Helpers | `join_classes`, `words`, `time`, `steps`, `announcement`, `messages`, `constants`, the move logic from `board_rail` (`movedOrder`, `moveAnnouncement`, `queuePosition`), and `badgeFor` from `task_drawer` | With their tests. `strings.ts` is replaced ([content](#content)). `repoLabel` goes, because there are no repos. |
 | Hooks | `use_now`, `use_escape_layer` | |
@@ -75,7 +75,12 @@ Each section is a SectionHeader with a count, followed by its cards.
 
 **The task view:**
 - It is one column inside the host's fullscreen frame, or inline at 735 px when fullscreen is not available.
-- A "Back to inline" button returns from fullscreen.
+- **Display buttons.** Small secondary buttons at the end of the header, in this order: "Back to board", when the view is the board's task panel; "Open in full screen", when it is inline and the host offers fullscreen; "Back to inline", when it is in fullscreen. With none of these, nothing is drawn.
+- Park and Archive sit at the end of the meta line, each confirmed in place.
+
+**Settled while building:**
+- **The follow-up composer** appends steps to a task to sign off, written as in TaskEntry (title, owner, detail, and Output for an agent step), and places the task at the Back or the Front of the queue. Its note reads "Extends the chain · re-enters the queue" once every step has a title.
+- **The Park questions** say what Park does where it is asked. On a Waiting on user card: "Park “{title}”? It moves to the backlog and its step is released." In the task view: "Park “{title}”? Its claim is cleared and it moves to the backlog." They are confirmations, so they end with a full stop.
 
 There is no AppShell, TopBar, ViewTabs, WorkflowsNavLink, PauseControl or CapControl. There are no routes. Opening a task from the board calls `get_task` and swaps the board view to its task panel inside the same iframe. "Open in full screen" then asks for fullscreen. The model's `open_task` renders the task view directly.
 
@@ -92,6 +97,22 @@ Barlow (400, 500, 700) and Barlow Condensed (400, 600) are inlined into each vie
 - **Inverse surfaces.** Tone scopes (`data-tone="inverse"`) work as in anachoic. The inverse surface is used for the Your turn section header, as anachoic uses it for the Your turn band.
 
 Dark mode is revisited after phase 2 ([10](10-open-questions.md#open-questions)).
+
+### Contrast
+
+Every text in the views reaches 4.5:1, and axe's `color-contrast` rule runs on every story with no exception. Anachoic built some text below 4.5:1 by design and listed a one-token fix for each (`anachoic:ui/16-accessibility.md#what-is-decided-and-what-is-not`). This app takes all three:
+
+- **Secondary text.** `--color-text-subtle`, `--color-text-faint`, `--color-text-meta` and `--color-text-column` point at neutral-700, 5.87:1 on the ground.
+- **Dimmed text.** Text that is already neutral-700 is not dimmed with `opacity`: a step's number, status and labels in the timeline, its "Unclaimed", and an event's time.
+- **The accent fill.** The primary button and a selected segment (the owner and placement fields) fill with accent-700, so white text on them is 6.3:1. Hover is accent-800 and pressed accent-900.
+
+**Text on the inverted field.** Two tone tokens are added, with `--inverse-fg-subtle` behind the first: `--tone-fg-subtle` (the subtle text role on light, the ground at 75% on the inverted field) and `--tone-fg-accent` (accent text on light, accent-300 on the inverted field). The text classes `text-section` and `text-control` take `--tone-fg`, and `text-label` and `text-status` take `--tone-fg-subtle`, so a label inside an inverted Frame is light without an override. On light they resolve to the same colours as anachoic's. A Frame with the tint fill sets the light tone inside it, so an InlineConfirm on a Waiting on user card keeps dark text and an accent focus ring.
+
+**Characters that are not words.** `SymbolText` (a primitive) draws a string with each of `↗ → ← · — × ⇧` in an `aria-hidden` span, and the dash of an empty value followed by hidden "none", as `anachoic:ui/16-accessibility.md#characters-that-are-not-words` asks. MetaLine, section notes, step lines, counters, step statuses and link labels draw through it.
+
+**Lint.** `eslint/css_rules.js` checks the CSS modules under `view/components/`: no raw or named colour, no `color-mix()`, fonts only through `--font-*`, durations only through `--motion-*`, no terminal token, and gaps and margins wider than 4 px only through `--space-*`, `--gap-stack` or `--gap-rows`. Pixel values stay allowed for control padding, type sizes and fixed dimensions (`anachoic:ui/02-tokens.md#rules-for-using-tokens`).
+
+**Target size.** "Move", "Dismiss", "Park", "Archive", "Back to board", "Back to inline" and "Open in full screen" are each at least 24 px tall, from the small button's `min-height`; the conformance tests measure them.
 
 ## The host bridge
 

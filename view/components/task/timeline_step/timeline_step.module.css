@@ -16,7 +16,7 @@
   box-sizing: border-box;
   width: 13px;
   height: 13px;
-  margin-top: 6px;
+  margin-top: var(--gap-stack);
   border: var(--border-hairline) solid var(--color-accent-700);
   background: var(--color-bg);
 }
@@ -72,16 +72,15 @@
 }
 
 .number {
-  opacity: var(--dim-3);
+  color: var(--tone-fg-subtle);
 }
 
 .status {
   margin-left: auto;
-  opacity: var(--dim-1);
 }
 
 .title {
-  margin-top: 6px;
+  margin-top: var(--gap-stack);
   overflow-wrap: anywhere;
 }
 
@@ -103,10 +102,6 @@
   min-width: 0;
 }
 
-.label {
-  opacity: var(--dim-2);
-}
-
 .value {
   display: flex;
   flex-direction: column;
@@ -123,7 +118,7 @@
 
 .dim,
 .unblock {
-  opacity: var(--dim-3);
+  color: var(--tone-fg-subtle);
 }
 
 .links {

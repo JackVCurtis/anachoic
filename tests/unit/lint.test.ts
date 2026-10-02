@@ -108,3 +108,41 @@ describe('lint allows', { timeout: 30_000 }, () => {
     expect(await errors(filePath, code)).toEqual([])
   })
 })
+
+describe('lint of the CSS modules in view/components/', { timeout: 30_000 }, () => {
+  const MODULE = 'view/components/patterns/example/example.module.css'
+
+  test.each([
+    ['a hex colour', '.a {\n  color: #1d1f20;\n}'],
+    ['an rgba() colour', '.a {\n  background: rgba(0, 0, 0, 0.2);\n}'],
+    [
+      'color-mix() outside tokens.css',
+      '.a {\n  color: color-mix(in srgb, var(--color-text) 10%, transparent);\n}',
+    ],
+    ['a named colour', '.a {\n  border-color: white;\n}'],
+    ['a font family by name', '.a {\n  font-family: Barlow, sans-serif;\n}'],
+    ['a terminal token', '.a {\n  color: var(--terminal-fg);\n}'],
+    ['a raw duration', '.a {\n  transition: opacity 150ms;\n}'],
+    ['a gap in px wider than a hairline', '.a {\n  gap: 8px;\n}'],
+    ['a margin in px wider than a hairline', '.a {\n  margin-top: 6px;\n}'],
+  ])('refuses %s', async (_name, css) => {
+    const found = await errors(MODULE, css)
+    expect(found.map((message) => message.ruleId)).toEqual(['anachoic-css/tokens'])
+    expect(found[0].line).toBe(2)
+  })
+
+  test('allows tokens, hairline gaps, control padding and a colour in a comment', async () => {
+    const css = [
+      '/* #1d1f20 is the ink, named here only */',
+      '.a {',
+      '  padding: 3px 10px;',
+      '  gap: 2px;',
+      '  margin-top: var(--gap-stack);',
+      '  color: var(--tone-fg-subtle);',
+      '  font-family: var(--font-heading);',
+      '  transition: opacity var(--motion-quick);',
+      '}',
+    ].join('\n')
+    expect(await errors(MODULE, css)).toEqual([])
+  })
+})

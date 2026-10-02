@@ -1,6 +1,7 @@
 import { configApp } from '@adonisjs/eslint-config'
 import { react } from '@adonisjs/eslint-config/react'
 import { componentRules } from './eslint/component_rules.js'
+import { cssRules } from './eslint/css_rules.js'
 import { folderRules } from './eslint/folder_rules.js'
 
 const ICON_PRIMITIVE = 'view/components/primitives/icon/icon.tsx'
@@ -182,6 +183,18 @@ export default configApp(
         { patterns: [...COMPONENT_IMPORT_RESTRICTIONS, LUCIDE_RESTRICTION] },
       ],
     },
+  },
+  {
+    name: 'Anachoic CSS modules of the component library',
+    files: ['view/components/**/*.module.css'],
+    plugins: { 'anachoic-css': cssRules },
+    processor: 'anachoic-css/css',
+  },
+  {
+    name: 'Anachoic token use in CSS modules',
+    files: ['view/components/**/*.module.css/*.cssjs'],
+    plugins: { 'anachoic-css': cssRules },
+    rules: { 'anachoic-css/tokens': 'error' },
   },
   {
     name: 'Anachoic Icon primitive',

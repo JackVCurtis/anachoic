@@ -40,7 +40,7 @@ export function Frame({
   return (
     <Element
       {...attributes}
-      data-tone={tone === 'inverse' ? 'inverse' : undefined}
+      data-tone={tone === 'inverse' ? 'inverse' : fill === 'tint' ? 'light' : undefined}
       className={joinClasses(
         styles.frame,
         tone === 'inverse' && styles.inverse,

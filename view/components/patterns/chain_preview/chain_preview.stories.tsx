@@ -46,16 +46,6 @@ const meta = {
     variant: 'framed',
     steps: rowsOf(QUEUED_CHAIN, { withSessions: false }),
   },
-  parameters: {
-    a11y: {
-      /*
-       * The step numbers and the header label show --color-text-subtle, which
-       * is below 4.5:1 by design (ui/16, "Built as designed"). The contrast
-       * of the text roles belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story) => (
       <div style={{ maxWidth: 308 }}>

@@ -7,9 +7,6 @@ import { YourTurnSection } from './your_turn_section'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
-/** Everything drawn on the inverted field, for a rule run there alone. */
-const INVERSE_BAND = '[data-tone="inverse"], [data-tone="inverse"] *'
-
 const meta = {
   title: 'Board/YourTurnSection',
   component: YourTurnSection,
@@ -18,16 +15,6 @@ const meta = {
     onOpenTask: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The count, the empty state and the dimmed counters are below 4.5:1 by
-       * design (ui/16, "Built as designed"). The contrast of the text roles
-       * belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -53,12 +40,6 @@ export const EachKind: Story = {
 export const ThreeKinds: Story = {
   name: 'A blocked step beside your step and an agent’s question',
   args: { tasks: [YOUR_TURN.blocked, YOUR_TURN.yourStep, YOUR_TURN.question] },
-  parameters: {
-    a11y: {
-      /* The header and every card are on the inverse field, so contrast is checked */
-      config: { rules: [{ id: 'color-contrast', enabled: true, selector: INVERSE_BAND }] },
-    },
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(yourTurn.kindBlocked)).toBeVisible()

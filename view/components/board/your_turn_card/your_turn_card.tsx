@@ -15,6 +15,7 @@ import { ArtifactLink } from '../artifact_links/artifact_links'
 import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 /** What can be done with a step that waits on the user. */
 export type YourTurnAction = 'complete' | 'answer' | 'park'
@@ -121,7 +122,9 @@ function BlockedCard({ item, blocked, onOpenTask }: BlockedCardProps) {
       <p className={styles.step}>
         <span className={joinClasses('text-mono-xs', styles.id)}>{task.displayId}</span>
         <span className="text-body-sm">
-          {fillTemplate(yourTurn.blockedStep, { 'n': step.number, 'step title': step.title })}
+          <SymbolText>
+            {fillTemplate(yourTurn.blockedStep, { 'n': step.number, 'step title': step.title })}
+          </SymbolText>
         </span>
       </p>
       <p data-raised className={joinClasses('text-body-sm', styles.reason)}>
@@ -170,7 +173,7 @@ function WaitingCard({
           <StatusSquare state="attention" />
           <span className={styles.kind}>{kindLabel(item)}</span>
           <span className={joinClasses('text-status', 'text-tabular', styles.counter)}>
-            {counter}
+            <SymbolText>{counter}</SymbolText>
           </span>
         </div>
       }

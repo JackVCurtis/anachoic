@@ -10,9 +10,6 @@ import { BoardView } from './board_view'
 const INLINE = { viewport: { value: 'inline', isRotated: false } }
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
-/** Everything drawn on the inverted field, for a rule run there alone. */
-const INVERSE_BAND = '[data-tone="inverse"], [data-tone="inverse"] *'
-
 async function expectEmptyBoard(canvasElement: HTMLElement, width: number) {
   const canvas = within(canvasElement)
   const headings = canvas.getAllByRole('heading', { level: 1 })
@@ -34,14 +31,6 @@ const meta = {
   globals: INLINE,
   parameters: {
     layout: 'fullscreen',
-    a11y: {
-      /*
-       * The counts and the empty states show --color-text-subtle, which is
-       * below 4.5:1 by design (ui/16, "Built as designed"). The contrast of
-       * the text roles belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
   },
   decorators: [
     (Story, { parameters }) => (
@@ -149,18 +138,6 @@ export const AssignedNarrow: Story = {
 export const Blocked: Story = {
   name: 'User step, a question and a blocked step together',
   args: BLOCKED_BOARD,
-  parameters: {
-    a11y: {
-      /*
-       * The contrast rule runs on the inverse band, where the blocked card
-       * sits beside the other two kinds. The light sections keep the subtle
-       * text that is below 4.5:1 by design, as in the other stories.
-       */
-      config: {
-        rules: [{ id: 'color-contrast', enabled: true, selector: INVERSE_BAND }],
-      },
-    },
-  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('User step')).toBeVisible()

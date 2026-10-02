@@ -5,6 +5,7 @@ import { describe, expect, test } from 'vitest'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import { SectionHeader, type HeadingLevel } from './section_header'
+import { fullText } from '../../testing/text'
 
 function rootOf(title: string): HTMLElement {
   return screen.getByText(title).parentElement as HTMLElement
@@ -136,7 +137,7 @@ describe('SectionHeader', () => {
       </div>
     )
     const status = screen.getByText('click a step')
-    const chainNote = screen.getByText('4 steps · 2 for the user')
+    const chainNote = screen.getByText(fullText('4 steps · 2 for the user'))
     const row = rootOf('Chain preview')
 
     expect(status.classList.contains('text-status')).toBe(true)

@@ -40,7 +40,10 @@ export function EventList({ events }: EventListProps) {
               {event.stepNumber !== null && event.stepNumber !== undefined && (
                 <> {fillTemplate(words.step, { n: event.stepNumber })}</>
               )}
-              <span className={styles.by}> · {causedBy(event)}</span>
+              <span className={styles.by}>
+                {' '}
+                <span aria-hidden="true">·</span> {causedBy(event)}
+              </span>
               {event.detail && <span className={styles.detail}> {event.detail}</span>}
             </span>
           </li>

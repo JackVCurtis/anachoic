@@ -6,6 +6,7 @@ import { fillTemplate, sessions as strings } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import type { BoardSession } from '../board_data'
 import { SessionCard } from './session_card'
+import { fullText } from '../../testing/text'
 
 function renderRemovable(session: BoardSession, removing = false) {
   const onRemove = vi.fn()
@@ -28,7 +29,7 @@ describe('SessionCard', () => {
     expect(screen.getByText('api-server')).toBeVisible()
     expect(screen.getByText('Worker')).toBeVisible()
     expect(screen.getByText('Running')).toBeVisible()
-    expect(screen.getByText('Step 1 · Draft the migration')).toBeVisible()
+    expect(screen.getByText(fullText('Step 1 · Draft the migration'))).toBeVisible()
     expect(screen.queryByText(/elapsed$/)).toBeNull()
   })
 
@@ -45,7 +46,7 @@ describe('SessionCard', () => {
 
     expect(screen.getByText('api-server')).toBeVisible()
     expect(screen.getByText('Blocked on T-030 step 2')).toBeVisible()
-    expect(screen.getByText('Step 2 · Deploy')).toBeVisible()
+    expect(screen.getByText(fullText('Step 2 · Deploy'))).toBeVisible()
     expect(screen.queryByText('Waiting on user')).toBeNull()
     const square = container.querySelector('[aria-hidden="true"]')
     expect(square?.className).toMatch(/attention/)
@@ -57,7 +58,7 @@ describe('SessionCard', () => {
 
     expect(screen.getAllByText('This chat')).toHaveLength(1)
     expect(screen.queryByText('Worker')).toBeNull()
-    expect(screen.getByText('Step 2 · Choose the cache key')).toBeVisible()
+    expect(screen.getByText(fullText('Step 2 · Choose the cache key'))).toBeVisible()
   })
 
   test('a session holding nothing reads "Idle" and has no main action', () => {

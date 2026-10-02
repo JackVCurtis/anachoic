@@ -25,6 +25,7 @@
 
 .tint {
   background-color: var(--color-accent-100);
+  color: var(--tone-fg);
 }
 
 .hatch {

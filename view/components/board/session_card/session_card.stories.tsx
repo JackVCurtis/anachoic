@@ -5,6 +5,7 @@ import { SESSIONS } from '../../fixtures/board_sections'
 import { fillTemplate, sessions as strings } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { SessionCard } from './session_card'
+import { fullText } from '../../testing/text'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
@@ -16,16 +17,6 @@ const meta = {
     onOpenTask: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The state label and the released ids show --color-text-subtle, below
-       * 4.5:1 by design (ui/16, "Built as designed"). The contrast of the text
-       * roles belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -65,7 +56,7 @@ export const Blocked: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Blocked on T-030 step 2')).toBeVisible()
-    await expect(canvas.getByText('Step 2 · Deploy')).toBeVisible()
+    await expect(canvas.getByText(fullText('Step 2 · Deploy'))).toBeVisible()
     await expect(canvasElement.querySelector('[data-tone="inverse"]')).toBeNull()
   },
 }

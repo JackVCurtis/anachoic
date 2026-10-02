@@ -5,6 +5,7 @@ import { assistive, card } from '../../helpers/strings'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import type { BoardArtifact } from '../board_data'
 import styles from './artifact_links.module.css'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 export interface ArtifactLinkProps {
   url: string
@@ -38,7 +39,7 @@ export function ArtifactLink({ url, label, onOpenLink, className }: ArtifactLink
       onAuxClick={(event) => event.preventDefault()}
       className={joinClasses('text-control', styles.link, className)}
     >
-      {label}
+      <SymbolText>{label}</SymbolText>
       <span aria-hidden="true">{` ${ARTIFACT_ARROW}`}</span>
       <VisuallyHidden>{` ${assistive.opensInBrowser}`}</VisuallyHidden>
     </a>

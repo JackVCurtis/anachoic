@@ -8,6 +8,7 @@ import { resolvedColor } from '../../testing/resolved_color'
 import { Button } from '../button/button'
 import { ActionCard, type ActionCardProps } from './action_card'
 import sample from './action_card_sample.module.css'
+import { fullText } from '../../testing/text'
 
 const TITLE = 'Research the retry policy for the sync worker'
 
@@ -100,7 +101,7 @@ describe('ActionCard', () => {
     }
 
     onAction.mockClear()
-    await userEvent.click(screen.getByText('Research · step 2 of 3'), UNDER_THE_HIT_AREA)
+    await userEvent.click(screen.getByText(fullText('Research · step 2 of 3')), UNDER_THE_HIT_AREA)
     await userEvent.click(screen.getByText('Approval needed'), UNDER_THE_HIT_AREA)
     await userEvent.click(screen.getByText(TITLE))
     expect(onAction).toHaveBeenCalledTimes(3)
@@ -194,7 +195,7 @@ describe('ActionCard', () => {
 
   test('text under the hit area cannot be selected with the mouse', async () => {
     renderCard()
-    const meta = screen.getByText('Research · step 2 of 3')
+    const meta = screen.getByText(fullText('Research · step 2 of 3'))
 
     window.getSelection()?.removeAllRanges()
     await userEvent.tripleClick(meta, UNDER_THE_HIT_AREA)
@@ -217,7 +218,7 @@ describe('ActionCard', () => {
     const { card, action } = renderCard()
 
     expect(getComputedStyle(card).backgroundColor).toBe(CLEAR)
-    await userEvent.hover(screen.getByText('Research · step 2 of 3'), UNDER_THE_HIT_AREA)
+    await userEvent.hover(screen.getByText(fullText('Research · step 2 of 3')), UNDER_THE_HIT_AREA)
     expect(getComputedStyle(card).backgroundColor).toBe(resolvedColor('--color-accent-100'))
 
     action.focus()
@@ -240,7 +241,7 @@ describe('ActionCard', () => {
     const rest = getComputedStyle(card).backgroundColor
 
     expect(rest).toBe(resolvedColor('--inverse-bg'))
-    await userEvent.hover(screen.getByText('Research · step 2 of 3'), UNDER_THE_HIT_AREA)
+    await userEvent.hover(screen.getByText(fullText('Research · step 2 of 3')), UNDER_THE_HIT_AREA)
     expect(getComputedStyle(card).backgroundColor).toBe(rest)
     await userEvent.unhover(card)
   })

@@ -1,6 +1,7 @@
 // Copied from anachoic inertia/components/patterns/meta_line/meta_line.tsx at fd99e0d
 import { Fragment } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
+import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 import styles from './meta_line.module.css'
 
 export const META_LINE_TONES = ['meta', 'detail'] as const
@@ -39,7 +40,9 @@ export function MetaLine({ tone, facts, className }: MetaLineProps) {
         // Facts may repeat, so their place in the line is their identity.
         <Fragment key={index}>
           {index > 0 && <span aria-hidden="true">{SEPARATOR}</span>}
-          <span>{fact}</span>
+          <span>
+            <SymbolText>{fact}</SymbolText>
+          </span>
         </Fragment>
       ))}
     </span>

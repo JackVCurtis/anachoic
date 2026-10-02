@@ -8,6 +8,7 @@ import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard, type YourTurnAction } from './your_turn_card'
+import { fullText } from '../../testing/text'
 
 function renderCard(item: YourTurnTask) {
   const onOpenTask = vi.fn()
@@ -27,7 +28,7 @@ describe('YourTurnCard', () => {
     expect(screen.getByText('User step')).toBeVisible()
     expect(screen.getByText(YOUR_TURN.yourStep.task.displayId)).toBeVisible()
     expect(screen.getByText(YOUR_TURN.yourStep.step.title)).toBeVisible()
-    expect(screen.getByText('Step 3/4 · 14m')).toBeVisible()
+    expect(screen.getByText(fullText('Step 3/4 · 14m'))).toBeVisible()
     expect(card.querySelectorAll('p')).toHaveLength(1)
   })
 
@@ -66,17 +67,17 @@ describe('YourTurnCard', () => {
       toFake: ['setInterval', 'clearInterval', 'Date'],
     })
     render(<YourTurnCard item={YOUR_TURN.yourStep} onOpenTask={() => {}} />)
-    expect(screen.getByText('Step 3/4 · 14m')).toBeDefined()
+    expect(screen.getByText(fullText('Step 3/4 · 14m'))).toBeDefined()
 
     act(() => {
       vi.advanceTimersByTime(15_000)
     })
-    expect(screen.getByText('Step 3/4 · 14m')).toBeDefined()
+    expect(screen.getByText(fullText('Step 3/4 · 14m'))).toBeDefined()
 
     act(() => {
       vi.advanceTimersByTime(15_000)
     })
-    expect(screen.getByText('Step 3/4 · 15m')).toBeDefined()
+    expect(screen.getByText(fullText('Step 3/4 · 15m'))).toBeDefined()
   })
 
   test('pressing the title raises onOpenTask with the task id', async () => {
@@ -325,7 +326,7 @@ describe('YourTurnCard, blocked', () => {
     expect(screen.getByText('Blocked')).toBeVisible()
     expect(screen.getByText('api-server')).toBeVisible()
     expect(screen.getByText(YOUR_TURN.blocked.task.displayId)).toBeVisible()
-    expect(screen.getByText('Step 2 · Deploy')).toBeVisible()
+    expect(screen.getByText(fullText('Step 2 · Deploy'))).toBeVisible()
     expect(screen.getByText(YOUR_TURN.blocked.blocked!.reason)).toBeVisible()
     expect(screen.getByText('Blocked 20m')).toBeVisible()
     expect(screen.getByText('Unblock it in api-server’s session')).toBeVisible()

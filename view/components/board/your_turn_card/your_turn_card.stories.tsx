@@ -5,6 +5,7 @@ import { assistive, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
+import { fullText } from '../../testing/text'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
@@ -26,17 +27,6 @@ const meta = {
     busy: null,
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The counter and the task id are dimmed to --dim-2 on the inverted
-       * field, below 4.5:1 by design (ui/16, "Built as designed"). The
-       * contrast of the text roles belongs to the tokens, so only that rule is
-       * off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>
@@ -55,7 +45,7 @@ export const YourStep: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('User step')).toBeVisible()
-    await expect(canvas.getByText('Step 3/4 · 14m')).toBeVisible()
+    await expect(canvas.getByText(fullText('Step 3/4 · 14m'))).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: YOUR_TURN.yourStep.task.title }))
     await expect(args.onOpenTask).toHaveBeenCalledWith(YOUR_TURN.yourStep.task.id)
   },
@@ -258,12 +248,6 @@ export const HandedWithoutHost: Story = {
   },
 }
 
-/**
- * A blocked card has no dimmed control, so its stories run the contrast rule
- * on the inverted field.
- */
-const CONTRAST_ON = { a11y: { config: { rules: [{ id: 'color-contrast', enabled: true }] } } }
-
 async function expectBlockedCard(canvasElement: HTMLElement, item: YourTurnTask) {
   const canvas = within(canvasElement)
   await expect(canvas.getByText(yourTurn.kindBlocked)).toBeVisible()
@@ -276,12 +260,11 @@ async function expectBlockedCard(canvasElement: HTMLElement, item: YourTurnTask)
 export const Blocked: Story = {
   name: 'Blocked by its worker',
   args: { item: YOUR_TURN.blocked },
-  parameters: CONTRAST_ON,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expectBlockedCard(canvasElement, YOUR_TURN.blocked)
     await expect(canvas.getByText('api-server')).toBeVisible()
-    await expect(canvas.getByText('Step 2 · Deploy')).toBeVisible()
+    await expect(canvas.getByText(fullText('Step 2 · Deploy'))).toBeVisible()
     await expect(canvas.getByText('Blocked 20m')).toBeVisible()
     await expect(canvas.getByText('Unblock it in api-server’s session')).toBeVisible()
     await userEvent.click(canvas.getByRole('button', { name: YOUR_TURN.blocked.task.title }))
@@ -293,7 +276,7 @@ export const BlockedNarrow: Story = {
   name: 'Blocked by its worker, narrow',
   args: { item: YOUR_TURN.blocked },
   globals: NARROW,
-  parameters: { ...CONTRAST_ON, frame: 'narrow' },
+  parameters: { frame: 'narrow' },
   play: async ({ canvasElement }) => {
     await expectBlockedCard(canvasElement, YOUR_TURN.blocked)
   },
@@ -302,7 +285,6 @@ export const BlockedNarrow: Story = {
 export const BlockedLong: Story = {
   name: 'Blocked, with a reason of 2,000 characters, a long title and worker name',
   args: { item: YOUR_TURN.longBlocked },
-  parameters: CONTRAST_ON,
   play: async ({ canvasElement }) => {
     await expectBlockedCard(canvasElement, YOUR_TURN.longBlocked)
   },
@@ -312,5 +294,5 @@ export const BlockedLongNarrow: Story = {
   ...BlockedLong,
   name: 'Blocked, with a reason of 2,000 characters, a long title and worker name, narrow',
   globals: NARROW,
-  parameters: { ...CONTRAST_ON, frame: 'narrow' },
+  parameters: { frame: 'narrow' },
 }

@@ -5,6 +5,7 @@ import { ASKING, BLOCKED, LONG_TITLE, REVIEW, RUNNING, TEN_LINKS } from '../../f
 import { renderComponent } from '../../testing/render'
 import type { TimelineStepData } from '../task_data'
 import { TimelineStep } from './timeline_step'
+import { fullText } from '../../testing/text'
 
 function renderStep(
   step: TimelineStepData,
@@ -47,18 +48,18 @@ describe('TimelineStep', () => {
         />
       </ol>
     )
-    expect(screen.getByText('Running · 6m 12s')).toBeDefined()
+    expect(screen.getByText(fullText('Running · 6m 12s'))).toBeDefined()
 
     act(() => {
       vi.advanceTimersByTime(1000)
     })
-    expect(screen.getByText('Running · 6m 13s')).toBeDefined()
+    expect(screen.getByText(fullText('Running · 6m 13s'))).toBeDefined()
   })
 
   test('a waiting step reads Waiting on user with its waited time', () => {
     renderStep(ASKING.steps[0], { isCurrent: true, open: false })
 
-    expect(screen.getByText('Waiting on user · 14m')).toBeVisible()
+    expect(screen.getByText(fullText('Waiting on user · 14m'))).toBeVisible()
   })
 
   test('the header has the two-digit number, the claiming session and the title', () => {
@@ -103,7 +104,7 @@ describe('TimelineStep', () => {
   test('a blocked step reads Blocked with its time, its reason, and where to unblock it, and offers no action', () => {
     renderStep(BLOCKED.steps[1], { isCurrent: true })
 
-    expect(screen.getByText('Blocked · 14m')).toBeVisible()
+    expect(screen.getByText(fullText('Blocked · 14m'))).toBeVisible()
     expect(screen.getByText(BLOCKED.steps[1].blocked!.reason)).toBeVisible()
     expect(screen.getByText('Unblock it in api-server’s session')).toBeVisible()
     expect(screen.getAllByRole('button')).toHaveLength(1)
@@ -119,7 +120,7 @@ describe('TimelineStep', () => {
   test('a done step links to its artifact and its links', () => {
     renderStep(RUNNING.steps[0])
 
-    expect(screen.getByRole('link', { name: /Pull request · step 1/ })).toBeVisible()
+    expect(screen.getByRole('link', { name: /Pull request step 1/ })).toBeVisible()
     expect(screen.getByRole('link', { name: /CI run/ })).toBeVisible()
     expect(screen.getByText(RUNNING.steps[0].summary!)).toBeVisible()
     expect(screen.getByText(RUNNING.steps[0].detail!)).toBeVisible()

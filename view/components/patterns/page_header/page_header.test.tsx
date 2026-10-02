@@ -5,12 +5,13 @@ import { describe, expect, test } from 'vitest'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import { PageHeader } from './page_header'
+import { fullText } from '../../testing/text'
 
 describe('PageHeader', () => {
   test('the title is the page h1 and the summary follows on one baseline', () => {
     renderComponent(<PageHeader title="Completed" summary="412 tasks · hidden from the board" />)
     const title = screen.getByRole('heading', { level: 1, name: 'Completed' })
-    const summary = screen.getByText('412 tasks · hidden from the board')
+    const summary = screen.getByText(fullText('412 tasks · hidden from the board'))
     const row = getComputedStyle(title.parentElement as HTMLElement)
 
     expect(title.classList.contains('text-title-page')).toBe(true)

@@ -48,16 +48,6 @@ function Opener(props: Omit<InlineConfirmProps, 'onConfirm' | 'onCancel' | 'retu
 const meta = {
   title: 'Patterns/InlineConfirm',
   component: InlineConfirm,
-  parameters: {
-    a11y: {
-      /*
-       * White text on the accent fill of the confirm button is 3.71:1, below
-       * 4.5:1 by design (ui/16, "Built as designed"). The contrast of that
-       * pairing belongs to the tokens, so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   args: {
     ...PARK,
     layout: 'row',

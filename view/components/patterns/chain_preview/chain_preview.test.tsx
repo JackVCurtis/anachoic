@@ -7,6 +7,7 @@ import type { ChainPreviewRow } from '../../helpers/steps'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import { ChainPreview } from './chain_preview'
+import { fullText } from '../../testing/text'
 
 /**
  * A new task's four steps, two of them yours. No session holds any of them.
@@ -74,7 +75,7 @@ describe('ChainPreview', () => {
     renderComponent(<ChainPreview variant="framed" steps={NEW_TASK} />)
     const list = screen.getByRole('list', { name: 'Chain preview' })
     const frame = list.parentElement as HTMLElement
-    const note = screen.getByText('4 steps · 2 for the user')
+    const note = screen.getByText(fullText('4 steps · 2 for the user'))
     const space3 = getComputedStyle(document.documentElement).getPropertyValue('--space-3').trim()
 
     expect(list.getAttribute('start')).toBe('1')

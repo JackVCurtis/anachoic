@@ -9,12 +9,6 @@ const meta = {
   component: EventList,
   args: { events: EVENTS },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /* The times and details are dimmed below 4.5:1 by design (ui/16, "Built as designed"). */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story) => (
       <ViewFrame>

@@ -22,16 +22,6 @@ const meta = {
     onOpenLink: fn(),
   },
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The id, the step label, the step numbers, the status labels and the
-       * event times are dimmed below 4.5:1 by design (ui/16, "Built as
-       * designed"), so only that rule is off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story, { parameters }) => (
       <ViewFrame width={parameters.frame}>

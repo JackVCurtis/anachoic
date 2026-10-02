@@ -64,11 +64,11 @@ describe('artifact links on the cards', () => {
     const user = await renderBoard(app)
 
     const link = screen.getByRole('link', {
-      name: `Pull request · step 2 ${assistive.opensInBrowser}`,
+      name: `Pull request step 2 ${assistive.opensInBrowser}`,
     })
     expect(link).toHaveAttribute('title', PR)
     expect(link).toHaveTextContent('Pull request · step 2 ↗')
-    expect(screen.getByRole('link', { name: /^Ticket · step 3/ })).toHaveAttribute('title', TICKET)
+    expect(screen.getByRole('link', { name: /^Ticket step 3/ })).toHaveAttribute('title', TICKET)
 
     await user.click(link)
 
@@ -81,7 +81,7 @@ describe('artifact links on the cards', () => {
     const app = fakeApp(() => Promise.resolve({ isError: true }))
     const user = await renderBoard(app)
 
-    await user.click(screen.getByRole('link', { name: /^Ticket · step 3/ }))
+    await user.click(screen.getByRole('link', { name: /^Ticket step 3/ }))
 
     expect(app.calls.openLink).toEqual([{ url: TICKET }])
     expect(await screen.findByRole('alert')).toHaveTextContent(card.linkNotOpened)

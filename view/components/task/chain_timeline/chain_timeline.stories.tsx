@@ -32,16 +32,6 @@ const meta = {
   },
   render: (args) => <Kept {...args} />,
   globals: { viewport: { value: 'inline', isRotated: false } },
-  parameters: {
-    a11y: {
-      /*
-       * The step numbers, the hint and the status labels are dimmed below
-       * 4.5:1 by design (ui/16, "Built as designed"), so only that rule is
-       * off here.
-       */
-      config: { rules: [{ id: 'color-contrast', enabled: false }] },
-    },
-  },
   decorators: [
     (Story) => (
       <ViewFrame>
