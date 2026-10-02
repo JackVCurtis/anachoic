@@ -1,9 +1,11 @@
 import { stepId } from '../shared/step_id.js'
+import { formatTaskId } from '../shared/task_id.js'
 import { currentStepIndex } from './chain.js'
 import type { Placement } from './queue_order.js'
 import {
   agentStep,
   archived,
+  assignedToAnother,
   claimedByAnother,
   invalid,
   isRefusal,
@@ -223,6 +225,12 @@ export const preconditions = {
     first(
       () => notArchived(state),
       () => (isYou(ctx.actor) ? onlyASession(state.task.id, 'claim a step of {task}') : null),
+      () => {
+        const { assignedTo } = state.task
+        return assignedTo === null || assignedTo === ctx.actor
+          ? null
+          : assignedToAnother(state.task.id, nameOf(ctx, assignedTo))
+      },
       () => inStatus(state, 'queue'),
       () => {
         const { step } = current(state)
@@ -411,10 +419,16 @@ export interface NewTask {
   taskId: number
   title: string
   steps: readonly StepInput[]
+  /**
+   * The worker the task is assigned to. The caller has checked that it is a
+   * live worker, which needs the sessions this module cannot see.
+   */
+  assignTo?: SessionId | null
 }
 
 /**
- * Add: a new task in the backlog, every step pending.
+ * Add: a new task in the backlog, every step pending, assigned to the worker
+ * given.
  */
 export function add(input: NewTask, ctx: Context): Change {
   const task: Task = {
@@ -427,15 +441,17 @@ export function add(input: NewTask, ctx: Context): Change {
     finishedAt: null,
     signedOffAt: null,
     archivedAt: null,
+    assignedTo: input.assignTo ?? null,
   }
   const steps = newSteps(input.taskId, 1, input.steps, 'chain')
   const count = steps.length === 1 ? '1 step' : `${steps.length} steps`
-  return {
-    task,
-    steps,
-    queue: NONE,
-    events: [event(ctx, task.id, null, 'added', `Added with ${count}`)],
+  const events = [event(ctx, task.id, null, 'added', `Added with ${count}`)]
+  if (task.assignedTo !== null) {
+    events.push(
+      event(ctx, task.id, null, 'assigned', `Assigned to ${nameOf(ctx, task.assignedTo)}`)
+    )
   }
+  return { task, steps, queue: NONE, events }
 }
 
 /**
@@ -711,6 +727,30 @@ export function release(state: TaskState, ctx: Context): Outcome {
 }
 
 /**
+ * Unassign: automatic, when the worker the task is assigned to is found dead.
+ * `ctx.actor` is that worker. Nothing else about the task changes.
+ */
+export function unassign(state: TaskState, ctx: Context): Outcome {
+  if (state.task.assignedTo === null || state.task.assignedTo !== ctx.actor) {
+    return invalid(`${formatTaskId(state.task.id)} is not assigned to ${nameOf(ctx, ctx.actor)}`)
+  }
+  return {
+    task: { ...state.task, assignedTo: null },
+    steps: state.steps,
+    queue: NONE,
+    events: [
+      event(
+        ctx,
+        state.task.id,
+        null,
+        'unassigned',
+        `Unassigned: ${nameOf(ctx, ctx.actor)} stopped responding`
+      ),
+    ],
+  }
+}
+
+/**
  * Sign off: you accept a done task.
  */
 export function signOff(state: TaskState, ctx: Context): Outcome {
@@ -750,7 +790,7 @@ export function followUp(state: TaskState, ctx: Context, input: FollowUpInput): 
 
 /**
  * Archive: the task leaves every list with its status unchanged. Its queue
- * position, any claim and any unanswered question are cleared.
+ * position, assignment, any claim and any unanswered question are cleared.
  */
 export function archive(state: TaskState, ctx: Context): Outcome {
   const refused = preconditions.archive(state, ctx)
@@ -758,7 +798,7 @@ export function archive(state: TaskState, ctx: Context): Outcome {
   const { index, step } = current(state)
   const held = step.status === 'running' || step.status === 'waiting'
   return {
-    task: { ...state.task, archivedAt: ctx.now },
+    task: { ...state.task, archivedAt: ctx.now, assignedTo: null },
     steps: held ? withStep(state.steps, index, backToPending(step, ctx.now)) : state.steps,
     queue: state.task.status === 'queue' ? LEAVE : NONE,
     events: [event(ctx, state.task.id, null, 'archived', 'Archived')],

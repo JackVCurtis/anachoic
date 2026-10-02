@@ -1,7 +1,7 @@
 import { claim } from '../../../domain/transitions.js'
 import { closeDatabase, openDatabase } from '../../../store/database.js'
 import { startHeartbeat } from '../../../store/heartbeat.js'
-import { claimStep } from '../../../store/services.js'
+import { addTask, claimStep } from '../../../store/services.js'
 import { touchSession } from '../../../store/sessions.js'
 import { isWritten, write } from '../../../store/write.js'
 import { addQueuedTask, transition } from './store.js'
@@ -70,5 +70,34 @@ if (role === 'open') {
   transition(database, taskId, (state) => claim(state, { actor: sessionId, now: now() }))
   setInterval(() => {}, 1000)
   await send({ taskId })
+} else if (role === 'serve assigned') {
+  // Serves one worker with two tasks assigned to it, one claimed, then stays alive until killed.
+  const [sessionId, intervalMs, deadWindowMs] = rest
+  const database = openDatabase(file)
+  const heartbeat = startHeartbeat(database, {
+    intervalMs: Number(intervalMs),
+    deadWindowMs: Number(deadWindowMs),
+  })
+  heartbeat.serve(sessionId)
+  const now = () => new Date().toISOString()
+  touchSession(
+    database,
+    { id: sessionId, kind: 'worker', projectDir: '/work/killed' },
+    now(),
+    process.pid
+  )
+  const taskIds = [1, 2].map((index) => {
+    const result = addTask(database, 'you', now(), {
+      title: `Assigned ${index}`,
+      steps: [{ title: 'Do', owner: 'agent' }],
+      assignTo: sessionId,
+    })
+    if (!isWritten(result)) throw new Error(result.sentence)
+    return result.value.state.task.id
+  })
+  const claimed = claimStep(database, sessionId, now(), taskIds[0])
+  if (!isWritten(claimed)) throw new Error(claimed.sentence)
+  setInterval(() => {}, 1000)
+  await send({ taskIds })
 }
-if (role !== 'serve') process.disconnect?.()
+if (role !== 'serve' && role !== 'serve assigned') process.disconnect?.()

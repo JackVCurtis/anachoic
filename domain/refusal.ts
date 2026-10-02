@@ -103,6 +103,14 @@ export function onlyASession(taskId: number, action: string): Refusal {
   )
 }
 
+export function assignedToAnother(taskId: number, sessionName: string): Refusal {
+  return refusal('not_yours', `${formatTaskId(taskId)} is assigned to ${sessionName}`)
+}
+
+export function notALiveWorker(sessionName: string): Refusal {
+  return refusal('invalid', `${sessionName} is not a live worker`)
+}
+
 export function nothingToClaim(): Refusal {
   return refusal('nothing_to_claim', 'Nothing in the queue needs an agent')
 }

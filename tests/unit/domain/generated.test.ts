@@ -20,6 +20,7 @@ import {
   reorder,
   signOff,
   start,
+  unassign,
   unqueue,
   type Outcome,
 } from '../../../domain/transitions.js'
@@ -56,6 +57,7 @@ const OPERATIONS: Operation[] = [
       followUp(s, ctx(a, t), { placement: 'last', steps: [{ title: 'Check', owner: 'you' }] }),
   ],
   ['archive', (s, a, t) => archive(s, ctx(a, t))],
+  ['unassign', (s, a, t) => unassign(s, ctx(a, t))],
 ]
 
 /**
@@ -82,6 +84,7 @@ function shape({ task, steps }: TaskState): string {
     task.status,
     task.signedOffAt !== null,
     task.archivedAt !== null,
+    task.assignedTo,
     steps.map((step) => [
       step.owner,
       step.status,
@@ -108,9 +111,19 @@ function explore(owners: Owner[], visit: (state: TaskState, path: string[]) => v
     },
     ctx('you')
   )
+  const assigned = addToQueue(
+    {
+      taskId: 12,
+      title: 'Task 12',
+      steps: owners.map((owner, index) => ({ title: `Step ${index + 1}`, owner })),
+      assignTo: 'session-a',
+    },
+    ctx('you')
+  )
   const starts: Array<[TaskState, string[]]> = [
     [backlogTask(owners), ['add']],
     [{ task: fromQueue.task, steps: fromQueue.steps }, ['addToQueue']],
+    [{ task: assigned.task, steps: assigned.steps }, ['addToQueue assigned to session-a']],
   ]
   const seen = new Set<string>()
   const pending = [...starts]
@@ -165,6 +178,10 @@ describe.each(chains().map((owners) => [owners.join(', '), owners] as const))(
       const states = explore(owners, (state, path) => {
         const found = taskViolations(state)
         expect(found, `After ${path.join(' → ')}`).toEqual([])
+        if (state.task.assignedTo !== null) {
+          const claimants = state.steps.map((step) => step.claimedBy).filter((id) => id !== null)
+          expect(claimants, `After ${path.join(' → ')}`).not.toContain('session-b')
+        }
       })
       expect(states).toBeGreaterThan(owners.length)
     })

@@ -1,6 +1,6 @@
 import { formatTaskId } from '../shared/task_id.js'
 import { currentStepIndex } from './chain.js'
-import type { TaskState } from './types.js'
+import type { Session, TaskState } from './types.js'
 
 export class InvariantError extends Error {
   name = 'InvariantError'
@@ -81,12 +81,42 @@ export function taskViolations({ task, steps }: TaskState): string[] {
 }
 
 /**
+ * The assignment invariant of 11: a task's assignedTo names a worker session
+ * whose endedAt is empty.
+ */
+export function assignmentViolations(
+  states: readonly TaskState[],
+  sessions: readonly Session[]
+): string[] {
+  const byId = new Map(sessions.map((session) => [session.id, session]))
+  const found: string[] = []
+  for (const { task } of states) {
+    if (task.assignedTo === null) continue
+    const session = byId.get(task.assignedTo)
+    if (!session || session.kind !== 'worker' || session.endedAt !== null) {
+      const what = !session
+        ? 'an unknown session'
+        : session.kind !== 'worker'
+          ? `the ${session.kind} session`
+          : 'a session that ended'
+      found.push(`${formatTaskId(task.id)}: assigned: assigned to ${what}, ${task.assignedTo}`)
+    }
+  }
+  return found
+}
+
+/**
  * Every task's invariants, and invariant 9 over the queue: a task has a queue
  * position exactly when it is queued and not archived, and the positions run
- * from 1 to n with no gap and no repeat.
+ * from 1 to n with no gap and no repeat. With the sessions, the assignment
+ * invariant too.
  */
-export function boardViolations(states: readonly TaskState[]): string[] {
+export function boardViolations(
+  states: readonly TaskState[],
+  sessions?: readonly Session[]
+): string[] {
   const found = states.flatMap(taskViolations)
+  if (sessions) found.push(...assignmentViolations(states, sessions))
   const positions: number[] = []
   for (const { task } of states) {
     const queued = task.status === 'queue' && task.archivedAt === null
@@ -109,7 +139,7 @@ export function checkTask(state: TaskState): void {
   if (found.length > 0) throw new InvariantError(found)
 }
 
-export function checkBoard(states: readonly TaskState[]): void {
-  const found = boardViolations(states)
+export function checkBoard(states: readonly TaskState[], sessions?: readonly Session[]): void {
+  const found = boardViolations(states, sessions)
   if (found.length > 0) throw new InvariantError(found)
 }

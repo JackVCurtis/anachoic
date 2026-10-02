@@ -33,6 +33,8 @@ export const EVENT_KINDS = [
   'signed_off',
   'followed_up',
   'archived',
+  'assigned',
+  'unassigned',
 ] as const
 
 export type EventKind = (typeof EVENT_KINDS)[number]
@@ -67,6 +69,10 @@ export interface Task {
   finishedAt: Instant | null
   signedOffAt: Instant | null
   archivedAt: Instant | null
+  /**
+   * The worker that alone may claim the task's agent steps.
+   */
+  assignedTo: SessionId | null
 }
 
 export interface Step {

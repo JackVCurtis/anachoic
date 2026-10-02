@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { DEAD_WINDOW_MS, isLive } from '../domain/derived.js'
 import { invalid, isRefusal, refusal, type Refusal } from '../domain/refusal.js'
-import { release } from '../domain/transitions.js'
+import { release, unassign } from '../domain/transitions.js'
 import {
   DEDICATED_SESSION_ID,
   type Instant,
@@ -156,9 +156,10 @@ export interface LivenessOptions {
 }
 
 /**
- * Ends every session not seen within the dead window and releases each step
- * it claimed to the front of the queue, with a released event. Returns true
- * when it ended any session.
+ * Ends every session not seen within the dead window, releases each step it
+ * claimed to the front of the queue with a released event, and clears its
+ * assignment from every task assigned to it with an unassigned event.
+ * Returns true when it ended any session.
  */
 export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptions): boolean {
   const now = options.now()
@@ -178,12 +179,18 @@ export function releaseDeadSessions(sqlite: DatabaseSync, options: LivenessOptio
   const claimed = sqlite.prepare(
     "SELECT DISTINCT task_id FROM steps WHERE claimed_by = ? AND status IN ('running', 'waiting') ORDER BY task_id DESC"
   )
+  const assigned = sqlite.prepare('SELECT id FROM tasks WHERE assigned_to = ? ORDER BY id')
   for (const session of dead) {
     sqlite.prepare('UPDATE sessions SET ended_at = ? WHERE id = ?').run(now, session.id)
     // Released tasks each join the front, so the lowest task number ends up first.
     for (const { task_id: taskId } of claimed.all(session.id) as Array<{ task_id: number }>) {
       const state = loadTaskState(sqlite, taskId)!
       const outcome = release(state, { actor: session.id, now, nameOf: (id) => names.get(id) })
+      if (!isRefusal(outcome)) applyChange(sqlite, outcome)
+    }
+    for (const { id: taskId } of assigned.all(session.id) as Array<{ id: number }>) {
+      const state = loadTaskState(sqlite, taskId)!
+      const outcome = unassign(state, { actor: session.id, now, nameOf: (id) => names.get(id) })
       if (!isRefusal(outcome)) applyChange(sqlite, outcome)
     }
   }

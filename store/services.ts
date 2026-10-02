@@ -3,6 +3,7 @@ import { currentStep } from '../domain/chain.js'
 import {
   invalid,
   isRefusal,
+  notALiveWorker,
   nothingToClaim,
   notFound,
   wrongStepStatus,
@@ -20,8 +21,9 @@ import {
 } from '../domain/validate.js'
 import { formatTaskId, InvalidTaskIdError, toTaskNumber } from '../shared/task_id.js'
 import type { Database } from './database.js'
+import { firstClaimableIn } from './queries.js'
 import { read } from './read.js'
-import { applyChange, loadTaskState } from './rows.js'
+import { applyChange, loadSession, loadTaskState } from './rows.js'
 import { write, type Written } from './write.js'
 
 /**
@@ -102,11 +104,14 @@ export interface AddTaskInput {
   steps: StepInput[]
   /** Add to the queue, rather than the backlog. */
   queue?: boolean
+  /** The id of the live worker the task is assigned to. */
+  assignTo?: string | null
 }
 
 /**
  * Add, or Add to queue. The task takes the next number, which is never
- * reused, and is created by the session or by you.
+ * reused, and is created by the session or by you. A task may be assigned
+ * only to a live worker.
  */
 export function addTask(
   database: Database,
@@ -117,12 +122,19 @@ export function addTask(
   const refused = firstRefusal(checkText('title', input.title), checkSteps(input.steps))
   if (refused) return refused
   return write(database, (sqlite) => {
+    const assignTo = input.assignTo ?? null
+    if (assignTo !== null) {
+      const worker = loadSession(sqlite, assignTo)
+      if (!worker || worker.kind !== 'worker' || worker.endedAt !== null) {
+        return notALiveWorker(worker?.name ?? assignTo)
+      }
+    }
     const { next_task_number: taskId } = sqlite
       .prepare('SELECT next_task_number FROM board WHERE id = 1')
       .get() as { next_task_number: number }
     sqlite.prepare('UPDATE board SET next_task_number = next_task_number + 1 WHERE id = 1').run()
     const ctx = contextFor(sqlite, actor, now)
-    const task = { taskId, title: input.title, steps: input.steps }
+    const task = { taskId, title: input.title, steps: input.steps, assignTo }
     return commit(
       sqlite,
       (input.queue ?? true) ? transitions.addToQueue(task, ctx) : transitions.add(task, ctx)
@@ -161,9 +173,10 @@ export function reorderQueue(
 }
 
 /**
- * Claims the current agent step of the task at queue position 1, or of the
- * queued task named, wherever it sits. The write lock makes a claim atomic,
- * so two sessions never take the same step.
+ * Claims the current agent step of the queued task named, wherever it sits;
+ * or, with no task, of the first task the session may claim, those assigned
+ * to it first. The write lock makes a claim atomic, so two sessions never
+ * take the same step.
  */
 export function claimStep(
   database: Database,
@@ -173,12 +186,9 @@ export function claimStep(
 ): ServiceResult {
   if (task !== undefined) return act(database, actor, now, task, transitions.claim)
   return write(database, (sqlite) => {
-    const front = sqlite.prepare('SELECT id FROM tasks WHERE queue_position = 1').get() as
-      { id: number } | undefined
-    if (!front) return nothingToClaim()
-    const state = loadTaskState(sqlite, front.id)!
-    const step = currentStep(state.steps)
-    if (step.owner !== 'agent' || step.status !== 'pending') return nothingToClaim()
+    const claimable = firstClaimableIn(sqlite, actor)
+    if (!claimable) return nothingToClaim()
+    const state = loadTaskState(sqlite, claimable.taskId)!
     return commit(sqlite, transitions.claim(state, contextFor(sqlite, actor, now)))
   })
 }

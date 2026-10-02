@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { DEAD_WINDOW_MS } from '../domain/derived.js'
-import type { Instant, Step, Task, TaskState } from '../domain/types.js'
+import type { Instant, SessionId, Step, Task, TaskState } from '../domain/types.js'
 import type { Database } from './database.js'
 import { read } from './read.js'
 import { eventFromRow, loadTaskState, stepFromRow, taskFromRow, type StoredEvent } from './rows.js'
@@ -89,6 +89,42 @@ export function readTask(database: Database, taskId: number): TaskSnapshot | nul
       .map(eventFromRow)
     return { revision: revisionOf(sqlite), state, events }
   })
+}
+
+export interface Claimable {
+  taskId: number
+  /** Assigned to the session that asked, rather than unassigned. */
+  assigned: boolean
+}
+
+/**
+ * The task claim_step with no task would take for the session: the first
+ * queued task, by position, whose current step is a pending agent step and
+ * that is assigned to the session; failing that, the first such task that is
+ * unassigned. Never one assigned to another session.
+ */
+export function firstClaimableIn(sqlite: DatabaseSync, sessionId: SessionId): Claimable | null {
+  const row = sqlite
+    .prepare(
+      `SELECT tasks.id, tasks.assigned_to FROM tasks
+       JOIN steps ON steps.task_id = tasks.id AND steps.number = (
+         SELECT min(number) FROM steps AS later WHERE later.task_id = tasks.id AND later.status <> 'done'
+       )
+       WHERE tasks.status = 'queue' AND tasks.archived_at IS NULL
+         AND (tasks.assigned_to = :session OR tasks.assigned_to IS NULL)
+         AND steps.owner = 'agent' AND steps.status = 'pending'
+       ORDER BY tasks.assigned_to IS NULL, tasks.queue_position
+       LIMIT 1`
+    )
+    .get({ session: sessionId }) as { id: number; assigned_to: string | null } | undefined
+  return row ? { taskId: row.id, assigned: row.assigned_to !== null } : null
+}
+
+/**
+ * firstClaimableIn as a read only, which wait_for_work polls.
+ */
+export function firstClaimable(database: Database, sessionId: SessionId): Claimable | null {
+  return read(database, (sqlite) => firstClaimableIn(sqlite, sessionId))
 }
 
 export function readRevision(database: Database): number {

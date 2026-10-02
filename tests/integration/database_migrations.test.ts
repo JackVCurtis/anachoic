@@ -7,6 +7,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/client/stdio'
 import { afterEach, beforeEach, expect, test } from 'vitest'
 
 const SERVER = resolve(import.meta.dirname, '../../dist/server.js')
+const MIGRATIONS = resolve(import.meta.dirname, '../../store/migrations')
 
 let dataDir: string
 let serverDir: string
@@ -40,7 +41,11 @@ test('the built server migrates the database with no .sql file beside it', async
 
   const database = new DatabaseSync(join(dataDir, 'board.sqlite'), { readOnly: true })
   try {
-    expect(database.prepare('PRAGMA user_version').get()).toEqual({ user_version: 1 })
+    const files = await readdir(MIGRATIONS)
+    const migrations = files.filter((file) => file.endsWith('.sql'))
+    expect(database.prepare('PRAGMA user_version').get()).toEqual({
+      user_version: migrations.length,
+    })
     expect(database.prepare('SELECT revision, next_task_number FROM board').get()).toEqual({
       revision: 0,
       next_task_number: 1,

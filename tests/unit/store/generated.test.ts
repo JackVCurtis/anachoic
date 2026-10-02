@@ -9,13 +9,14 @@ import { closeDatabase, openDatabase, type Database } from '../../../store/datab
 import { readRevision } from '../../../store/queries.js'
 import { read } from '../../../store/read.js'
 import * as services from '../../../store/services.js'
+import { sessionFromRow } from '../../../store/rows.js'
 import { registerLiveness, touchSession } from '../../../store/sessions.js'
 import { at } from '../support/domain.js'
 import { allTaskStates } from '../support/store.js'
 
 const SESSIONS = ['session-a', 'session-b', 'session-c']
 const ACTORS: Actor[] = ['you', ...SESSIONS]
-const OPERATIONS = 400
+const OPERATIONS = 600
 
 /**
  * Mulberry32: a small seeded generator, so a failing run can be repeated.
@@ -100,6 +101,16 @@ describe('Random operations on a real database', () => {
               steps: steps(),
             }),
         ],
+        [
+          'addTask assigned',
+          () =>
+            services.addTask(database, actor, now(), {
+              title: `Task ${known + 1}`,
+              steps: steps(),
+              queue: chance(0.8),
+              assignTo: chance(0.9) ? session : pick(['dedicated', 'nobody']),
+            }),
+        ],
         ['queueTask', () => services.queueTask(database, actor, now(), task)],
         [
           'reorderQueue',
@@ -108,11 +119,58 @@ describe('Random operations on a real database', () => {
         ['claimStep', () => services.claimStep(database, session, now())],
         ['claimStep named', () => services.claimStep(database, session, now(), task)],
         [
+          'claimStep of an assigned task',
+          () => {
+            const assigned = read(database, (sqlite) =>
+              sqlite.prepare('SELECT id FROM tasks WHERE assigned_to IS NOT NULL').all()
+            ) as Array<{ id: number }>
+            return services.claimStep(
+              database,
+              session,
+              now(),
+              assigned.length > 0 ? pick(assigned).id : task
+            )
+          },
+        ],
+        [
           'updateStep',
           () => services.updateStep(database, session, now(), task, { note: 'Progress' }),
         ],
         ['askYou', () => services.askYou(database, session, now(), task, 'Which?')],
+        [
+          'askYou',
+          () => {
+            const running = read(database, (sqlite) =>
+              sqlite
+                .prepare("SELECT task_id AS id, claimed_by FROM steps WHERE status = 'running'")
+                .all()
+            ) as Array<{ id: number; claimed_by: string }>
+            const [held] = running.length > 0 ? [pick(running)] : []
+            return held
+              ? services.askYou(database, held.claimed_by, now(), held.id, 'Which?')
+              : services.askYou(database, session, now(), task, 'Which?')
+          },
+        ],
         ['answerQuestion', () => services.answerQuestion(database, 'you', now(), task, 'That one')],
+        [
+          'answerQuestion',
+          () => {
+            const waiting = read(database, (sqlite) =>
+              sqlite
+                .prepare(
+                  "SELECT task_id AS id FROM steps WHERE owner = 'agent' AND status = 'waiting'"
+                )
+                .all()
+            ) as Array<{ id: number }>
+            return services.answerQuestion(
+              database,
+              'you',
+              now(),
+              waiting.length > 0 ? pick(waiting).id : task,
+              'That one'
+            )
+          },
+        ],
         [
           'completeStep',
           () => services.completeStep(database, session, now(), task, { summary: 'Done' }),
@@ -151,9 +209,33 @@ describe('Random operations on a real database', () => {
         ],
       ]
       const [name, run] = pick(operations)
+      const unassignedEvents = () =>
+        (
+          read(database, (sqlite) =>
+            sqlite.prepare("SELECT count(*) AS n FROM events WHERE kind = 'unassigned'").get()
+          ) as { n: number }
+        ).n
+      // The worker a task is assigned to is usually live: it has just been seen.
+      if (name === 'addTask assigned' && chance(0.8)) {
+        touchSession(
+          database,
+          { id: session, kind: 'worker', projectDir: `/w/${session}` },
+          now(),
+          1
+        )
+      }
+      const unassignedBefore = unassignedEvents()
       const before = readRevision(database)
       const result = run()
       const after = readRevision(database)
+      if (name.startsWith('claimStep')) {
+        if (isRefusal(result) && result.sentence.includes('is assigned to')) {
+          succeeded.add('claim refused by assignment')
+        } else if (!isRefusal(result) && (result.value as services.Acted).state.task.assignedTo) {
+          succeeded.add('assigned claim')
+        }
+      }
+      if (unassignedEvents() > unassignedBefore) succeeded.add('release with unassign')
       applied.push(
         `${name}(T-${task}, ${actor}/${session}) at ${clock}s → ${isRefusal(result) ? result.code : 'ok'}`
       )
@@ -166,7 +248,12 @@ describe('Random operations on a real database', () => {
         succeeded.add(name)
         expect(after - before, context).toBeLessThanOrEqual(1)
       }
-      const violations = read(database, (sqlite) => boardViolations(allTaskStates(sqlite)))
+      const violations = read(database, (sqlite) =>
+        boardViolations(
+          allTaskStates(sqlite),
+          sqlite.prepare('SELECT * FROM sessions').all().map(sessionFromRow)
+        )
+      )
       expect(violations, context).toEqual([])
     }
     expect(accepted).toBeGreaterThan(OPERATIONS / 4)
@@ -176,16 +263,21 @@ describe('Random operations on a real database', () => {
     expect([...succeeded].sort()).toEqual([
       'addFollowUp',
       'addTask',
+      'addTask assigned',
       'answerQuestion',
       'archiveTask',
       'askYou',
+      'assigned claim',
+      'claim refused by assignment',
       'claimStep',
       'claimStep named',
+      'claimStep of an assigned task',
       'collectAnswer',
       'completeMyStep',
       'completeStep',
       'moveToBacklog',
       'queueTask',
+      'release with unassign',
       'reorderQueue',
       'signOff',
       'time passes',
