@@ -1,0 +1,32 @@
+id: MCP-17
+title: "Hand work back to the worker when you finish your step"
+area: MCP
+phase: "2"
+summary: >
+  When a worker completes an agent step and the next step is yours, the task remembers that worker
+  as resumeWith, complete_step tells the worker to wait in wait_for_work, and when you mark your step
+  done that worker's wait_for_work returns the task first, with your note and artifact link, so the
+  worker carries on without being told by hand.
+requirements:
+  - "A new migration (store/migrations/004_resume_with.sql) adds tasks.resume_with, a nullable session id"
+  - "Completing an agent step whose next step is yours sets resume_with to the completing session in the same transaction; claiming the task's next agent step (by anyone), release, archive and the end of that session clear it"
+  - "The invariant from 11 (resumeWith only while your step waits or the task is queued with an agent step current) is added to the invariant checker and the generated and random-operation tests"
+  - "complete_step's text when the next step is yours: \"Step 3 of T-012 is the person's. Call wait_for_work to be told when this task needs an agent again.\""
+  - "firstClaimable and wait_for_work prefer, in order: a task assigned to the caller, a task whose resume_with is the caller, an unassigned task; a task assigned to another session is never offered"
+  - "wait_for_work's text for a hand-back names your step, its title, the artifact URL and your note when present, and says \"Call claim_step with task T-012 to continue it.\""
+  - "The worker instructions in server/instructions.ts add: after handing a step to the person, call wait_for_work and keep calling it"
+acceptance_criteria:
+  - "Unit suite: resume_with is set and cleared by each transition listed, and the invariants hold across the random-operations test"
+  - "Integration suite: a worker completes step 1 of a task whose step 2 is yours, calls wait_for_work, and receives the hand-back text with the note and artifact within one poll of complete_my_step"
+  - "Integration suite: with two workers waiting, the hand-back goes to the worker in resume_with, not the other; when that worker has ended, the other is offered the task"
+  - "Manual desktop check: a worker hands a step to you and waits; marking your step done on the board makes the worker continue without anything typed in its terminal"
+depends_on:
+  - "MCP-15"
+  - "MCP-16"
+external_dependencies: []
+docs:
+  - "11-assignment-and-outputs.md#handing-work-back-to-the-worker"
+  - "11-assignment-and-outputs.md#waiting-for-work"
+  - "03-domain-model.md#the-task-state-machine"
+  - "05-sessions.md#waiting-for-your-answer"
+  - "06-tools-and-views.md#server-instructions"

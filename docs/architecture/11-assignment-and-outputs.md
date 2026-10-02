@@ -74,6 +74,41 @@ The worker instructions add a rule: a worker with nothing to do calls `wait_for_
 | Queue, Backlog and Working cards | "Assigned to api-server" in the meta line, when the task is assigned |
 | Text summary | "→ api-server" after an assigned task |
 
+## Handing work back to the worker
+
+Added on 2026-10-02, at the product owner's request: "I also want the agent to receive a message when I mark my steps complete."
+
+### The problem
+
+When a worker completes an agent step and the next step is yours, the worker's turn ends. When you later mark your step done, the task goes to the front of the queue, and the dedicated chat is told. The worker that handed the task to you is told nothing, because the server cannot push to it ([05](05-sessions.md#waiting-for-your-answer)).
+
+### The rule
+
+**The worker waits for the hand-back in `wait_for_work`.**
+- **When the next step is yours,** `complete_step` returns: "Step 3 of T-012 is the person's. Call wait_for_work to be told when this task needs an agent again."
+- **The worker instructions** make this a rule: after handing a step to the person, call `wait_for_work` and keep calling it.
+
+**The task remembers who to hand back to.**
+- **Setting it.** When an agent step is completed and the next step is yours, the task records `resumeWith`, the session that completed the agent step.
+- **Clearing it.** It is cleared when the task's next agent step is claimed, by anyone, or released, or archived, or when that session ends.
+
+**`wait_for_work` hands it back first.** It returns, in this order of preference:
+1. a queued task assigned to the caller
+2. a queued task whose `resumeWith` is the caller
+3. an unassigned queued task
+
+For the second, the text says what you did: "The person finished step 3 of T-012, “Review the PR”: https://… Note: Looks good. Call claim_step with task T-012 to continue it." The link and the note appear only when present.
+
+**A preference, not a lock.** `resumeWith` does not reserve the task. If that worker is not waiting, any worker may claim the task, as before. An assignment, where there is one, still decides who may claim ([assigning a task to a worker](#assigning-a-task-to-a-worker)).
+
+### Domain
+
+| Field | On | Type | Meaning |
+|---|---|---|---|
+| resumeWith | Task | Session id, or empty | The worker that handed the task to you and should get it back |
+
+There is a new invariant: `resumeWith` is set only on a task whose current step is yours and waiting, or on a queued task whose current step is an agent's.
+
 ## Output formats on your steps
 
 ### The rule
