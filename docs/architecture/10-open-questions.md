@@ -42,6 +42,7 @@ These choices are made in these documents, without a decision from the product o
 | Does `CLAUDE_CODE_SESSION_ID` survive `/clear` and `--resume`? | [05](05-sessions.md#liveness) handles a returning id. A changed id after `/clear` shows up as a new session, and the old one is released. Todo MCP-06 checks this. |
 | What is desktop's `local-agent-mode` client? | It is ignored until it calls a tool |
 | Can a view render in a desktop Code-tab session? | Not relied on. The Code tab is treated as text only. |
+| Which client name and environment does a desktop Code-tab session give the server? | It is treated as any other client: a worker with a minted id, unless it reports `claude-code` with `CLAUDE_CODE_SESSION_ID`. The server logs each client's name and version, and the names (never the values) of the `CLAUDE`, `ANTHROPIC` and `MCP` variables it was given, on `initialized`, so the answer can be read from its log. |
 | Where does desktop install the extension's files, for a worker's `claude mcp add`? | Todo PKG-02 finds the path |
 
 ## Verified by the spikes

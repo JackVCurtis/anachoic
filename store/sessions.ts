@@ -91,6 +91,38 @@ export function touchSession(
   })
 }
 
+/**
+ * Touches a worker session that a call names by its id, as one write. An id
+ * the board has never seen, or the dedicated session's, is refused, so a
+ * call can only name a session the server minted.
+ */
+export function touchKnownSession(
+  database: Database,
+  id: string,
+  now: Instant,
+  pid: number
+): Written<Touched> | Refusal {
+  return write(
+    database,
+    (sqlite) => {
+      const existing = loadSession(sqlite, id)
+      if (!existing || existing.kind !== 'worker') {
+        return refusal(
+          'not_found',
+          `Session ${id} does not exist. Call join_board without session to get a session id.`
+        )
+      }
+      return touchSessionRow(
+        sqlite,
+        { id, kind: existing.kind, projectDir: existing.projectDir },
+        now,
+        pid
+      )
+    },
+    { keepRevision: (touched) => !touched.created && !touched.revived }
+  )
+}
+
 export interface Named {
   id: string
   kind: SessionKind

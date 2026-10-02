@@ -7,11 +7,12 @@ import {
   type BoardProps,
   type GetBoardResult,
 } from '../../shared/props.js'
-import type { Logger } from '../logger.js'
 import { emptyBoard } from '../props/empty_board.js'
 import { guarded } from '../results.js'
 import { boardSummary } from '../text/board_summary.js'
 import { VIEWS } from '../views.js'
+import { asCaller, type ToolContext } from './context.js'
+import { sessionInput } from './session_input.js'
 
 export type BoardSource = () => BoardProps
 
@@ -21,7 +22,7 @@ export type BoardSource = () => BoardProps
  */
 export function registerBoardTools(
   server: McpServer,
-  logger: Logger,
+  context: ToolContext,
   board: BoardSource = () => emptyBoard()
 ) {
   registerAppTool(
@@ -31,11 +32,11 @@ export function registerBoardTools(
       title: 'Show the board',
       description:
         'Shows the Anachoic board: what waits on you, what is running, the queue, the backlog, what is ready to sign off, and the sessions. Hosts that render views draw it; the text result summarises it.',
-      inputSchema: z.object({}),
+      inputSchema: z.object({ ...sessionInput }),
       outputSchema: boardPropsSchema,
       _meta: { ui: { resourceUri: VIEWS.board } },
     },
-    guarded(logger, 'show_board', () => {
+    asCaller(context, 'show_board', () => {
       const props = board()
       return {
         content: [{ type: 'text', text: boardSummary(props) }],
@@ -57,7 +58,7 @@ export function registerBoardTools(
       outputSchema: getBoardResultSchema,
       _meta: { ui: { visibility: ['app'] } },
     },
-    guarded(logger, 'get_board', ({ sinceRevision }) => {
+    guarded(context.logger, 'get_board', ({ sinceRevision }) => {
       const props = board()
       const result: GetBoardResult =
         sinceRevision === props.revision ? { changed: false, revision: props.revision } : props

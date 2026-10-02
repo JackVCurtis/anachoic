@@ -55,7 +55,6 @@ test('show_board returns the board summary and the board props', async () => {
 
   expect(result.isError).toBeFalsy()
   const text = textOf(result)
-  expect(text.startsWith('Board, revision 0')).toBe(true)
   expect(text.split('\n')).toEqual([
     'Board, revision 0',
     'Your turn (0): none',

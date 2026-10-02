@@ -9,9 +9,13 @@ import {
   prepareDataDirectory,
   resolveDataDirectory,
 } from './data_directory.js'
+import { createCallers, type Callers } from './callers.js'
+import { hostVariableNames, kindOfClient } from './identity.js'
 import { createLifecycle } from './lifecycle.js'
-import { createLogger, describeError, type Logger } from './logger.js'
+import { createLogger, describeError } from './logger.js'
 import { registerBoardTools } from './tools/board.js'
+import type { ToolContext } from './tools/context.js'
+import { registerJoinBoard } from './tools/join_board.js'
 import { VERSION } from './version.js'
 import { registerViews } from './views.js'
 
@@ -19,26 +23,41 @@ const VIEWS_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), 'views')
 const HTTP_HOST = '127.0.0.1'
 const DEFAULT_HTTP_PORT = 3001
 
-function createServer(logger: Logger) {
+/**
+ * What every connection's server shares with the others in this process.
+ */
+type Shared = Omit<ToolContext, 'client'>
+
+function createServer(shared: Shared) {
+  const { logger } = shared
   const server = new McpServer({ name: 'anachoic', version: VERSION })
+  const context: ToolContext = { ...shared, client: () => server.server.getClientVersion() }
   registerViews(server, VIEWS_DIRECTORY, logger)
-  registerBoardTools(server, logger)
+  registerBoardTools(server, context)
+  registerJoinBoard(server, context)
   server.server.oninitialized = () => {
-    const client = server.server.getClientVersion()
-    logger.log('initialized', { client: { name: client?.name, version: client?.version } })
+    const client = context.client()
+    // Names only, never values: they show what each host passes to the server.
+    logger.log('initialized', {
+      client: { name: client?.name, version: client?.version },
+      kind: kindOfClient(client),
+      environment: hostVariableNames(process.env),
+    })
   }
   return server
 }
 
-async function serveStdio(logger: Logger, lifecycle: ReturnType<typeof createLifecycle>) {
-  const server = createServer(logger)
+async function serveStdio(shared: Shared, lifecycle: ReturnType<typeof createLifecycle>) {
+  const { logger } = shared
+  const server = createServer(shared)
   lifecycle.onStop(() => server.close())
   // The stdio transport closes itself when stdin ends.
   server.server.onclose = () => void lifecycle.stop('stdin closed')
   await server.connect(new StdioServerTransport())
 }
 
-async function serveHttp(logger: Logger, lifecycle: ReturnType<typeof createLifecycle>) {
+async function serveHttp(shared: Shared, lifecycle: ReturnType<typeof createLifecycle>) {
+  const { logger } = shared
   const { createMcpExpressApp } = await import('@modelcontextprotocol/express')
   const { NodeStreamableHTTPServerTransport } = await import('@modelcontextprotocol/node')
   const { default: cors } = await import('cors')
@@ -46,7 +65,7 @@ async function serveHttp(logger: Logger, lifecycle: ReturnType<typeof createLife
   const app = createMcpExpressApp()
   app.use(cors())
   app.all('/mcp', async (request, response) => {
-    const server = createServer(logger)
+    const server = createServer(shared)
     const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined })
     response.on('close', () => {
       transport.close().catch(() => {})
@@ -116,8 +135,19 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => void lifecycle.stop(signal))
 }
 
+const callers: Callers = createCallers({
+  database,
+  heartbeat,
+  env: {
+    CLAUDE_CODE_SESSION_ID: process.env.CLAUDE_CODE_SESSION_ID,
+    CLAUDE_PROJECT_DIR: process.env.CLAUDE_PROJECT_DIR,
+  },
+  logger,
+})
+const shared: Shared = { logger, database, callers, now: () => new Date().toISOString() }
+
 if (transport === 'http') {
-  await serveHttp(logger, lifecycle)
+  await serveHttp(shared, lifecycle)
 } else {
-  await serveStdio(logger, lifecycle)
+  await serveStdio(shared, lifecycle)
 }
