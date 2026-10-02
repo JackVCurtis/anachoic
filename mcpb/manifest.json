@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "anachoic",
   "display_name": "Anachoic",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A board for planning work as chains of steps shared between you and your Claude sessions.",
   "author": {
     "name": "Jack Curtis"

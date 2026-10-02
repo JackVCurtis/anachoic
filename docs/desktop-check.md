@@ -87,6 +87,21 @@ Use a task with a worker step that declared Output "Pull request", then a user s
    - Archive takes the task off every list. In the board panel it returns to the board, and in the standalone view it says the task was archived.
 5. **Nothing is posted** to the chat by any of these actions, and no text on screen says "you".
 
+## H. Prompts and History (after phase 3)
+
+1. **The board prompt in desktop.**
+   - In a new desktop chat, type `/` and look for "Show the board" from Anachoic. If it isn't there, look under the "+" menu, at "Add from Anachoic".
+   - Use it. The message "Show the Anachoic board." is sent, and the board appears.
+   - Note where desktop offered the prompt. It is recorded in doc 14.
+2. **The history prompt** works the same way, and the History view appears.
+3. **History.**
+   - It lists signed-off tasks, newest first, with their steps, times, workers, artifact links and sign-off date.
+   - The filter narrows the list by title or by id. With more than 20 tasks, Previous and Next move between pages.
+   - A task's title opens the task view, and "Back to history" returns to the list.
+   - Artifact links open in the browser.
+4. **From the board.** "Show all completed tasks" in the Done section opens History, and "Back to board" returns.
+5. **In Claude Code.** `/mcp__anachoic__board` shows the board summary as text.
+
 ## Results
 
 | Date | Claude desktop | Phase | Result |
