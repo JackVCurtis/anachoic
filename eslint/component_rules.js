@@ -28,7 +28,9 @@ function folderName(layer) {
 }
 
 /**
- * Folders only stories, tests and the folder itself may import from.
+ * Folders only stories, tests and the folder itself may import from. An
+ * entry's fixtures.ts may import the library's fixtures too, so the entry's
+ * sample props are built from the same boards.
  */
 const TEST_ONLY = {
   fixtures: 'Fixtures are for stories and tests only. No component, page or layout imports them.',
@@ -124,6 +126,9 @@ const layers = {
     }
 
     const isStoryOrTest = STORY_OR_TEST.test(basename(filename))
+    const isEntryFixtures =
+      basename(filename) === 'fixtures.ts' &&
+      relative(place.view, filename).split(sep)[0] === 'entries'
     const from = layerOf(filename, place.components)
     const known = from !== null && from in LAYER_IMPORTS
 
@@ -146,7 +151,10 @@ const layers = {
       }
 
       if (to in TEST_ONLY) {
-        const allowed = isStoryOrTest || from === to || (to === 'fixtures' && from === 'testing')
+        const allowed =
+          isStoryOrTest ||
+          from === to ||
+          (to === 'fixtures' && (from === 'testing' || isEntryFixtures))
         if (!allowed) {
           context.report({ node, message: TEST_ONLY[to] })
         }

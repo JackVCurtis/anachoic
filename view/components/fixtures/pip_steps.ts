@@ -1,5 +1,5 @@
 // Copied from anachoic inertia/components/fixtures/pip_steps.ts at fd99e0d
-import type { Owner, StepStatus } from '../types'
+import type { Owner, StepStatus } from '../types.js'
 
 /**
  * A step with only the fields a row of pips reads.

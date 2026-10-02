@@ -36,6 +36,11 @@ describe('lint refuses', () => {
       'view/components/patterns/example/example.tsx',
       "import { FIXED_NOW } from '../../fixtures/clock'",
     ],
+    [
+      'the library fixtures in a view entry',
+      'view/entries/board/board_entry.tsx',
+      "import { BUSY_BOARD } from '../../components/fixtures/board'",
+    ],
     ['a barrel file in the library', 'view/components/primitives/index.ts', 'export {}'],
     [
       'lucide-react outside the Icon primitive',
@@ -72,6 +77,11 @@ describe('lint allows', () => {
       'lucide-react in the Icon primitive',
       'view/components/primitives/icon/icon.tsx',
       "import { Plus } from 'lucide-react'",
+    ],
+    [
+      "an entry's fixtures importing the library fixtures",
+      'view/entries/board/fixtures.ts',
+      "import { BUSY_BOARD } from '../../components/fixtures/board'",
     ],
   ])('%s', async (_name, filePath, code) => {
     expect(await errors(filePath, code)).toEqual([])
