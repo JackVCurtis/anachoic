@@ -47,7 +47,7 @@ function backInQueue(): TaskState {
 }
 
 describe('resumeWith', () => {
-  test('completing an agent step whose next step is yours sets it to the completing session', () => {
+  test("completing an agent step whose next step is the user's sets it to the completing session", () => {
     const state = handedToYou()
     expect(state.task.status).toBe('active')
     expect(state.task.resumeWith).toBe(A)

@@ -234,7 +234,7 @@ test.each([
     'complete_my_step on an agent’s waiting step',
     'complete_my_step',
     { task: 'T-001' },
-    "Step 1 of T-001 is an agent's, not yours",
+    "Step 1 of T-001 is an agent's, not the user's",
   ],
   [
     'reorder_queue on a backlog task',

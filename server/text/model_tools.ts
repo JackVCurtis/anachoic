@@ -1,13 +1,22 @@
 import { currentStep } from '../../domain/chain.js'
-import type { Event, SessionKind, Step, TaskState } from '../../domain/types.js'
+import { inputOf } from '../../domain/derived.js'
+import type { Event, Owner, SessionKind, Step, TaskState } from '../../domain/types.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import { formatTaskId } from '../../shared/task_id.js'
 import { since } from './board_summary.js'
 
 /**
  * The text result of each model tool that changes the board: one compact
- * block for the model, in the sentences of 06's tables.
+ * block for the model, in the sentences of 06's tables. The texts never
+ * address the user in the second person: "you" is always the model.
  */
+
+/**
+ * A step's owner as the model reads it.
+ */
+export function ownerWord(owner: Owner): 'agent' | 'user' {
+  return owner === 'you' ? 'user' : 'agent'
+}
 
 function steps(count: number, adjective = '') {
   const noun = count === 1 ? 'step' : 'steps'
@@ -15,12 +24,12 @@ function steps(count: number, adjective = '') {
 }
 
 /**
- * Where a task stands after a change that sent it to the queue, the backlog,
- * or straight to you.
+ * Where a task stands after a change that started it at once, because its
+ * current step is the user's.
  */
-function waitsOnYou({ task, steps: chain }: TaskState) {
+function waitsOnUser({ task, steps: chain }: TaskState) {
   const step = currentStep(chain)
-  return `${formatTaskId(task.id)} is active: step ${step.number} "${step.title}" waits on you`
+  return `${formatTaskId(task.id)} is active: step ${step.number} "${step.title}" waits on the user`
 }
 
 /**
@@ -33,7 +42,7 @@ export function addTaskText(state: TaskState, assignedName?: string): string {
     case 'queue':
       return `Added ${id} to the queue at position ${state.task.queuePosition}${assigned}`
     case 'active':
-      return `Added ${id}${assigned}. ${waitsOnYou(state)}`
+      return `Added ${id}${assigned}. ${waitsOnUser(state)}`
     default:
       return `Added ${id} to the backlog${assigned}`
   }
@@ -41,7 +50,7 @@ export function addTaskText(state: TaskState, assignedName?: string): string {
 
 export function queueTaskText(state: TaskState): string {
   return state.task.status === 'active'
-    ? waitsOnYou(state)
+    ? waitsOnUser(state)
     : `${formatTaskId(state.task.id)} is in the queue at position ${state.task.queuePosition}`
 }
 
@@ -49,7 +58,7 @@ export function addFollowUpText(state: TaskState, added: number): string {
   const id = formatTaskId(state.task.id)
   const count = steps(added, 'new')
   return state.task.status === 'active'
-    ? `${waitsOnYou(state)}, with ${count}`
+    ? `${waitsOnUser(state)}, with ${count}`
     : `${id} is back in the queue at position ${state.task.queuePosition} with ${count}`
 }
 
@@ -82,7 +91,7 @@ export function blockHistory(events: readonly Event[], now: string): Map<string,
 }
 
 function chainLine(step: Step, blocks?: ReadonlyMap<string, string[]>) {
-  const head = `${step.number}. "${step.title}" (${step.owner === 'you' ? 'yours' : 'agent'})`
+  const head = `${step.number}. "${step.title}" (${ownerWord(step.owner)})`
   const line = step.summary ? `${head}: ${step.summary}` : head
   const past = blocks?.get(step.id)
   return past ? `${line} (${past.join('; ')})` : line
@@ -90,22 +99,23 @@ function chainLine(step: Step, blocks?: ReadonlyMap<string, string[]>) {
 
 /**
  * One line for each step before `before` that has an artifact:
- * "Step 2 (you): Pull request https://…".
+ * "Step 2 (agent): Pull request https://…".
  */
 export function artifactLines(chain: readonly Step[], before: number): string[] {
   return chain.flatMap((step) =>
     step.number < before && step.outputFormat !== null && step.artifactUrl !== null
       ? [
-          `Step ${step.number} (${step.owner}): ${OUTPUT_FORMAT_WORDS[step.outputFormat].shown} ${step.artifactUrl}`,
+          `Step ${step.number} (${ownerWord(step.owner)}): ${OUTPUT_FORMAT_WORDS[step.outputFormat].shown} ${step.artifactUrl}`,
         ]
       : []
   )
 }
 
 /**
- * The claimed step in full: what to do, whether the task is assigned to the
- * caller, the chain so far with each completed step's summary and past
- * blocks, the steps after it, and what to call next.
+ * The claimed step in full: its input, the previous step's artifact, first;
+ * what to do and what it must produce; whether the task is assigned to the
+ * caller; the chain so far with each completed step's summary, past blocks
+ * and artifacts; the steps after it; and what to call next.
  */
 export function claimStepText(
   state: TaskState,
@@ -117,13 +127,24 @@ export function claimStepText(
   const done = state.steps.filter((each) => each.number < step.number)
   const later = state.steps.filter((each) => each.number > step.number)
   const artifacts = artifactLines(state.steps, step.number)
+  const input = inputOf(state.steps, step)
   return [
     `Claimed ${id} step ${step.number} of ${state.steps.length}: "${step.title}"`,
+    ...(input
+      ? [
+          `Input from step ${input.stepNumber}: ${OUTPUT_FORMAT_WORDS[input.format].shown} ${input.url}`,
+        ]
+      : []),
     `Task: "${state.task.title}"`,
     ...(callerId !== undefined && state.task.assignedTo === callerId
       ? [`${id} is assigned to you: no other session may claim its agent steps.`]
       : []),
     ...(step.detail ? [`Detail: ${step.detail}`] : []),
+    ...(step.outputFormat
+      ? [
+          `Produces: ${OUTPUT_FORMAT_WORDS[step.outputFormat].produced}. Finish with complete_step and artifact_url.`,
+        ]
+      : []),
     ...(blocks?.get(step.id)
       ? [`Before this claim, the step was ${blocks.get(step.id)!.join('; ')}`]
       : []),
@@ -132,7 +153,7 @@ export function claimStepText(
       : ['Done so far:', ...done.map((each) => chainLine(each, blocks))]),
     ...(artifacts.length === 0 ? [] : ['Artifacts:', ...artifacts]),
     ...(later.length === 0 ? [] : ['After this step:', ...later.map((each) => chainLine(each))]),
-    `Next: do the step. Call update_step with task ${id} to note progress, ask_you if you need an answer from the person, and complete_step with task ${id}, a summary and links when it is done.`,
+    `Next: do the step. Call update_step with task ${id} to note progress, ask_you if you need an answer from the user, and complete_step with task ${id}, a summary and links when it is done.`,
   ].join('\n')
 }
 
@@ -141,7 +162,7 @@ export function updateStepText(state: TaskState): string {
 }
 
 export function blockStepText(state: TaskState): string {
-  return `Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task ${formatTaskId(state.task.id)}.`
+  return `Blocked. The user will unblock this in this session. End this turn now and wait for the user here; when they have resolved it, call unblock_step with task ${formatTaskId(state.task.id)}.`
 }
 
 export function unblockStepText(state: TaskState): string {
@@ -154,8 +175,8 @@ export function askYouText(state: TaskState): string {
 
 /**
  * What happened after the step was completed: the task is done, waits on
- * you, or is back in the queue for an agent to continue. A worker that hands
- * a step to you is told to wait for the task to come back.
+ * the user, or is back in the queue for an agent to continue. A worker that
+ * hands a step to the user is told to wait for the task to come back.
  */
 export function completeStepText(
   state: TaskState,
@@ -174,8 +195,8 @@ export function completeStepText(
     default: {
       const next = currentStep(state.steps)
       return kind === 'dedicated'
-        ? `${head} Step ${next.number} "${next.title}" waits on you.`
-        : `${head} Step ${next.number} of ${id} is the person's. Call wait_for_work to be told when this task needs an agent again.`
+        ? `${head} Step ${next.number} "${next.title}" waits on the user.`
+        : `${head} Step ${next.number} of ${id} is the user's. Call wait_for_work to be told when this task needs an agent again.`
     }
   }
 }

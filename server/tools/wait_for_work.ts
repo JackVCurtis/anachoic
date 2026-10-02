@@ -18,14 +18,14 @@ function sentence(text: string) {
 
 /**
  * The work found, and the call that takes it. A task handed back to the
- * caller names your step, with its artifact and note when present.
+ * caller names the user's step, with its artifact and note when present.
  */
 export function workText({ taskId, assigned, handBack }: Work): string {
   const id = formatTaskId(taskId)
   if (handBack) {
     const { stepNumber, title, artifactUrl, note } = handBack
     return [
-      `The person finished step ${stepNumber} of ${id}, “${title}”${artifactUrl ? `: ${artifactUrl}` : '.'}`,
+      `The user finished step ${stepNumber} of ${id}, “${title}”${artifactUrl ? `: ${artifactUrl}` : '.'}`,
       ...(note ? [`Note: ${sentence(note)}`] : []),
       `Call claim_step with task ${id} to continue it.`,
     ].join(' ')

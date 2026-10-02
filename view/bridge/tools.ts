@@ -59,7 +59,7 @@ export interface NewStep {
   title: string
   owner: 'agent' | 'you'
   detail?: string
-  /** Your steps only. */
+  /** Agent steps only. */
   outputFormat?: OutputFormat | null
 }
 
@@ -78,12 +78,8 @@ export const actions = {
     callAppTool<ActionResult>(app, 'reorder_queue', { task, position }),
   moveToBacklog: (app: App, task: TaskArg) =>
     callAppTool<ActionResult>(app, 'move_to_backlog', { task }),
-  completeMyStep: (app: App, task: TaskArg, note?: string, artifactUrl?: string) =>
-    callAppTool<ActionResult>(app, 'complete_my_step', {
-      task,
-      ...(note ? { note } : {}),
-      ...(artifactUrl ? { artifactUrl } : {}),
-    }),
+  completeMyStep: (app: App, task: TaskArg, note?: string) =>
+    callAppTool<ActionResult>(app, 'complete_my_step', { task, ...(note ? { note } : {}) }),
   answerQuestion: (app: App, task: TaskArg, answer: string) =>
     callAppTool<ActionResult>(app, 'answer_question', { task, answer }),
   signOff: (app: App, task: TaskArg) => callAppTool<ActionResult>(app, 'sign_off', { task }),

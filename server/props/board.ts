@@ -5,6 +5,7 @@ import {
   claimedBy,
   counts,
   holdings,
+  inputOf,
   linkCount,
   listOf,
   yourSeconds,
@@ -99,6 +100,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             waitingSince: step.waitingSince ?? step.startedAt ?? now,
           },
           ...(session ? { session } : {}),
+          ...(step.owner === 'you' ? { input: inputOf(steps, step) } : {}),
           blocked:
             step.blockedReason === null
               ? null
@@ -115,6 +117,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             number: step.number,
             title: step.title,
             ...(step.note === null ? {} : { note: step.note }),
+            ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
             runningSince: step.runningSince ?? step.startedAt ?? now,
           },
           session: holder(state) ?? {

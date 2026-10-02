@@ -85,7 +85,7 @@ test('a worker adds a two-step chain, claims, notes and completes each step, and
     'Done so far: none',
     'After this step:',
     '2. "Use it in the client" (agent)',
-    'Next: do the step. Call update_step with task T-001 to note progress, ask_you if you need an answer from the person, and complete_step with task T-001, a summary and links when it is done.',
+    'Next: do the step. Call update_step with task T-001 to note progress, ask_you if you need an answer from the user, and complete_step with task T-001, a summary and links when it is done.',
   ])
 
   expect(await ok(api, 'update_step', { task: 'T-001', note: 'Helper written' })).toBe(
@@ -121,7 +121,7 @@ test('add_task, queue_task and add_follow_up say where the task went', async () 
   )
   expect(
     await ok(api, 'add_task', { title: 'Review', steps: [{ title: 'Read it', owner: 'you' }] })
-  ).toBe('Added T-002. T-002 is active: step 1 "Read it" waits on you')
+  ).toBe('Added T-002. T-002 is active: step 1 "Read it" waits on the user')
   expect(await ok(api, 'queue_task', { task: 'T-001' })).toBe('T-001 is in the queue at position 1')
 
   await ok(api, 'add_task', { title: 'One step', steps: [{ title: 'Do it', owner: 'agent' }] })
@@ -175,7 +175,7 @@ test('complete_step on a step waiting on you is refused as unanswered', async ()
     'Asked. Call wait_for_answer with task T-001 next.'
   )
   expect(await call(api, 'complete_step', { task: 'T-001', summary: 'Done' })).toEqual({
-    text: 'Step 1 of T-001 is waiting for your answer',
+    text: "Step 1 of T-001 is waiting for the user's answer",
     isError: true,
   })
 })

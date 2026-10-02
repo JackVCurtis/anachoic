@@ -56,14 +56,14 @@ describe('add_task, queue_task and add_follow_up', () => {
     expect(addTaskText(at(newTask(['agent']), 4))).toBe('Added T-012 to the queue at position 4')
     expect(addTaskText(backlogTask(['agent']))).toBe('Added T-012 to the backlog')
     expect(addTaskText(at(newTask(['you'])))).toBe(
-      'Added T-012. T-012 is active: step 1 "Draft the plan" waits on you'
+      'Added T-012. T-012 is active: step 1 "Draft the plan" waits on the user'
     )
 
     expect(queueTaskText(at(stateOf(queue(backlogTask(['agent']), ctx(A))), 4))).toBe(
       'T-012 is in the queue at position 4'
     )
     expect(queueTaskText(stateOf(queue(backlogTask(['you']), ctx(A))))).toBe(
-      'T-012 is active: step 1 "Step 1" waits on you'
+      'T-012 is active: step 1 "Step 1" waits on the user'
     )
   })
 
@@ -86,7 +86,7 @@ describe('add_task, queue_task and add_follow_up', () => {
       placement: 'last',
     })
     expect(addFollowUpText(stateOf(yoursFirst), 1)).toBe(
-      'T-012 is active: step 2 "Check" waits on you, with 1 new step'
+      'T-012 is active: step 2 "Check" waits on the user, with 1 new step'
     )
   })
 })
@@ -109,8 +109,43 @@ describe('the worker tools', () => {
         'Done so far:',
         '1. "Draft the plan" (agent): Plan in the PR description',
         'After this step:',
-        '3. "Review the PR" (yours)',
-        'Next: do the step. Call update_step with task T-012 to note progress, ask_you if you need an answer from the person, and complete_step with task T-012, a summary and links when it is done.',
+        '3. "Review the PR" (user)',
+        'Next: do the step. Call update_step with task T-012 to note progress, ask_you if you need an answer from the user, and complete_step with task T-012, a summary and links when it is done.',
+      ].join('\n')
+    )
+  })
+
+  test('claim_step names its input first and what the step produces', () => {
+    const url = 'https://github.com/acme/api/pull/12'
+    const formatted = addToQueue(
+      {
+        taskId: 12,
+        title: 'Add caching',
+        steps: [
+          { title: 'Open the PR', owner: 'agent', outputFormat: 'pull_request' },
+          { title: 'Write the docs', owner: 'agent', outputFormat: 'document' },
+        ],
+      },
+      ctx(A)
+    )
+    const first = stateOf(claim(at(formatted, 1), ctx(A)))
+    expect(claimStepText(first).split('\n')).toContain(
+      'Produces: a pull request. Finish with complete_step and artifact_url.'
+    )
+    expect(claimStepText(first)).not.toContain('Input from')
+    const done = accepted(completeStep(first, ctx(A), { summary: 'Opened', artifactUrl: url }))
+    const next = stateOf(claim(at(done, 1), ctx(A)))
+    expect(claimStepText(next)).toBe(
+      [
+        'Claimed T-012 step 2 of 2: "Write the docs"',
+        `Input from step 1: Pull request ${url}`,
+        'Task: "Add caching"',
+        'Produces: a document. Finish with complete_step and artifact_url.',
+        'Done so far:',
+        '1. "Open the PR" (agent): Opened',
+        'Artifacts:',
+        `Step 1 (agent): Pull request ${url}`,
+        'Next: do the step. Call update_step with task T-012 to note progress, ask_you if you need an answer from the user, and complete_step with task T-012, a summary and links when it is done.',
       ].join('\n')
     )
   })
@@ -123,7 +158,7 @@ describe('the worker tools', () => {
     expect(askYouText(asked)).toBe('Asked. Call wait_for_answer with task T-012 next.')
   })
 
-  test('complete_step says the task is back in the queue, waits on you, or is done', () => {
+  test('complete_step says the task is back in the queue, waits on the user, or is done', () => {
     const requeued = accepted(completeStep(claimed, ctx(A), { summary: 'Planned' }))
     expect(completeStepText(at(requeued, 1), requeued.events)).toBe(
       'Completed T-012 step 1. T-012 is back in the queue at position 1. Call claim_step with task T-012 to continue it.'
@@ -131,10 +166,10 @@ describe('the worker tools', () => {
 
     const yours = accepted(completeStep(second, ctx(A), { summary: 'Redis' }))
     expect(completeStepText(at(yours), yours.events)).toBe(
-      "Completed T-012 step 2. Step 3 of T-012 is the person's. Call wait_for_work to be told when this task needs an agent again."
+      "Completed T-012 step 2. Step 3 of T-012 is the user's. Call wait_for_work to be told when this task needs an agent again."
     )
     expect(completeStepText(at(yours), yours.events, 'dedicated')).toBe(
-      'Completed T-012 step 2. Step 3 "Review the PR" waits on you.'
+      'Completed T-012 step 2. Step 3 "Review the PR" waits on the user.'
     )
 
     const only = stateOf(claim(at(newTask(['agent']), 1), ctx(A)))
@@ -149,7 +184,7 @@ describe('blocked steps', () => {
   test('block_step and unblock_step say what to do next', () => {
     const blocked = stateOf(block(claimed(), ctx(A, 60), 'needs AWS credentials'))
     expect(blockStepText(blocked)).toBe(
-      'Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-012.'
+      'Blocked. The user will unblock this in this session. End this turn now and wait for the user here; when they have resolved it, call unblock_step with task T-012.'
     )
     expect(unblockStepText(stateOf(unblock(blocked, ctx(A, 120))))).toBe(
       'Unblocked. Carry on with step 1 of T-012.'

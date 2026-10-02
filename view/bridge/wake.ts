@@ -22,12 +22,8 @@ export function createYourActions(app: ActionApp) {
       actions.reorderQueue(app, task.displayId, position),
     /** `active`: the task was active, so moving it parks it. */
     moveToBacklog: (task: TaskName, _active: boolean) => actions.moveToBacklog(app, task.displayId),
-    completeMyStep: (
-      task: TaskName,
-      _step: { number: number; title: string },
-      note?: string,
-      artifactUrl?: string
-    ) => actions.completeMyStep(app, task.displayId, note, artifactUrl),
+    completeMyStep: (task: TaskName, _step: { number: number; title: string }, note?: string) =>
+      actions.completeMyStep(app, task.displayId, note),
     answerQuestion: (task: TaskName, _stepNumber: number, answer: string) =>
       actions.answerQuestion(app, task.displayId, answer),
     signOff: (task: TaskName) => actions.signOff(app, task.displayId),

@@ -124,7 +124,7 @@ describe('addTask', () => {
     expect(first.events.map((event) => event.kind)).toEqual(['added', 'queued'])
   })
 
-  test('adds to the backlog, and starts at once when the first step is yours', () => {
+  test("adds to the backlog, and starts at once when the first step is the user's", () => {
     expect(readTask(database, add(['agent'], { queue: false }))!.state.task.status).toBe('backlog')
     const started = readTask(database, add(['you', 'agent']))!.state
     expect(started.task).toMatchObject({ status: 'active', queuePosition: null })
@@ -162,7 +162,7 @@ describe('addTask', () => {
     [
       'an unknown owner',
       { title: 'x', steps: [{ title: 'x', owner: 'robot' }] },
-      'steps[0].owner must be agent or you',
+      'steps[0].owner must be agent or user',
     ],
   ])('refuses %s', (_label, input, sentence) => {
     refuses(() => addTask(database, 'you', now(), input as never), 'invalid', sentence)
@@ -195,12 +195,12 @@ describe('queueTask and reorderQueue', () => {
     expect([one, two, three].map(positionOf)).toEqual([1, 2, 3])
   })
 
-  test('reorder is yours alone, and needs a position from 1', () => {
+  test("reorder is the user's alone, and needs a position from 1", () => {
     const id = add(['agent'])
     refuses(
       () => reorderQueue(database, A, now(), id, 1),
       'not_yours',
-      'Only you can reorder T-001'
+      'Only the user can reorder T-001'
     )
     refuses(() => reorderQueue(database, 'you', now(), id, 0), 'invalid')
   })
@@ -269,7 +269,7 @@ describe('Worker services', () => {
     refuses(
       () => askYou(database, A, now(), id, 'Again?'),
       'unanswered',
-      'Step 1 of T-001 is waiting for your answer'
+      "Step 1 of T-001 is waiting for the user's answer"
     )
     refuses(() => completeStep(database, A, now(), id, { summary: 'x' }), 'unanswered')
   })

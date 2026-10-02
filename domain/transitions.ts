@@ -348,7 +348,7 @@ export const preconditions = {
       () => {
         const { step } = current(state)
         if (step.owner === 'you') {
-          return wrongStepStatus(state.task.id, step.number, 'is your step, not a question')
+          return wrongStepStatus(state.task.id, step.number, "is the user's step, not a question")
         }
         return step.status === 'waiting' && !isBlocked(step)
           ? null
@@ -358,7 +358,7 @@ export const preconditions = {
   completeMyStep: (state: TaskState, ctx: Context) =>
     first(
       () => notArchived(state),
-      () => byYou(state, ctx, 'mark your own step on {task} done'),
+      () => byYou(state, ctx, "mark the user's step on {task} done"),
       () => inStatus(state, 'active'),
       () => {
         const { step } = current(state)
@@ -429,7 +429,9 @@ function startNow(state: TaskState, ctx: Context): Change {
     task: { ...state.task, status: 'active' },
     steps: withStep(state.steps, index, started),
     queue: state.task.status === 'queue' ? LEAVE : NONE,
-    events: [event(ctx, state.task.id, started, 'started', `Step ${started.number} waits on you`)],
+    events: [
+      event(ctx, state.task.id, started, 'started', `Step ${started.number} waits on the user`),
+    ],
   }
 }
 

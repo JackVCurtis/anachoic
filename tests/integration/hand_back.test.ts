@@ -19,7 +19,7 @@ const WAIT_ENV = {
 }
 
 const HAND_BACK =
-  'The person finished step 2 of T-001, “Review the PR”: https://github.com/o/r/pull/7 Note: Looks good. Call claim_step with task T-001 to continue it.'
+  'The user finished step 2 of T-001, “Review the PR”. Note: Looks good. Call claim_step with task T-001 to continue it.'
 
 let dataDir: string
 let chat: Client
@@ -64,8 +64,8 @@ beforeEach(async () => {
   await call(chat, 'add_task', {
     title: 'Add retries',
     steps: [
-      { title: 'Open the PR', owner: 'agent' },
-      { title: 'Review the PR', owner: 'you', output_format: 'pull_request' },
+      { title: 'Open the PR', owner: 'agent', output_format: 'pull_request' },
+      { title: 'Review the PR', owner: 'user' },
       { title: 'Merge it', owner: 'agent' },
     ],
   })
@@ -80,13 +80,19 @@ afterEach(async () => {
 function markDone() {
   return chat.callTool({
     name: 'complete_my_step',
-    arguments: { task: 'T-001', note: 'Looks good', artifactUrl: 'https://github.com/o/r/pull/7' },
+    arguments: { task: 'T-001', note: 'Looks good' },
   })
 }
 
 test('a worker that hands a step to you waits, and gets the task back within one poll of your step being done', async () => {
-  expect(await call(api, 'complete_step', { task: 'T-001', summary: 'Opened it' })).toEqual({
-    text: "Completed T-001 step 1. Step 2 of T-001 is the person's. Call wait_for_work to be told when this task needs an agent again.",
+  expect(
+    await call(api, 'complete_step', {
+      task: 'T-001',
+      summary: 'Opened it',
+      artifact_url: 'https://github.com/o/r/pull/7',
+    })
+  ).toEqual({
+    text: "Completed T-001 step 1. Step 2 of T-001 is the user's. Call wait_for_work to be told when this task needs an agent again.",
     isError: false,
   })
   expect(query(dataDir, 'SELECT resume_with FROM tasks')).toEqual([{ resume_with: 'worker-a' }])
@@ -107,7 +113,11 @@ test('a worker that hands a step to you waits, and gets the task back within one
 })
 
 test('with two workers waiting, the hand-back goes to the worker in resume_with; once it has ended, the other is offered the task', async () => {
-  await call(api, 'complete_step', { task: 'T-001', summary: 'Opened it' })
+  await call(api, 'complete_step', {
+    task: 'T-001',
+    summary: 'Opened it',
+    artifact_url: 'https://github.com/o/r/pull/7',
+  })
   const fromApi = waitForWork(api)
   const fromWeb = waitForWork(web)
   await sleep(POLL_MS * 2)

@@ -98,18 +98,18 @@ export function claimedByAnother(taskId: number, stepNumber: number, sessionName
 }
 
 export function yourStep(taskId: number, stepNumber: number): Refusal {
-  return refusal('not_yours', `${stepOf(taskId, stepNumber)} is yours, not an agent's`)
+  return refusal('not_yours', `${stepOf(taskId, stepNumber)} is the user's, not an agent's`)
 }
 
 export function agentStep(taskId: number, stepNumber: number): Refusal {
-  return refusal('not_yours', `${stepOf(taskId, stepNumber)} is an agent's, not yours`)
+  return refusal('not_yours', `${stepOf(taskId, stepNumber)} is an agent's, not the user's`)
 }
 
 /**
  * `action` names the action, with {task} where the task's display id goes.
  */
 export function onlyYou(taskId: number, action: string): Refusal {
-  return refusal('not_yours', `Only you can ${action.replace('{task}', formatTaskId(taskId))}`)
+  return refusal('not_yours', `Only the user can ${action.replace('{task}', formatTaskId(taskId))}`)
 }
 
 export function onlyASession(taskId: number, action: string): Refusal {
@@ -132,7 +132,7 @@ export function nothingToClaim(): Refusal {
 }
 
 export function unanswered(taskId: number, stepNumber: number): Refusal {
-  return refusal('unanswered', `${stepOf(taskId, stepNumber)} is waiting for your answer`)
+  return refusal('unanswered', `${stepOf(taskId, stepNumber)} is waiting for the user's answer`)
 }
 
 export function signedOff(taskId: number): Refusal {

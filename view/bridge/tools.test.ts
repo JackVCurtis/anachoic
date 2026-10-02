@@ -41,20 +41,15 @@ describe('callAppTool', () => {
 })
 
 describe('actions.completeMyStep', () => {
-  test('sends the note and the artifact URL only when given', async () => {
+  test('sends the note only when given, and never an artifact URL', async () => {
     const app = new FakeApp({ answer: () => ({ content: [], structuredContent: {} }) })
 
     await actions.completeMyStep(app, 'T-012')
     await actions.completeMyStep(app, 'T-012', 'Two nits')
-    await actions.completeMyStep(app, 'T-012', undefined, 'https://github.com/acme/api/pull/12')
 
     expect(app.calls.callServerTool).toEqual([
       { name: 'complete_my_step', arguments: { task: 'T-012' } },
       { name: 'complete_my_step', arguments: { task: 'T-012', note: 'Two nits' } },
-      {
-        name: 'complete_my_step',
-        arguments: { task: 'T-012', artifactUrl: 'https://github.com/acme/api/pull/12' },
-      },
     ])
   })
 })

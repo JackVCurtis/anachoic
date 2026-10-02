@@ -88,7 +88,7 @@ test('your answer from another process ends the wait within one poll, and only o
   const result = await waiting
 
   expect(result).toMatchObject({
-    text: 'The person answered your question on T-001:\nRedis',
+    text: 'The user answered your question on T-001:\nRedis',
     isError: false,
   })
   expect(result.at - answeredAt).toBeLessThan(POLL_MS + SLACK_MS)
@@ -157,7 +157,7 @@ test('cancelling the call stops the polling, keeps the question, and a later cal
   await sleep(POLL_MS)
   await call(view, 'answer_question', { task: 'T-001', answer: 'In-process' })
   expect(await again).toMatchObject({
-    text: 'The person answered your question on T-001:\nIn-process',
+    text: 'The user answered your question on T-001:\nIn-process',
   })
 })
 

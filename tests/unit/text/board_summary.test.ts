@@ -30,7 +30,7 @@ describe('the empty board', () => {
     expect(boardSummary(emptyBoard())).toBe(
       [
         'Board, revision 0',
-        'Your turn (0): none',
+        'Waiting on user (0): none',
         'Working (0): none',
         'Queue (0): none',
         'Backlog (0): none',
@@ -158,7 +158,7 @@ describe('the board summary', () => {
     const lines = boardSummary(boardPropsSchema.parse(EXAMPLE)).split('\n')
     const expected = [
       'Board, revision 214',
-      'Your turn (2): T-012 step 2 "Choose the cache key" asks: "Redis or in-process?" (api-server) · T-009 step 3 "Review the PR" is yours',
+      `Waiting on user (2): T-012 step 2 "Choose the cache key" asks: "Redis or in-process?" (api-server) · T-009 step 3 "Review the PR" is the user's`,
       'Working (3): T-014 step 1 "Draft the migration" (api-server, 12m) · …',
       'Queue (4): 1. T-015 "Add retries" next: agent · 2. …',
       'Backlog (6): T-003, T-004, T-007, T-008, T-010, T-011',
@@ -211,7 +211,7 @@ describe('the board summary', () => {
     const summary = boardSummary(boardPropsSchema.parse(board))
     expect(estimateTokens(summary)).toBeLessThan(SUMMARY_TOKEN_BUDGET)
     const lines = summary.split('\n')
-    expect(lines[1]).toMatch(/^Your turn \(20\): .* · and \d+ more$/)
+    expect(lines[1]).toMatch(/^Waiting on user \(20\): .* · and \d+ more$/)
     expect(lines[3]).toMatch(/^Queue \(20\): 1\. T-041 "x{59}…" next: agent · .* · and \d+ more$/)
     expect(lines[4]).toBe(
       `Backlog (20): ${Array.from({ length: 20 }, (_, index) => ref(index + 61).displayId).join(', ')}`
@@ -245,7 +245,7 @@ describe('a blocked step in the summary', () => {
     }
     const lines = boardSummary(boardPropsSchema.parse(board)).split('\n')
     expect(lines[1]).toBe(
-      'Your turn (1): T-012 step 2 "Deploy" is blocked (api-server): needs AWS credentials'
+      'Waiting on user (1): T-012 step 2 "Deploy" is blocked (api-server): needs AWS credentials'
     )
     expect(lines[6]).toBe('Sessions: api-server (live, blocked on T-012 step 2)')
   })
@@ -264,6 +264,8 @@ describe('a blocked step in the summary', () => {
     }
     const summary = boardSummary(boardPropsSchema.parse(board))
     expect(estimateTokens(summary)).toBeLessThan(SUMMARY_TOKEN_BUDGET)
-    expect(summary.split('\n')[1]).toMatch(/^Your turn \(20\): .* is blocked .* · and \d+ more$/)
+    expect(summary.split('\n')[1]).toMatch(
+      /^Waiting on user \(20\): .* is blocked .* · and \d+ more$/
+    )
   })
 })

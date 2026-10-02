@@ -125,10 +125,10 @@ export function boardSummary(board: BoardProps): string {
   return [
     `Board, revision ${board.revision}`,
     list(
-      'Your turn',
+      'Waiting on user',
       board.yourTurn.map(({ task, step, session, blocked }) => {
         const head = `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)}`
-        if (step.owner === 'you') return `${head} is yours`
+        if (step.owner === 'you') return `${head} is the user's`
         if (blocked) {
           const who = session ? ` (${session.name})` : ''
           return `${head} is blocked${who}: ${cut(blocked.reason, QUESTION_CHARS)}`

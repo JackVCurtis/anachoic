@@ -124,13 +124,13 @@ describe('the board summary', () => {
 
 describe('artifactLines', () => {
   test('lists each earlier step with an artifact, as the worker’s texts name it', () => {
-    const { steps } = backlogTask(['agent', 'you', 'you', 'agent'])
+    const { steps } = backlogTask(['agent', 'agent', 'you', 'agent'])
     steps[1] = { ...steps[1], status: 'done', outputFormat: 'pull_request', artifactUrl: PR }
     steps[2] = { ...steps[2], status: 'done', outputFormat: 'ticket', artifactUrl: 'https://t/1' }
     expect(artifactLines(steps, 4)).toEqual([
-      `Step 2 (you): Pull request ${PR}`,
-      'Step 3 (you): Ticket https://t/1',
+      `Step 2 (agent): Pull request ${PR}`,
+      'Step 3 (user): Ticket https://t/1',
     ])
-    expect(artifactLines(steps, 3)).toEqual([`Step 2 (you): Pull request ${PR}`])
+    expect(artifactLines(steps, 3)).toEqual([`Step 2 (agent): Pull request ${PR}`])
   })
 })

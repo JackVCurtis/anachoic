@@ -30,6 +30,7 @@ import {
 } from '../text/model_tools.js'
 import { asCaller, type ToolContext } from './context.js'
 import {
+  artifactUrlInput,
   assignToInput,
   fromModelSteps,
   linksInput,
@@ -53,7 +54,7 @@ function answer<T>(result: ServiceResult<T>, text: (value: T) => string) {
 }
 
 /**
- * The dedicated session is a conversation with the person, so it asks in its
+ * The dedicated session is a conversation with the user, so it asks in its
  * own chat: an answer given on the board would never reach it.
  */
 export const DEDICATED_ASK = 'Ask in this chat instead'
@@ -182,7 +183,7 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
     ask_you: server.registerTool(
       'ask_you',
       {
-        title: 'Ask the person a question',
+        title: 'Ask the user a question',
         description: TOOL_DESCRIPTIONS.worker.ask_you,
         inputSchema: z.object({ task: taskInput, question: questionInput, ...sessionInput }),
       },
@@ -204,14 +205,18 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
           task: taskInput,
           summary: summaryInput,
           links: linksInput,
+          artifact_url: artifactUrlInput,
           ...sessionInput,
         }),
       },
-      asCaller(context, 'complete_step', ({ task, summary, links }, caller) =>
-        answer(
-          completeStep(database, caller.id, now(), task, { summary, links }),
-          ({ state, events }) => completeStepText(state, events, caller.kind)
-        )
+      asCaller(
+        context,
+        'complete_step',
+        ({ task, summary, links, artifact_url: artifactUrl }, caller) =>
+          answer(
+            completeStep(database, caller.id, now(), task, { summary, links, artifactUrl }),
+            ({ state, events }) => completeStepText(state, events, caller.kind)
+          )
       )
     ),
 

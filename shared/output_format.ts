@@ -1,6 +1,7 @@
 /**
- * The artifact a step you own may require when you mark it done, and the
- * check its URL must pass. Shared by the domain, the tools and the view.
+ * The artifact an agent step may declare it produces, which completing it
+ * requires, and the check its URL must pass. Shared by the domain, the tools
+ * and the view.
  */
 
 export const OUTPUT_FORMATS = ['pull_request', 'ticket', 'document', 'link'] as const
@@ -10,10 +11,12 @@ export type OutputFormat = (typeof OUTPUT_FORMATS)[number]
 export interface OutputFormatWords {
   /** How a card or a text names the format: "Pull request". */
   shown: string
-  /** The label of the URL field when you mark the step done: "Pull request link". */
+  /** The label of a field for the artifact's URL: "Pull request link". */
   field: string
   /** What the step needs, as a sentence ends: "a pull request link". */
   needed: string
+  /** What the step produces, as a sentence ends: "a pull request". */
+  produced: string
 }
 
 export const OUTPUT_FORMAT_WORDS: Record<OutputFormat, OutputFormatWords> = {
@@ -21,10 +24,16 @@ export const OUTPUT_FORMAT_WORDS: Record<OutputFormat, OutputFormatWords> = {
     shown: 'Pull request',
     field: 'Pull request link',
     needed: 'a pull request link',
+    produced: 'a pull request',
   },
-  ticket: { shown: 'Ticket', field: 'Ticket link', needed: 'a ticket link' },
-  document: { shown: 'Document', field: 'Document link', needed: 'a document link' },
-  link: { shown: 'Link', field: 'Link', needed: 'a link' },
+  ticket: { shown: 'Ticket', field: 'Ticket link', needed: 'a ticket link', produced: 'a ticket' },
+  document: {
+    shown: 'Document',
+    field: 'Document link',
+    needed: 'a document link',
+    produced: 'a document',
+  },
+  link: { shown: 'Link', field: 'Link', needed: 'a link', produced: 'a link' },
 }
 
 export const ARTIFACT_URL_MAX = 2000

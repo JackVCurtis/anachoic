@@ -91,7 +91,7 @@ describe('The task state machine', () => {
     expect(change.events.map((event) => event.kind)).toEqual(['added', 'queued'])
   })
 
-  test('Add to queue starts the task at once when the first step is yours', () => {
+  test("Add to queue starts the task at once when the first step is the user's", () => {
     const change = addToQueue(
       { taskId: 12, title: 'Review', steps: [{ title: 'Read it', owner: 'you' }] },
       ctx(A, 5)
@@ -113,7 +113,7 @@ describe('The task state machine', () => {
     expect(change.queue).toEqual({ kind: 'join', placement: 'last' })
   })
 
-  test('Queue starts the task when its current step is yours', () => {
+  test("Queue starts the task when its current step is the user's", () => {
     const change = accepted(queue(backlogTask(['you', 'agent']), ctx(A)))
     expect(change.task.status).toBe('active')
     expect(change.steps[0].status).toBe('waiting')
@@ -135,11 +135,11 @@ describe('The task state machine', () => {
     expect(change.queue).toEqual({ kind: 'leave' })
   })
 
-  test('Unqueue is yours alone, and starts from the queue', () => {
+  test("Unqueue is the user's alone, and starts from the queue", () => {
     expectRefusal(
       unqueue(queued(['agent']), ctx(A)),
       'not_yours',
-      'Only you can move T-012 to the backlog'
+      'Only the user can move T-012 to the backlog'
     )
     expectRefusal(
       unqueue(backlogTask(['agent']), ctx('you')),
@@ -155,7 +155,11 @@ describe('The task state machine', () => {
   })
 
   test('Reorder refuses a session, a backlog task and a position below 1', () => {
-    expectRefusal(reorder(queued(['agent']), ctx(A), 1), 'not_yours', 'Only you can reorder T-012')
+    expectRefusal(
+      reorder(queued(['agent']), ctx(A), 1),
+      'not_yours',
+      'Only the user can reorder T-012'
+    )
     expectRefusal(
       reorder(backlogTask(['agent']), ctx('you'), 1),
       'wrong_status',
@@ -211,7 +215,7 @@ describe('The task state machine', () => {
     expectRefusal(
       start(backlogTask(['agent']), ctx('you')),
       'not_yours',
-      "Step 1 of T-012 is an agent's, not yours"
+      "Step 1 of T-012 is an agent's, not the user's"
     )
     expect(accepted(start(backlogTask(['you']), ctx('you'))).task.status).toBe('active')
   })
@@ -269,7 +273,7 @@ describe('The task state machine', () => {
       expectRefusal(
         completeStep(asked(['agent']), ctx(A, 30), { summary: 'x' }),
         'unanswered',
-        'Step 1 of T-012 is waiting for your answer'
+        "Step 1 of T-012 is waiting for the user's answer"
       )
     })
 
@@ -286,17 +290,17 @@ describe('The task state machine', () => {
       expectRefusal(
         completeStep(yours, ctx(A), { summary: 'x' }),
         'not_yours',
-        "Step 1 of T-012 is yours, not an agent's"
+        "Step 1 of T-012 is the user's, not an agent's"
       )
       expectRefusal(
         completeMyStep(claimedBy(['agent']), ctx('you')),
         'not_yours',
-        "Step 1 of T-012 is an agent's, not yours"
+        "Step 1 of T-012 is an agent's, not the user's"
       )
       expectRefusal(
         completeMyStep(yours, ctx(A)),
         'not_yours',
-        'Only you can mark your own step on T-012 done'
+        "Only the user can mark the user's step on T-012 done"
       )
     })
 
@@ -304,7 +308,7 @@ describe('The task state machine', () => {
       expectRefusal(
         completeMyStep(asked(['agent']), ctx('you')),
         'not_yours',
-        "Step 1 of T-012 is an agent's, not yours"
+        "Step 1 of T-012 is an agent's, not the user's"
       )
     })
   })
@@ -324,8 +328,8 @@ describe('The task state machine', () => {
     expect(change.queue).toEqual({ kind: 'none' })
   })
 
-  test('Park is yours alone and starts from active', () => {
-    expectRefusal(park(claimedBy(['agent']), ctx(A)), 'not_yours', 'Only you can park T-012')
+  test("Park is the user's alone and starts from active", () => {
+    expectRefusal(park(claimedBy(['agent']), ctx(A)), 'not_yours', 'Only the user can park T-012')
     expectRefusal(
       park(queued(['agent']), ctx('you')),
       'wrong_status',
@@ -373,7 +377,7 @@ describe('The task state machine', () => {
       'T-012 is in the queue, not done'
     )
     expectRefusal(signOff(signed(), ctx('you')), 'signed_off', 'T-012 is signed off')
-    expectRefusal(signOff(done(), ctx(A)), 'not_yours', 'Only you can sign off T-012')
+    expectRefusal(signOff(done(), ctx(A)), 'not_yours', 'Only the user can sign off T-012')
   })
 
   test.each(['first', 'last'] as const)(
@@ -399,7 +403,7 @@ describe('The task state machine', () => {
     }
   )
 
-  test('Follow-up starts at once when the first new step is yours', () => {
+  test("Follow-up starts at once when the first new step is the user's", () => {
     const change = accepted(
       followUp(done(), ctx('you', 80), {
         placement: 'first',
@@ -450,7 +454,7 @@ describe('The task state machine', () => {
     expectRefusal(
       archive(backlogTask(['agent']), ctx(A)),
       'not_yours',
-      'Only you can archive T-012'
+      'Only the user can archive T-012'
     )
   })
 
@@ -508,7 +512,7 @@ describe('The step state machine', () => {
     expectRefusal(
       ask(asked(['agent']), ctx(A), 'Again?'),
       'unanswered',
-      'Step 1 of T-012 is waiting for your answer'
+      "Step 1 of T-012 is waiting for the user's answer"
     )
   })
 
@@ -529,7 +533,7 @@ describe('The step state machine', () => {
     expectRefusal(
       answer(yours, ctx('you'), 'x'),
       'wrong_status',
-      'Step 1 of T-012 is your step, not a question'
+      "Step 1 of T-012 is the user's step, not a question"
     )
     expectRefusal(
       answer(claimedBy(['agent']), ctx('you'), 'x'),
@@ -539,7 +543,7 @@ describe('The step state machine', () => {
     expectRefusal(
       answer(asked(['agent']), ctx(A), 'x'),
       'not_yours',
-      'Only you can answer the question on T-012'
+      'Only the user can answer the question on T-012'
     )
   })
 

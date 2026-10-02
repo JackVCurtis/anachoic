@@ -54,7 +54,7 @@ afterEach(async () => {
 test('a blocked step is in Your turn with its reason, refuses complete_step until unblocked, then runs and leaves Your turn', async () => {
   expect(await call(api, 'block_step', { task: 'T-001', reason: 'needs AWS credentials' })).toEqual(
     {
-      text: 'Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-001.',
+      text: 'Blocked. The user will unblock this in this session. End this turn now and wait for the user here; when they have resolved it, call unblock_step with task T-001.',
       isError: false,
     }
   )
@@ -69,7 +69,7 @@ test('a blocked step is in Your turn with its reason, refuses complete_step unti
   expect(blocked.working).toEqual([])
   const summary = await call(chat, 'show_board')
   expect(summary.text).toContain(
-    'Your turn (1): T-001 step 1 "Deploy" is blocked (api-server): needs AWS credentials'
+    'Waiting on user (1): T-001 step 1 "Deploy" is blocked (api-server): needs AWS credentials'
   )
 
   expect(await call(api, 'complete_step', { task: 'T-001', summary: 'Done' })).toEqual({

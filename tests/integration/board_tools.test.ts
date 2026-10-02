@@ -42,7 +42,7 @@ test('show_board returns the board summary and the board props', async () => {
   expect(result.isError).toBeFalsy()
   expect(textOf(result).split('\n')).toEqual([
     'Board, revision 1',
-    'Your turn (0): none',
+    'Waiting on user (0): none',
     'Working (0): none',
     'Queue (0): none',
     'Backlog (0): none',

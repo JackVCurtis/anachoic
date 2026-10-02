@@ -229,7 +229,7 @@ describe('firstClaimable', () => {
     expect(revision).toBeLessThan(afterClaim)
   })
 
-  test('ignores tasks in the backlog and tasks whose current step is yours', () => {
+  test("ignores tasks in the backlog and tasks whose current step is the user's", () => {
     add(A, ['agent'], false)
     add(A, ['you', 'agent'])
     expect(firstClaimable(database, A)).toBeNull()

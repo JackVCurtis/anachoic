@@ -65,7 +65,7 @@ export function checkSteps(steps: unknown): Refusal | null {
       step === null ||
       (step.owner !== 'agent' && step.owner !== 'you')
     ) {
-      return invalid(`steps[${index}].owner must be agent or you`)
+      return invalid(`steps[${index}].owner must be agent or user`)
     }
     const refused =
       checkText('title', step.title, `steps[${index}].title`) ??

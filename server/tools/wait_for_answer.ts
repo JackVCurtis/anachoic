@@ -19,8 +19,8 @@ import { keepAlive, pause } from './waiting.js'
 export const NO_ANSWER_YET = 'No answer yet. Call wait_for_answer again to keep waiting.'
 export const DEDICATED_WAIT = 'This chat does not wait'
 
-function answeredText(task: TaskRef, answer: string) {
-  return `The person answered your question on ${formatTaskId(toTaskNumber(task))}:\n${answer}`
+export function answeredText(task: TaskRef, answer: string) {
+  return `The user answered your question on ${formatTaskId(toTaskNumber(task))}:\n${answer}`
 }
 
 /**
@@ -34,7 +34,7 @@ export function registerWaitForAnswer(server: McpServer, context: ToolContext) {
   return server.registerTool(
     'wait_for_answer',
     {
-      title: 'Wait for the person’s answer',
+      title: 'Wait for the user’s answer',
       description: TOOL_DESCRIPTIONS.worker.wait_for_answer,
       inputSchema: z.object({ task: taskInput, ...sessionInput }),
     },

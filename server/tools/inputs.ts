@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { StepInput } from '../../domain/types.js'
+import type { Owner, StepInput } from '../../domain/types.js'
 import { LIMITS } from '../../shared/limits.js'
 import { OUTPUT_FORMATS } from '../../shared/output_format.js'
 
@@ -17,12 +17,23 @@ export const taskInput = z
 
 const outputFormat = z
   .enum(OUTPUT_FORMATS)
-  .describe('Only on a step the person owns: the artifact marking it done requires')
+  .describe(
+    'Only on an agent step: the artifact it produces, whose URL complete_step then requires as artifact_url'
+  )
 
 const step = {
   title: text('title'),
-  owner: z.enum(['agent', 'you']),
+  owner: z
+    .enum(['agent', 'user', 'you'])
+    .describe('Who does the step: "agent", or "user" ("you" is accepted for "user")'),
   detail: text('detail').optional(),
+}
+
+/**
+ * The domain's owner for a tool's: "user" and its alias "you" are both 'you'.
+ */
+function toOwner(owner: 'agent' | 'user' | 'you'): Owner {
+  return owner === 'agent' ? 'agent' : 'you'
 }
 
 /**
@@ -45,9 +56,18 @@ export const viewStepsInput = z
  * The model tools' steps as the services take them.
  */
 export function fromModelSteps(steps: z.infer<typeof stepsInput>): StepInput[] {
-  return steps.map(({ output_format: format, ...each }) =>
-    format === undefined ? each : { ...each, outputFormat: format }
+  return steps.map(({ output_format: format, owner, ...each }) =>
+    format === undefined
+      ? { ...each, owner: toOwner(owner) }
+      : { ...each, owner: toOwner(owner), outputFormat: format }
   )
+}
+
+/**
+ * The view's steps as the services take them.
+ */
+export function fromViewSteps(steps: z.infer<typeof viewStepsInput>): StepInput[] {
+  return steps.map(({ owner, ...each }) => ({ ...each, owner: toOwner(owner) }))
 }
 
 export const linksInput = z
@@ -69,3 +89,10 @@ export const noteInput = text('note')
 export const questionInput = text('question')
 export const reasonInput = text('reason')
 export const summaryInput = text('summary')
+
+export const artifactUrlInput = z
+  .string()
+  .optional()
+  .describe(
+    'The http(s) URL of the artifact the step produced. Required when the step declares an output format, and ignored otherwise.'
+  )

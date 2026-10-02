@@ -28,16 +28,17 @@ describe('the dedicated session’s instructions', () => {
   const text = INSTRUCTIONS.dedicated
 
   test.each([
-    'call show_board whenever the person asks about work',
+    'call show_board whenever the user asks about work',
     'plan work as tasks with chains of steps, through add_task',
-    'Give each step an owner: "you"',
+    'Give each step an owner: "user"',
+    'An agent step may declare an output_format',
     '"agent"',
     'Tasks cannot be edited once added, and a chain changes only by add_follow_up on a done task that is not signed off',
     'Never call wait_for_answer, and never wait in a tool',
     'this chat may claim an agent step like a worker',
     "It is unblocked in that worker's session, by the worker, not by this chat",
-    "This chat learns of the person's board actions only by calling show_board",
-    'asks the person questions directly in this chat, never with ask_you',
+    "This chat learns of the user's board actions only by calling show_board",
+    'asks the user questions directly in this chat, never with ask_you',
   ])('says %s', (phrase) => {
     expect(text).toContain(phrase)
   })
@@ -66,19 +67,20 @@ describe('a worker’s instructions', () => {
     'pass it as session on every later call',
     'claim one step at a time with claim_step',
     'Report progress with update_step',
-    'ask the person only through ask_you followed by wait_for_answer, never in your own chat',
+    "ask the user only through ask_you followed by wait_for_answer, never in this session's chat",
     'Call wait_for_answer again whenever it says "No answer yet"',
     'complete the step with complete_step, a summary of what was done and links',
     'When complete_step says to call claim_step with the task, do so to continue the chain',
     'Never insert a step',
-    'ask the person with ask_you instead',
+    'ask the user with ask_you instead',
     'not_yours',
     'archived',
     'wrong_status',
     'stop work on a task',
-    'wait_for_answer says the task was parked or your claim ended',
-    "when complete_step says the next step is the person's, call wait_for_work and keep calling it",
-    'call block_step with a clear reason, then end your turn',
+    'wait_for_answer says the task was parked or the claim ended',
+    "when complete_step says the next step is the user's, call wait_for_work and keep calling it",
+    'call block_step with a clear reason, then end the turn',
+    'finish the step with complete_step and its link as artifact_url',
     'call unblock_step and carry on',
     'before this session is closed on purpose, call leave_board',
   ])('says %s', (phrase) => {

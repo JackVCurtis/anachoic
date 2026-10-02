@@ -97,9 +97,9 @@ allowed-tools: ${PLUGIN_TOOLS}
 Start working as a worker on the Anachoic board, using the anachoic server's tools and following its instructions.
 
 1. Call join_board with the name "$ARGUMENTS". If that name is empty, use a short name that fits this project, such as its folder or repository name.
-2. Call claim_step with no task. When it claims a step, do the step as the instructions say: report progress with update_step, ask the person only with ask_you then wait_for_answer, block with block_step when the person must act with you here, and finish with complete_step. When complete_step says to claim the task again, do so.
-3. When there is nothing to claim, or a step is handed to the person, call wait_for_work and keep calling it until it names a task, then claim that task.
-4. Go back to step 2. Keep going until the person interrupts you. Before this session is closed on purpose, call leave_board.
+2. Call claim_step with no task. When it claims a step, do the step as the instructions say: report progress with update_step, ask the user only with ask_you then wait_for_answer, block with block_step when the user must act with you here, finish a step that produces an artifact with complete_step and its artifact_url, and finish any other step with complete_step. When complete_step says to claim the task again, do so.
+3. When there is nothing to claim, or a step is handed to the user, call wait_for_work and keep calling it until it names a task, then claim that task.
+4. Go back to step 2. Keep going until the user interrupts you. Before this session is closed on purpose, call leave_board.
 `
 
 export function buildPlugin({ dist, out, manifest, version }) {
