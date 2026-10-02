@@ -3,13 +3,16 @@ import { joinClasses } from '../../helpers/join_classes'
 import { assistive, taskEntry } from '../../helpers/strings'
 import {
   TASK_ENTRY_LIMITS,
+  draftAssignee,
   taskEntryMissing,
   type TaskEntryDraft,
   type TaskEntryFieldError,
+  type TaskEntryWorker,
 } from '../../helpers/task_entry'
 import { SectionHeader } from '../../patterns/section_header/section_header'
 import { Button } from '../../primitives/button/button'
 import { Frame } from '../../primitives/frame/frame'
+import { Select } from '../../primitives/select/select'
 import { TextInput } from '../../primitives/text_input/text_input'
 import { VisuallyHidden } from '../../primitives/visually_hidden/visually_hidden'
 import { ChainComposer, errorFor, FieldError } from '../chain_composer/chain_composer'
@@ -25,6 +28,8 @@ export interface TaskEntryProps {
   busy?: TaskEntryDestination | null
   /** A message from the server about one of the fields. */
   fieldError?: TaskEntryFieldError | null
+  /** The live workers a task can be assigned to. With none, there is no Worker field. */
+  workers?: readonly TaskEntryWorker[]
   onOpen: () => void
   /** "Cancel" or Escape. */
   onCancel: () => void
@@ -37,16 +42,20 @@ function isComposing(event: KeyboardEvent): boolean {
   return event.nativeEvent.isComposing || event.keyCode === 229
 }
 
+const NO_WORKERS: readonly TaskEntryWorker[] = []
+
 /**
- * Adds a task: collapsed to "Add task" until opened, then a title and a chain
- * of steps, each with an owner and an optional detail, with "Add to queue"
- * and "Add". The draft belongs to the parent.
+ * Adds a task: collapsed to "Add task" until opened, then a title, the worker
+ * it is assigned to when any worker is live, and a chain of steps, each with
+ * an owner and an optional detail, with "Add to queue" and "Add". The draft
+ * belongs to the parent.
  */
 export function TaskEntry({
   open,
   draft,
   busy = null,
   fieldError = null,
+  workers = NO_WORKERS,
   onOpen,
   onCancel,
   onDraftChange,
@@ -76,6 +85,7 @@ export function TaskEntry({
       draft={draft}
       busy={busy}
       fieldError={fieldError}
+      workers={workers}
       onCancel={onCancel}
       onDraftChange={onDraftChange}
       onSubmit={onSubmit}
@@ -89,6 +99,7 @@ export function TaskEntry({
 interface TaskEntryFormProps extends Omit<TaskEntryProps, 'open' | 'onOpen'> {
   busy: TaskEntryDestination | null
   fieldError: TaskEntryFieldError | null
+  workers: readonly TaskEntryWorker[]
   /** Told, as the form goes, whether it held focus. */
   onClosing: (heldFocus: boolean) => void
 }
@@ -97,6 +108,7 @@ function TaskEntryForm({
   draft,
   busy,
   fieldError,
+  workers,
   onCancel,
   onDraftChange,
   onSubmit,
@@ -184,6 +196,13 @@ function TaskEntryForm({
           />
           {titleError !== null && <FieldError id={titleErrorId} text={titleError} />}
         </div>
+        {workers.length > 0 && (
+          <WorkerField
+            workers={workers}
+            assignTo={draftAssignee(draft, workers)}
+            onChange={(assignTo) => onDraftChange({ ...draft, assignTo })}
+          />
+        )}
         <ChainComposer
           steps={draft.steps}
           fieldError={fieldError}
@@ -218,5 +237,39 @@ function TaskEntryForm({
         </div>
       </form>
     </Frame>
+  )
+}
+
+interface WorkerFieldProps {
+  workers: readonly TaskEntryWorker[]
+  /** The chosen worker's id, or null for "Any worker". */
+  assignTo: string | null
+  onChange: (assignTo: string | null) => void
+}
+
+/** The value of "Any worker", which no session id can take. */
+const ANY_WORKER = ''
+
+/**
+ * The worker a task is assigned to: "Any worker" first, then each live worker
+ * by name.
+ */
+function WorkerField({ workers, assignTo, onChange }: WorkerFieldProps) {
+  const labelId = useId()
+  const options = [
+    { value: ANY_WORKER, label: taskEntry.anyWorker },
+    ...workers.map((worker) => ({ value: worker.id, label: worker.name })),
+  ]
+
+  return (
+    <div className={styles.field}>
+      <SectionHeader level="label" titleId={labelId} title={taskEntry.workerLabel} />
+      <Select
+        labelledBy={labelId}
+        options={options}
+        value={assignTo ?? ANY_WORKER}
+        onChange={(value) => onChange(value === ANY_WORKER ? null : value)}
+      />
+    </div>
   )
 }

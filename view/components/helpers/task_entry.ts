@@ -25,6 +25,16 @@ export interface TaskEntryStep {
 export interface TaskEntryDraft {
   title: string
   steps: readonly TaskEntryStep[]
+  /** The id of the worker chosen, or null or absent for "Any worker". */
+  assignTo?: string | null
+}
+
+/**
+ * A live worker a task can be assigned to.
+ */
+export interface TaskEntryWorker {
+  id: string
+  name: string
 }
 
 let stepKeys = 0
@@ -41,7 +51,19 @@ export function newTaskEntryStep(owner: Owner = 'agent'): TaskEntryStep {
  * A task with no title and one empty step, which an agent owns.
  */
 export function emptyTaskEntryDraft(): TaskEntryDraft {
-  return { title: '', steps: [newTaskEntryStep()] }
+  return { title: '', steps: [newTaskEntryStep()], assignTo: null }
+}
+
+/**
+ * The worker the draft is assigned to, or null for "Any worker". A worker
+ * that is no longer live counts as "Any worker".
+ */
+export function draftAssignee(
+  draft: TaskEntryDraft,
+  workers: readonly TaskEntryWorker[]
+): string | null {
+  const chosen = draft.assignTo ?? null
+  return workers.some((worker) => worker.id === chosen) ? chosen : null
 }
 
 function isFilled(text: string): boolean {
@@ -82,11 +104,16 @@ export function submittedSteps(steps: readonly TaskEntryStep[]) {
 }
 
 /**
- * The draft as add_task takes it: every text trimmed, and a detail left out
- * when it is empty.
+ * The draft as add_task takes it: every text trimmed, a detail left out when
+ * it is empty, and the worker left out for "Any worker" or one no longer live.
  */
-export function submittedTask(draft: TaskEntryDraft) {
-  return { title: draft.title.trim(), steps: submittedSteps(draft.steps) }
+export function submittedTask(draft: TaskEntryDraft, workers: readonly TaskEntryWorker[] = []) {
+  const assignTo = draftAssignee(draft, workers)
+  return {
+    title: draft.title.trim(),
+    steps: submittedSteps(draft.steps),
+    ...(assignTo === null ? {} : { assignTo }),
+  }
 }
 
 /**

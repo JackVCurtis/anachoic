@@ -8,6 +8,7 @@ import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
 import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
+import { assignmentFact } from '../assignment'
 import type { BacklogTask, CardAction } from '../board_data'
 import styles from './backlog_card.module.css'
 
@@ -44,7 +45,11 @@ export function BacklogCard({
   const [confirming, setConfirming] = useState(false)
   const archivable = task.canAct.archive && onArchive !== undefined
   const yourSteps = task.steps.filter((step) => step.owner === 'you').length
-  const facts = [task.task.displayId, ...splitFacts(chainNote(task.steps.length, yourSteps))]
+  const facts = [
+    task.task.displayId,
+    ...splitFacts(chainNote(task.steps.length, yourSteps)),
+    assignmentFact(task.task),
+  ]
 
   return (
     <ActionCard

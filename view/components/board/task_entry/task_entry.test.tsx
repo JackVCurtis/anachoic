@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
-import { TASK_ENTRY_DRAFTS } from '../../fixtures/task_entry'
+import { TASK_ENTRY_DRAFTS, TASK_ENTRY_WORKERS } from '../../fixtures/task_entry'
 import { taskEntry } from '../../helpers/strings'
-import type { TaskEntryDraft } from '../../helpers/task_entry'
+import type { TaskEntryDraft, TaskEntryWorker } from '../../helpers/task_entry'
 import { renderComponent } from '../../testing/render'
 import { TaskEntry, type TaskEntryDestination } from './task_entry'
 
@@ -14,11 +14,15 @@ import { TaskEntry, type TaskEntryDestination } from './task_entry'
 function Harness({
   initial,
   startOpen,
+  workers,
   onSubmit,
+  onDraftChange,
 }: {
   initial: TaskEntryDraft
   startOpen: boolean
+  workers?: readonly TaskEntryWorker[]
   onSubmit: (destination: TaskEntryDestination) => void
+  onDraftChange?: (draft: TaskEntryDraft) => void
 }) {
   const [open, setOpen] = useState(startOpen)
   const [draft, setDraft] = useState(initial)
@@ -26,20 +30,39 @@ function Harness({
     <TaskEntry
       open={open}
       draft={draft}
+      workers={workers}
       onOpen={() => setOpen(true)}
       onCancel={() => setOpen(false)}
-      onDraftChange={setDraft}
+      onDraftChange={(next) => {
+        setDraft(next)
+        onDraftChange?.(next)
+      }}
       onSubmit={onSubmit}
     />
   )
 }
 
-function renderEntry(initial: TaskEntryDraft = TASK_ENTRY_DRAFTS.typed, startOpen = true) {
+function renderEntry(
+  initial: TaskEntryDraft = TASK_ENTRY_DRAFTS.typed,
+  startOpen = true,
+  workers?: readonly TaskEntryWorker[]
+) {
   const onSubmit = vi.fn()
+  const onDraftChange = vi.fn()
   const rendered = renderComponent(
-    <Harness initial={initial} startOpen={startOpen} onSubmit={onSubmit} />
+    <Harness
+      initial={initial}
+      startOpen={startOpen}
+      workers={workers}
+      onSubmit={onSubmit}
+      onDraftChange={onDraftChange}
+    />
   )
-  return { ...rendered, onSubmit }
+  return { ...rendered, onSubmit, onDraftChange }
+}
+
+function workerField() {
+  return screen.getByRole('combobox', { name: taskEntry.workerLabel })
 }
 
 function titleField() {
@@ -198,5 +221,59 @@ describe('TaskEntry', () => {
     await user.click(titleField())
     await user.keyboard('{Enter}')
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('TaskEntry worker field', () => {
+  test('lists Any worker first and then each live worker by name, after the title', () => {
+    renderEntry(TASK_ENTRY_DRAFTS.typed, true, TASK_ENTRY_WORKERS.two)
+
+    expect(
+      within(workerField())
+        .getAllByRole('option')
+        .map((o) => o.textContent)
+    ).toEqual([taskEntry.anyWorker, 'api-server', 'web-client'])
+    expect(workerField()).toHaveValue('')
+    expect(
+      titleField().compareDocumentPosition(workerField()) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(
+      workerField().compareDocumentPosition(
+        screen.getByRole('textbox', { name: 'Title of step 1' })
+      ) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+  })
+
+  test.each([
+    ['no workers are given', undefined],
+    ['no worker is live', []],
+  ])('is absent when %s', (_, workers) => {
+    renderEntry(TASK_ENTRY_DRAFTS.typed, true, workers)
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  test('choosing a worker puts its id in the draft, and Any worker clears it', async () => {
+    const { user, onDraftChange } = renderEntry(
+      TASK_ENTRY_DRAFTS.typed,
+      true,
+      TASK_ENTRY_WORKERS.two
+    )
+
+    await user.selectOptions(workerField(), 'web-client')
+    expect(onDraftChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ assignTo: 'worker-web-client' })
+    )
+    expect(workerField()).toHaveValue('worker-web-client')
+
+    await user.selectOptions(workerField(), taskEntry.anyWorker)
+    expect(onDraftChange).toHaveBeenLastCalledWith(expect.objectContaining({ assignTo: null }))
+    expect(workerField()).toHaveValue('')
+  })
+
+  test('a chosen worker that is no longer live shows as Any worker', () => {
+    renderEntry(TASK_ENTRY_DRAFTS.assigned, true, [TASK_ENTRY_WORKERS.two[0]])
+
+    expect(workerField()).toHaveValue('')
+    expect(screen.queryByRole('option', { name: 'web-client' })).toBeNull()
   })
 })

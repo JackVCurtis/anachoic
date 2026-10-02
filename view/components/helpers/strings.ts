@@ -34,6 +34,8 @@ export const taskEntry = {
   addTask: 'Add task',
   title: 'New task',
   titlePlaceholder: 'What needs doing?',
+  workerLabel: 'Worker',
+  anyWorker: 'Any worker',
   stepsLabel: 'Steps',
   stepTitleLabel: 'Title of step {n}',
   stepTitlePlaceholder: 'What this step does',
@@ -55,6 +57,13 @@ export const taskEntry = {
   hint: 'Enter to add · ⇧Enter to queue',
   needsTitle: 'A task needs a title',
   stepNeedsTitle: 'A step needs a title',
+} as const
+
+/**
+ * Facts any task card can show in its meta line.
+ */
+export const card = {
+  assignedTo: 'Assigned to {name}',
 } as const
 
 export const yourTurn = {
@@ -255,6 +264,7 @@ export const strings = {
   message,
   boardHeader,
   taskEntry,
+  card,
   yourTurn,
   sessions,
   working,

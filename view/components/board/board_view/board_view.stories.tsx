@@ -125,6 +125,24 @@ export const BusyNarrow: Story = {
   parameters: { frame: 'narrow' },
 }
 
+export const Assigned: Story = {
+  name: 'Tasks assigned to workers',
+  args: BUSY_BOARD,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Assigned to api-server')).toBeVisible()
+    await expect(canvas.getAllByText('Assigned to web-client')).toHaveLength(2)
+    await expectNoSidewaysScroll()
+  },
+}
+
+export const AssignedNarrow: Story = {
+  ...Assigned,
+  name: 'Tasks assigned to workers, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}
+
 export const Many: Story = {
   name: 'Twenty in the queue and fourteen in the backlog',
   args: MANY_BOARD,

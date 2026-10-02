@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { TASK_ENTRY_DRAFTS, TASK_ENTRY_FIELD_ERRORS } from '../../fixtures/task_entry'
+import {
+  TASK_ENTRY_DRAFTS,
+  TASK_ENTRY_FIELD_ERRORS,
+  TASK_ENTRY_WORKERS,
+} from '../../fixtures/task_entry'
 import { taskEntry } from '../../helpers/strings'
 import { ViewFrame } from '../../testing/view_frame'
 import { TaskEntry } from './task_entry'
@@ -158,6 +162,48 @@ export const LongTitle: Story = {
   },
 }
 
+export const WithWorkers: Story = {
+  name: 'With live workers',
+  args: { workers: TASK_ENTRY_WORKERS.two },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('combobox', { name: taskEntry.workerLabel })
+    await expect(
+      within(field)
+        .getAllByRole('option')
+        .map((option) => option.textContent)
+    ).toEqual([taskEntry.anyWorker, 'api-server', 'web-client'])
+    await expect(field).toHaveValue('')
+    await userEvent.selectOptions(field, 'api-server')
+    await expect(args.onDraftChange).toHaveBeenCalledWith({
+      ...TASK_ENTRY_DRAFTS.typed,
+      assignTo: 'worker-api-server',
+    })
+  },
+}
+
+export const Assigned: Story = {
+  name: 'Assigned to a worker',
+  args: { draft: TASK_ENTRY_DRAFTS.assigned, workers: TASK_ENTRY_WORKERS.two },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole('combobox', { name: taskEntry.workerLabel })
+    ).toHaveValue('worker-web-client')
+  },
+}
+
+export const LongWorkerName: Story = {
+  name: 'A worker named with 40 characters',
+  args: {
+    draft: { ...TASK_ENTRY_DRAFTS.typed, assignTo: TASK_ENTRY_WORKERS.longName[0].id },
+    workers: TASK_ENTRY_WORKERS.longName,
+  },
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector('form')!
+    await expect(form.scrollWidth).toBeLessThanOrEqual(form.clientWidth)
+  },
+}
+
 export const CollapsedNarrow = narrow(Collapsed, 'Collapsed')
 export const EmptyNarrow = narrow(Empty, 'Empty')
 export const TypedNarrow = narrow(Default, 'Typed')
@@ -168,3 +214,6 @@ export const InvalidNarrow = narrow(Invalid, 'A step without a title')
 export const SubmittingNarrow = narrow(Submitting, 'Adding to the queue')
 export const FieldErrorNarrow = narrow(FieldError, 'The server refused a field')
 export const LongTitleNarrow = narrow(LongTitle, 'Long title')
+export const WithWorkersNarrow = narrow(WithWorkers, 'With live workers')
+export const AssignedNarrow = narrow(Assigned, 'Assigned to a worker')
+export const LongWorkerNameNarrow = narrow(LongWorkerName, 'A worker named with 40 characters')

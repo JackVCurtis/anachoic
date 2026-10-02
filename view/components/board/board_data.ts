@@ -5,11 +5,21 @@ import type { Owner, StepStatus } from '../types'
  * maps the server's board props to them.
  */
 
+/**
+ * A live worker session: one a task is assigned to, or one you can assign to.
+ */
+export interface BoardWorker {
+  id: string
+  name: string
+}
+
 export interface BoardTask {
   id: string
   /** Such as "T-012". */
   displayId: string
   title: string
+  /** The worker that alone may take the task's agent steps. Absent or null when any may. */
+  assignedTo?: BoardWorker | null
 }
 
 /**

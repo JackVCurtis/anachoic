@@ -29,8 +29,19 @@
   overflow-wrap: anywhere;
 }
 
+.meta {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .id {
   color: var(--color-text-subtle);
+}
+
+/* MetaLine's meta tone, after the id on the same line */
+.fact {
+  color: var(--color-text-meta);
 }
 
 .stepLine {

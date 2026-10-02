@@ -10,6 +10,7 @@ import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { Button } from '../../primitives/button/button'
 import type { BoardStep, CardAction, QueueTask } from '../board_data'
+import { assignmentFact } from '../assignment'
 import { MoveHandle, type HandleMove } from '../move_handle/move_handle'
 import { pipsOf } from '../pips'
 import styles from './queue_card.module.css'
@@ -56,8 +57,8 @@ function resumeLine(steps: readonly BoardStep[], nextOwner: QueueTask['nextOwner
 }
 
 /**
- * One queued task: where it stands in line, the way to move it, its chain and
- * where it will pick up.
+ * One queued task: where it stands in line, the way to move it, its chain,
+ * where it will pick up and the worker it is assigned to.
  */
 export function QueueCard({
   task,
@@ -126,7 +127,11 @@ export function QueueCard({
       <div className={styles.row}>
         <MetaLine
           tone="meta"
-          facts={[task.task.displayId, ...splitFacts(resumeLine(task.steps, task.nextOwner))]}
+          facts={[
+            task.task.displayId,
+            ...splitFacts(resumeLine(task.steps, task.nextOwner)),
+            assignmentFact(task.task),
+          ]}
           className={styles.meta}
         />
         {task.canAct.backlog && onMoveToBacklog && (

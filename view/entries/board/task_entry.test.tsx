@@ -57,7 +57,7 @@ async function renderBoard(app: FakeApp) {
       <BoardEntry connection={connection} source={source} />
     </ViewFrame>
   )
-  return { user: userEvent.setup() }
+  return { user: userEvent.setup(), source }
 }
 
 async function fillTask(user: ReturnType<typeof userEvent.setup>) {
@@ -149,6 +149,106 @@ describe('adding a task from the board', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent(text)
     expect(screen.getByRole('textbox', { name: taskEntry.title })).toHaveValue('Add retries')
+  })
+})
+
+const API_SERVER = { id: 'worker-api-server', name: 'api-server' }
+const WEB_CLIENT = { id: 'worker-web-client', name: 'web-client' }
+
+function boardWithWorkers(revision: number, workers: BoardProps['workers']): BoardProps {
+  return { ...emptyBoardProps(revision), workers }
+}
+
+function workerField() {
+  return screen.getByRole('combobox', { name: taskEntry.workerLabel })
+}
+
+describe('assigning a task to a worker', () => {
+  test('the Worker field lists the live workers of the board', async () => {
+    const app = fakeApp(boardWithWorkers(3, [API_SERVER, WEB_CLIENT]), {})
+    const { user } = await renderBoard(app)
+
+    await user.click(screen.getByRole('button', { name: taskEntry.addTask }))
+    expect(
+      within(workerField())
+        .getAllByRole('option')
+        .map((o) => o.textContent)
+    ).toEqual([taskEntry.anyWorker, 'api-server', 'web-client'])
+  })
+
+  test('with no live worker there is no Worker field', async () => {
+    const app = fakeApp(boardWithWorkers(3, []), {})
+    const { user } = await renderBoard(app)
+
+    await user.click(screen.getByRole('button', { name: taskEntry.addTask }))
+    expect(screen.queryByRole('combobox', { name: taskEntry.workerLabel })).toBeNull()
+  })
+
+  test('the chosen worker is sent as assignTo, and the field resets to Any worker after the add', async () => {
+    const workers = [API_SERVER, WEB_CLIENT]
+    const app = fakeApp(boardWithWorkers(3, workers), {
+      add_task_from_view: actionResult(boardWithWorkers(4, workers), {
+        task: { ...ADDED, assignedTo: WEB_CLIENT },
+        status: 'queue',
+        position: 1,
+      }),
+    })
+    const { user } = await renderBoard(app)
+
+    await fillTask(user)
+    await user.selectOptions(workerField(), 'web-client')
+    await user.click(screen.getByRole('button', { name: taskEntry.addToQueue }))
+
+    expect(app.callsTo('add_task_from_view')[0].arguments).toEqual({
+      title: 'Add retries',
+      steps: [
+        { title: 'Write the policy', owner: 'agent' },
+        { title: 'Review it', owner: 'you' },
+      ],
+      queue: true,
+      assignTo: 'worker-web-client',
+    })
+
+    await user.click(screen.getByRole('button', { name: taskEntry.addTask }))
+    expect(workerField()).toHaveValue('')
+  })
+
+  test('Any worker sends no assignTo', async () => {
+    const app = fakeApp(boardWithWorkers(3, [API_SERVER]), {
+      add_task_from_view: actionResult(boardWithWorkers(4, [API_SERVER]), {
+        task: ADDED,
+        status: 'backlog',
+        position: null,
+      }),
+    })
+    const { user } = await renderBoard(app)
+
+    await fillTask(user)
+    await user.click(screen.getByRole('button', { name: taskEntry.add }))
+
+    expect(app.callsTo('add_task_from_view')[0].arguments).not.toHaveProperty('assignTo')
+  })
+
+  test('a chosen worker that ends drops out of the list with a newer board, and the field falls back to Any worker', async () => {
+    const app = fakeApp(boardWithWorkers(3, [API_SERVER, WEB_CLIENT]), {
+      add_task_from_view: actionResult(boardWithWorkers(5, [API_SERVER]), {
+        task: ADDED,
+        status: 'backlog',
+        position: null,
+      }),
+    })
+    const { user, source } = await renderBoard(app)
+
+    await fillTask(user)
+    await user.selectOptions(workerField(), 'web-client')
+    /* The board a poll brings once web-client has ended. */
+    act(() => source.replace(boardWithWorkers(4, [API_SERVER])))
+
+    expect(workerField()).toHaveValue('')
+    expect(screen.queryByRole('option', { name: 'web-client' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: taskEntry.add }))
+    expect(app.callsTo('add_task_from_view')[0].arguments).not.toHaveProperty('assignTo')
   })
 })
 

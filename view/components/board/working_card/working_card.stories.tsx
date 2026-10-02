@@ -87,3 +87,19 @@ export const LongTitleNarrow: Story = {
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }
+
+export const Assigned: Story = {
+  name: 'Assigned to the worker running it',
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('article')).toHaveTextContent(
+      'T-014 · Assigned to api-server'
+    )
+  },
+}
+
+export const AssignedNarrow: Story = {
+  ...Assigned,
+  name: 'Assigned to the worker running it, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+}

@@ -9,6 +9,9 @@ import { BacklogCard } from './backlog_card'
 
 const [RENAME] = BACKLOG.busy
 
+/** T-010, assigned to web-client. */
+const DARK_MODE = BACKLOG.busy[4]
+
 function cardOf(canvasElement: HTMLElement, title: string): HTMLElement {
   return within(canvasElement).getByRole('heading', { level: 3, name: title })
     .parentElement as HTMLElement
@@ -125,4 +128,21 @@ export const Archiving: Story = {
     await expect(canvas.getByRole('button', { name: 'Archive' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Queue' })).toBeDisabled()
   },
+}
+
+export const Assigned: Story = {
+  name: 'Assigned to a worker',
+  args: { task: DARK_MODE },
+  play: async ({ canvasElement }) => {
+    await expect(cardOf(canvasElement, DARK_MODE.task.title)).toHaveTextContent(
+      'T-010 · 3 steps · 1 for you · Assigned to web-client'
+    )
+  },
+}
+
+export const AssignedNarrow: Story = {
+  ...Assigned,
+  name: 'Assigned to a worker, narrow',
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  parameters: { frame: 'narrow' },
 }

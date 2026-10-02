@@ -1,4 +1,4 @@
-import type { TaskEntryDraft, TaskEntryStep } from '../helpers/task_entry'
+import type { TaskEntryDraft, TaskEntryStep, TaskEntryWorker } from '../helpers/task_entry'
 import { LONG_TEXT } from './long_text'
 
 function step(index: number, title: string, owner: TaskEntryStep['owner'], detail = '') {
@@ -43,7 +43,24 @@ export const TASK_ENTRY_DRAFTS = {
     title: LONG_TEXT.title,
     steps: [step(1, LONG_TEXT.title, 'agent')],
   },
+  assigned: {
+    title: 'Add retries to the billing webhook',
+    steps: [step(1, 'Draft the retry policy', 'agent'), step(2, 'Review the PR', 'you')],
+    assignTo: 'worker-web-client',
+  },
 } as const satisfies Record<string, TaskEntryDraft>
+
+/**
+ * The live workers task entry can assign to: two, and one with a name of 40
+ * characters.
+ */
+export const TASK_ENTRY_WORKERS = {
+  two: [
+    { id: 'worker-api-server', name: 'api-server' },
+    { id: 'worker-web-client', name: 'web-client' },
+  ],
+  longName: [{ id: 'worker-long', name: LONG_TEXT.name }],
+} as const satisfies Record<string, readonly TaskEntryWorker[]>
 
 /**
  * What the server says about one field, as an invalid refusal names it.

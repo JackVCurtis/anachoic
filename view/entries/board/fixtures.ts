@@ -4,13 +4,15 @@ import {
   EMPTY_BOARD,
   LONG_TEXT_BOARD,
   MANY_BOARD,
+  workersOf,
   type BoardSample,
 } from '../../components/fixtures/board.js'
 import { FIXED_NOW } from '../../components/fixtures/clock.js'
 
 /**
  * A board sample as the server sends it: each session that asks or runs a
- * step is named by id and name rather than by name alone.
+ * step is named by id and name rather than by name alone, and the live
+ * workers are listed.
  */
 function toBoardProps(board: BoardSample, revision: number): BoardProps {
   const sessionNamed = (name: string) => {
@@ -42,6 +44,7 @@ function toBoardProps(board: BoardSample, revision: number): BoardProps {
       ...session,
       ...(released === undefined ? {} : { released: [...released] }),
     })),
+    workers: workersOf(board),
     counts: board.counts,
   }
 }

@@ -10,10 +10,16 @@ import type { PipStepSample } from './pip_steps.js'
  * checks that every board is assignable to them.
  */
 
+export interface WorkerSample {
+  id: string
+  name: string
+}
+
 export interface TaskSample {
   id: string
   displayId: string
   title: string
+  assignedTo?: WorkerSample | null
 }
 
 export interface YourTurnSample {
@@ -221,8 +227,35 @@ export function finished(
   }
 }
 
+/**
+ * The item with its task assigned to the worker.
+ */
+export function assigned<Item extends { task: TaskSample }>(
+  item: Item,
+  worker: WorkerSample
+): Item {
+  return { ...item, task: { ...item.task, assignedTo: worker } }
+}
+
+/**
+ * The live workers of a board's sessions, which a task can be assigned to.
+ */
+export function workersOf(board: Pick<BoardSample, 'sessions'>): WorkerSample[] {
+  return board.sessions
+    .filter((session) => session.kind === 'worker' && session.live)
+    .map(({ id, name }) => ({ id, name }))
+}
+
+/**
+ * The step a session holds, naming its task by id, display id and title only.
+ */
 export function holdingOf(item: YourTurnSample | WorkingSample, status: 'running' | 'waiting') {
-  return { task: item.task, step: { number: item.step.number, title: item.step.title }, status }
+  const { id, displayId, title } = item.task
+  return {
+    task: { id, displayId, title },
+    step: { number: item.step.number, title: item.step.title },
+    status,
+  }
 }
 
 export function countsOf(board: Pick<BoardSample, 'yourTurn' | 'working' | 'queue' | 'toSignOff'>) {
@@ -238,6 +271,9 @@ export const THIS_CHAT = 'This chat'
 export const API_SERVER = 'api-server'
 export const WEB_CLIENT = 'web-client'
 export const DOCS = 'docs'
+
+const API_SERVER_WORKER: WorkerSample = { id: 'worker-api-server', name: API_SERVER }
+const WEB_CLIENT_WORKER: WorkerSample = { id: 'worker-web-client', name: WEB_CLIENT }
 
 /**
  * Nothing waiting, nothing running, nothing queued and no session yet.
@@ -284,16 +320,19 @@ const CHOOSE_THE_CACHE_KEY = agentAsks(
   before({ minutes: 6 })
 )
 
-const DRAFT_THE_MIGRATION = running(
-  14,
-  'Add a sessions table',
-  [
-    ['agent', 'running', 'Draft the migration', API_SERVER],
-    ['you', 'pending', 'Review the migration'],
-    ['agent', 'pending', 'Run it on staging'],
-  ],
-  before({ minutes: 12 }),
-  'The up migration is written. Writing the down migration now.'
+const DRAFT_THE_MIGRATION = assigned(
+  running(
+    14,
+    'Add a sessions table',
+    [
+      ['agent', 'running', 'Draft the migration', API_SERVER],
+      ['you', 'pending', 'Review the migration'],
+      ['agent', 'pending', 'Run it on staging'],
+    ],
+    before({ minutes: 12 }),
+    'The up migration is written. Writing the down migration now.'
+  ),
+  API_SERVER_WORKER
 )
 
 /** Released by docs when it ended, so it went back to the front of the queue. */
@@ -305,10 +344,13 @@ const SETUP_GUIDE = queued(1, 13, 'Write the setup guide', [
 
 const BUSY_QUEUE: readonly QueueSample[] = [
   SETUP_GUIDE,
-  queued(2, 15, 'Add retries to the billing webhooks', [
-    ['agent', 'pending', 'Add retries with backoff'],
-    ['you', 'pending', 'Review the PR'],
-  ]),
+  assigned(
+    queued(2, 15, 'Add retries to the billing webhooks', [
+      ['agent', 'pending', 'Add retries with backoff'],
+      ['you', 'pending', 'Review the PR'],
+    ]),
+    WEB_CLIENT_WORKER
+  ),
   queued(3, 19, 'Upgrade the queue client', [
     ['you', 'done', 'Choose the version to move to'],
     ['agent', 'pending', 'Upgrade the client and fix the call sites'],
@@ -332,11 +374,14 @@ const BUSY_BACKLOG: readonly BacklogSample[] = [
     ['agent', 'pending', 'Delete the old flow'],
   ]),
   parked(8, 'Write the incident review for the outage', [['you', 'pending', 'Write the timeline']]),
-  parked(10, 'Add dark mode to the admin pages', [
-    ['agent', 'pending', 'Add the dark tokens'],
-    ['agent', 'pending', 'Switch the admin pages to the tokens'],
-    ['you', 'pending', 'Check every admin page in dark mode'],
-  ]),
+  assigned(
+    parked(10, 'Add dark mode to the admin pages', [
+      ['agent', 'pending', 'Add the dark tokens'],
+      ['agent', 'pending', 'Switch the admin pages to the tokens'],
+      ['you', 'pending', 'Check every admin page in dark mode'],
+    ]),
+    WEB_CLIENT_WORKER
+  ),
   parked(11, 'Tidy the logging config', [['agent', 'pending', 'Tidy the logging config']]),
 ]
 
@@ -381,7 +426,8 @@ const BUSY_LISTS = {
 
 /**
  * Every section filled, with This chat, a worker running a step, an idle
- * worker, and one that ended four minutes ago and released T-013.
+ * worker, and one that ended four minutes ago and released T-013. T-014 is
+ * assigned to api-server, and T-015 and T-010 to web-client.
  */
 export const BUSY_BOARD: BoardSample = {
   ...BUSY_LISTS,
@@ -469,6 +515,8 @@ const LONG_ASKS = agentAsks(
   before({ minutes: 3 })
 )
 
+const LONG_WORKER_2: WorkerSample = { id: 'worker-long-2', name: LONG_NAME_2 }
+
 const LONG_RUNNING = running(
   2,
   LONG_TEXT.title,
@@ -483,7 +531,9 @@ const LONG_RUNNING = running(
 const LONG_LISTS = {
   yourTurn: [LONG_ASKS],
   working: [LONG_RUNNING],
-  queue: [queued(1, 3, LONG_TEXT.title, [['agent', 'pending', LONG_TEXT.title]])],
+  queue: [
+    assigned(queued(1, 3, LONG_TEXT.title, [['agent', 'pending', LONG_TEXT.title]]), LONG_WORKER_2),
+  ],
   toSignOff: [
     finished(5, LONG_TEXT.title, [['agent', 'done', LONG_TEXT.title]], {
       finishedAt: INSTANTS.earlierToday,
@@ -495,11 +545,14 @@ const LONG_LISTS = {
 }
 
 /**
- * Titles of 120 characters and session names of 40 in every section.
+ * Titles of 120 characters and session names of 40 in every section, with the
+ * queued and backlog tasks assigned to a worker of 40.
  */
 export const LONG_TEXT_BOARD: BoardSample = {
   ...LONG_LISTS,
-  backlog: [parked(4, LONG_TEXT.title, [['you', 'pending', LONG_TEXT.title]])],
+  backlog: [
+    assigned(parked(4, LONG_TEXT.title, [['you', 'pending', LONG_TEXT.title]]), LONG_WORKER_2),
+  ],
   signedOff: [{ task: taskOf(6, LONG_TEXT.title), signedOffAt: INSTANTS.yesterday }],
   sessions: [
     {

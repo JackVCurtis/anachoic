@@ -168,3 +168,19 @@ export const MovingToBacklog: Story = {
     await expect(canvas.getByRole('button', { name: queue.move })).toBeDisabled()
   },
 }
+
+export const Assigned: Story = {
+  name: 'Assigned to a worker',
+  play: async ({ canvasElement }) => {
+    await expect(cardOf(canvasElement, STARTS.task.title)).toHaveTextContent(
+      'T-015 · starts at step 1/2 · agent · Assigned to web-client'
+    )
+  },
+}
+
+export const AssignedNarrow: Story = {
+  ...Assigned,
+  name: 'Assigned to a worker, narrow',
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  parameters: { frame: 'narrow' },
+}

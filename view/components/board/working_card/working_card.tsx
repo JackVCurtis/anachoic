@@ -7,6 +7,7 @@ import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { StepPips } from '../../patterns/step_pips/step_pips'
 import { ActionCard } from '../../primitives/action_card/action_card'
 import { StatusSquare } from '../../primitives/status_square/status_square'
+import { assignmentFact } from '../assignment'
 import type { WorkingTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './working_card.module.css'
@@ -18,11 +19,13 @@ export interface WorkingCardProps {
 
 /**
  * An active task whose current step is running: the session that claimed it,
- * how long it has run, the step, and the session's latest note.
+ * how long it has run, the worker it is assigned to, the step, and the
+ * session's latest note.
  */
 export function WorkingCard({ item, onOpenTask }: WorkingCardProps) {
   const now = useNow(LABEL_TICK.elapsed)
   const { task, step, sessionName, steps } = item
+  const assignment = assignmentFact(task)
 
   return (
     <ActionCard
@@ -40,7 +43,17 @@ export function WorkingCard({ item, onOpenTask }: WorkingCardProps) {
         </div>
       }
     >
-      <span className={joinClasses('text-mono-xs', styles.id)}>{task.displayId}</span>
+      <span className={styles.meta}>
+        <span className={joinClasses('text-mono-xs', styles.id)}>{task.displayId}</span>
+        {assignment !== '' && (
+          <>
+            <span aria-hidden="true" className={joinClasses('text-hint', styles.fact)}>
+              {' · '}
+            </span>
+            <span className={joinClasses('text-hint', styles.fact)}>{assignment}</span>
+          </>
+        )}
+      </span>
       <p className={styles.stepLine}>
         {joinFacts([stepCounter(step.number, stepCount(steps, step.number), 'long'), step.title])}
       </p>

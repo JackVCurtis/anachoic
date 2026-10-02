@@ -73,7 +73,7 @@ function Board({ app, source }: LiveBoardProps) {
   }, [source])
 
   const { messages, dismiss, reportFailure } = useBoardMessages(source)
-  const taskEntry = useTaskEntry(yourActions, source, reportFailure)
+  const taskEntry = useTaskEntry(yourActions, source, reportFailure, board.workers)
   const yourTurnActions = useYourTurnActions(yourActions, source, board, reportFailure)
   const cardActions = useCardActions(yourActions, source, board, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])

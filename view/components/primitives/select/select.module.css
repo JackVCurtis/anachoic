@@ -1,0 +1,69 @@
+/* Copied from anachoic inertia/components/primitives/select/select.module.css at fd99e0d */
+/*
+ * The text field's box on the browser's own select. The chevron is laid over
+ * the field's right padding and lets every click through to the select.
+ *
+ * With appearance none, Chromium, Firefox and WebKit give this select the same
+ * 36px height, the same padding and the same text position as TextInput, so no
+ * engine needs its own rule. WebKit ignores text-overflow on a select: a long
+ * value is cut at the right padding without the ellipsis, and the chevron's
+ * 32px stays clear.
+ */
+.control {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.select {
+  display: block;
+  width: 100%;
+  min-height: var(--size-control);
+  margin: 0;
+  padding: 6px 32px 6px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: var(--border-hairline) solid var(--color-divider);
+  border-radius: 0;
+  box-shadow: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.select:hover {
+  border-color: var(--tint-field-hover);
+}
+
+.select:focus-visible {
+  border-color: var(--tone-focus);
+  outline: 2px solid var(--tone-focus);
+  outline-offset: 0;
+}
+
+.select:disabled {
+  cursor: not-allowed;
+}
+
+.select:disabled:hover {
+  border-color: var(--color-divider);
+}
+
+/* The whole control dims, so the chevron fades with the field */
+.disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  color: var(--color-text-subtle);
+  pointer-events: none;
+  transform: translateY(-50%);
+}

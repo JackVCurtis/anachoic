@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import type { Worker } from '../../../shared/props'
 import type { BoardSource } from '../../bridge/board_source'
+import type { NewStep } from '../../bridge/tools'
 import type { YourActions } from '../../bridge/wake'
 import type {
   TaskEntryDestination,
@@ -14,15 +16,31 @@ import { taskEntryFieldOf } from './task_entry_refusal'
 import type { FailedWrite } from './use_board_messages'
 
 /**
+ * Adds a task. The worker, when one is chosen, reaches add_task_from_view
+ * because the action passes its input on whole.
+ */
+export interface AddTask {
+  addTask: (input: {
+    title: string
+    steps: NewStep[]
+    queue: boolean
+    assignTo?: string
+  }) => ReturnType<YourActions['addTask']>
+}
+
+/**
  * Task entry's draft, open state and submission, held by the board entry.
  * None of it outlives the view: a rebuild starts with an empty draft.
+ * The worker field lists the live workers of the latest board, so a worker
+ * that ends drops out and the field falls back to "Any worker".
  * A refusal about one field is shown under it; any other failure goes to
  * onFailure.
  */
 export function useTaskEntry(
-  yourActions: Pick<YourActions, 'addTask'>,
+  yourActions: AddTask,
   source: Pick<BoardSource, 'replace'>,
-  onFailure: (failure: FailedWrite) => void
+  onFailure: (failure: FailedWrite) => void,
+  workers: readonly Worker[] = []
 ): TaskEntryProps {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(emptyTaskEntryDraft)
@@ -33,7 +51,7 @@ export function useTaskEntry(
     setBusy(destination)
     setFieldError(null)
     const outcome = await yourActions.addTask({
-      ...submittedTask(draft),
+      ...submittedTask(draft, workers),
       queue: destination === 'queue',
     })
     setBusy(null)
@@ -56,6 +74,7 @@ export function useTaskEntry(
     draft,
     busy,
     fieldError,
+    workers,
     onOpen: () => setOpen(true),
     onCancel: () => setOpen(false),
     onDraftChange: (next) => {
