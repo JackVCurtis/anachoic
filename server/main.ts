@@ -2,6 +2,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { McpServer } from '@modelcontextprotocol/server'
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio'
+import type { SessionKind } from '../domain/types.js'
 import { closeDatabase, openDatabase } from '../store/database.js'
 import { startHeartbeat } from '../store/heartbeat.js'
 import {
@@ -10,7 +11,7 @@ import {
   resolveDataDirectory,
 } from './data_directory.js'
 import { createCallers, type Callers } from './callers.js'
-import { chooseTextsByClient } from './client_texts.js'
+import { describeTools, kindOfOpening, serveByClient } from './client_texts.js'
 import { hostVariableNames, kindOfClient } from './identity.js'
 import { INSTRUCTIONS } from './instructions.js'
 import { createLifecycle } from './lifecycle.js'
@@ -31,15 +32,19 @@ const DEFAULT_HTTP_PORT = 3001
  */
 type Shared = Omit<ToolContext, 'client'>
 
-function createServer(shared: Shared) {
+/**
+ * A server for one connection from the given kind of session, sending that
+ * kind's instructions and tool descriptions.
+ */
+function createServer(shared: Shared, kind: SessionKind) {
   const { logger } = shared
   const server = new McpServer(
     { name: 'anachoic', version: VERSION },
-    { instructions: INSTRUCTIONS.worker }
+    { instructions: INSTRUCTIONS[kind] }
   )
   const context: ToolContext = { ...shared, client: () => server.server.getClientVersion() }
   registerViews(server, VIEWS_DIRECTORY, logger)
-  chooseTextsByClient(server, {
+  describeTools(kind, {
     ...registerBoardTools(server, context),
     join_board: registerJoinBoard(server, context),
     ...registerModelTools(server, context),
@@ -57,12 +62,13 @@ function createServer(shared: Shared) {
 }
 
 async function serveStdio(shared: Shared, lifecycle: ReturnType<typeof createLifecycle>) {
-  const { logger } = shared
-  const server = createServer(shared)
-  lifecycle.onStop(() => server.close())
   // The stdio transport closes itself when stdin ends.
-  server.server.onclose = () => void lifecycle.stop('stdin closed')
-  await server.connect(new StdioServerTransport())
+  const connection = await serveByClient(
+    new StdioServerTransport(),
+    (kind) => createServer(shared, kind),
+    () => void lifecycle.stop('stdin closed')
+  )
+  lifecycle.onStop(() => connection.close())
 }
 
 async function serveHttp(shared: Shared, lifecycle: ReturnType<typeof createLifecycle>) {
@@ -74,7 +80,7 @@ async function serveHttp(shared: Shared, lifecycle: ReturnType<typeof createLife
   const app = createMcpExpressApp()
   app.use(cors())
   app.all('/mcp', async (request, response) => {
-    const server = createServer(shared)
+    const server = createServer(shared, kindOfOpening(request.body))
     const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined })
     response.on('close', () => {
       transport.close().catch(() => {})

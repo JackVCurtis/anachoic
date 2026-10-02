@@ -1,40 +1,117 @@
-import type {
-  InitializeRequest,
-  InitializeResult,
-  McpServer,
-  RegisteredTool,
+import {
+  isInitializeRequest,
+  type JSONRPCMessage,
+  type McpServer,
+  type MessageExtraInfo,
+  type RegisteredTool,
+  type Transport,
+  type TransportSendOptions,
 } from '@modelcontextprotocol/server'
+import type { SessionKind } from '../domain/types.js'
 import { kindOfClient } from './identity.js'
-import { INSTRUCTIONS, TOOL_DESCRIPTIONS, type DescribedTool } from './instructions.js'
+import { TOOL_DESCRIPTIONS, type DescribedTool } from './instructions.js'
 
 /**
- * The SDK's own initialize handler, which records the client and builds the
- * result. It is not part of the SDK's typed surface.
+ * Gives each tool the description for the kind of session its server serves.
+ * Called before the server connects, so update() sends no list_changed.
  */
-interface Initializer {
-  _oninitialize(request: InitializeRequest): Promise<InitializeResult>
+export function describeTools(
+  kind: SessionKind,
+  tools: Partial<Record<DescribedTool, RegisteredTool>>
+) {
+  for (const [name, tool] of Object.entries(tools)) {
+    tool.update({ description: TOOL_DESCRIPTIONS[kind][name as DescribedTool] })
+  }
 }
 
 /**
- * Answers initialize with the instructions for the kind of session the
- * client is, and gives each tool that kind's description before tools/list
- * can be asked. The SDK takes one instructions text per server, so the
- * server takes over the initialize request and keeps the SDK's handling of
- * it.
+ * The kind of session an incoming message, or batch of messages, opens. Only
+ * an initialize request names its client, so anything else is a worker.
  */
-export function chooseTextsByClient(
-  server: McpServer,
-  tools: Partial<Record<DescribedTool, RegisteredTool>>
-) {
-  const sdk = server.server as unknown as Initializer
-  server.server.setRequestHandler('initialize', async (request) => {
-    const kind = kindOfClient(request.params.clientInfo)
-    for (const [name, tool] of Object.entries(tools)) {
-      // Assigned rather than through update(), which would send a list_changed
-      // notification before the client has been answered.
-      tool.description = TOOL_DESCRIPTIONS[kind][name as DescribedTool]
+export function kindOfOpening(body: unknown): SessionKind {
+  const messages: unknown[] = Array.isArray(body) ? body : [body]
+  const opening = messages.find((message) => isInitializeRequest(message))
+  return opening ? kindOfClient(opening.params.clientInfo) : 'worker'
+}
+
+/**
+ * Hands one server's traffic to the connection's transport. Closing it ends
+ * only that server, so the connection can move on to another.
+ */
+class Link implements Transport {
+  onclose?: () => void
+  onerror?: (error: Error) => void
+  onmessage?: (message: JSONRPCMessage, extra?: MessageExtraInfo) => void
+
+  constructor(private readonly connection: Transport) {}
+
+  async start() {}
+
+  send(message: JSONRPCMessage, options?: TransportSendOptions) {
+    return this.connection.send(message, options)
+  }
+
+  async close() {
+    this.onclose?.()
+  }
+
+  setProtocolVersion(version: string) {
+    this.connection.setProtocolVersion?.(version)
+  }
+}
+
+export interface ClientConnection {
+  close(): Promise<void>
+}
+
+/**
+ * Serves one connection with a server built for the kind of client that
+ * opens it, so the SDK sends that kind's instructions and tool descriptions.
+ * A message before initialize, such as a newer client's server/discover probe,
+ * is answered by a worker server, which initialize replaces when the client
+ * is of another kind.
+ */
+export async function serveByClient(
+  transport: Transport,
+  build: (kind: SessionKind) => McpServer,
+  onclose: () => void
+): Promise<ClientConnection> {
+  let current: { server: McpServer; link: Link } | undefined
+  let initialized = false
+
+  const attach = (kind: SessionKind) => {
+    const previous = current
+    const link = new Link(transport)
+    const server = build(kind)
+    // connect() installs the link's handlers before its first await, so the
+    // message that triggered attach can be delivered straight after.
+    void server.connect(link)
+    current = { server, link }
+    if (previous) void previous.server.close()
+    return current
+  }
+
+  transport.onmessage = (message, extra) => {
+    let target = current
+    if (!initialized && isInitializeRequest(message)) {
+      initialized = true
+      const kind = kindOfClient(message.params.clientInfo)
+      if (!target || kind !== 'worker') target = attach(kind)
     }
-    const result = await sdk._oninitialize.call(server.server, request)
-    return { ...result, instructions: INSTRUCTIONS[kind] }
-  })
+    target ??= attach('worker')
+    target.link.onmessage?.(message, extra)
+  }
+  transport.onerror = (error) => current?.link.onerror?.(error)
+  transport.onclose = () => {
+    current?.link.onclose?.()
+    onclose()
+  }
+  await transport.start()
+
+  return {
+    async close() {
+      await current?.server.close()
+      await transport.close()
+    },
+  }
 }
