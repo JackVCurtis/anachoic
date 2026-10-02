@@ -29,6 +29,15 @@ export const linksInput = z
   .max(LIMITS.links.max)
   .optional()
 
+export const assignToInput = z
+  .string()
+  .min(1)
+  .max(100)
+  .optional()
+  .describe(
+    'A live worker to assign the task to, which alone may then claim its agent steps: its session id, or its name as the board shows it'
+  )
+
 export const titleInput = text('title')
 export const noteInput = text('note')
 export const questionInput = text('question')

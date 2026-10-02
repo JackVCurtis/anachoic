@@ -25,8 +25,21 @@ import { formatTaskId } from '../../shared/task_id.js'
 import type { Database } from '../../store/database.js'
 import { readBoard, type BoardSnapshot } from '../../store/queries.js'
 
-export function taskRef(task: Pick<Task, 'id' | 'title'>): TaskRef {
-  return { id: String(task.id), displayId: formatTaskId(task.id), title: task.title }
+/**
+ * A task as the props name it, with the worker it is assigned to named by
+ * `nameOf`.
+ */
+export function taskRef(
+  task: Pick<Task, 'id' | 'title' | 'assignedTo'>,
+  nameOf: (sessionId: string) => string
+): TaskRef {
+  return {
+    id: String(task.id),
+    displayId: formatTaskId(task.id),
+    title: task.title,
+    assignedTo:
+      task.assignedTo === null ? null : { id: task.assignedTo, name: nameOf(task.assignedTo) },
+  }
 }
 
 /**
@@ -39,6 +52,8 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
     snapshot.sessions.map(({ session, live }) => [session.id, { name: session.name, live }])
   )
   const nameOf = (id: string | null) => (id === null ? null : (known.get(id)?.name ?? id))
+  const ref = (task: Pick<Task, 'id' | 'title' | 'assignedTo'>) =>
+    taskRef(task, (id) => known.get(id)?.name ?? id)
 
   const pips = (steps: readonly Step[]): Pip[] =>
     steps.map((step) => ({
@@ -69,7 +84,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
       case 'yourTurn': {
         const session = step.owner === 'agent' ? holder(state) : undefined
         yourTurn.push({
-          task: taskRef(task),
+          task: ref(task),
           step: {
             number: step.number,
             title: step.title,
@@ -87,7 +102,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
       }
       case 'working':
         working.push({
-          task: taskRef(task),
+          task: ref(task),
           step: {
             number: step.number,
             title: step.title,
@@ -103,7 +118,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
         break
       case 'queue':
         queue.push({
-          task: taskRef(task),
+          task: ref(task),
           position: task.queuePosition ?? queue.length + 1,
           nextOwner: step.owner,
           steps: pips(steps),
@@ -112,14 +127,14 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
         break
       case 'backlog':
         backlog.push({
-          task: taskRef(task),
+          task: ref(task),
           steps: pips(steps),
           canAct: { queue: can.queue, archive: can.archive },
         })
         break
       case 'toSignOff':
         toSignOff.push({
-          task: taskRef(task),
+          task: ref(task),
           finishedAt: task.finishedAt ?? now,
           agentSeconds: agentSeconds(steps),
           yourSeconds: yourSeconds(steps),
@@ -144,14 +159,14 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
         const [held] = holdings(session.id, snapshot.tasks)
         if (held) {
           item.holding = {
-            task: taskRef(held.task),
+            task: ref(held.task),
             step: { number: held.step.number, title: held.step.title },
             status: held.status,
           }
         }
       } else {
         item.endedAt = session.endedAt!
-        item.released = released.map(taskRef)
+        item.released = released.map(ref)
       }
       return item
     })
@@ -166,10 +181,13 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
     backlog,
     toSignOff,
     signedOff: snapshot.signedOff.map(({ task }) => ({
-      task: taskRef(task),
+      task: ref(task),
       signedOffAt: task.signedOffAt!,
     })),
     sessions,
+    workers: snapshot.sessions
+      .filter(({ session, live }) => live && session.kind === 'worker')
+      .map(({ session }) => ({ id: session.id, name: session.name })),
     counts: counts(snapshot.tasks),
   }
 }

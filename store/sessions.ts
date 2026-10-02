@@ -210,7 +210,7 @@ export interface ListedSession {
   /**
    * The tasks released when the session ended, for one ended recently.
    */
-  released: Array<{ id: number; title: string }>
+  released: Array<{ id: number; title: string; assignedTo: string | null }>
 }
 
 export function listSessionRows(
@@ -226,7 +226,7 @@ export function listSessionRows(
     .all(since)
     .map(sessionFromRow)
   const releasedBy = sqlite.prepare(
-    `SELECT DISTINCT tasks.id, tasks.title FROM events JOIN tasks ON tasks.id = events.task_id
+    `SELECT DISTINCT tasks.id, tasks.title, tasks.assigned_to AS assignedTo FROM events JOIN tasks ON tasks.id = events.task_id
      WHERE events.kind = 'released' AND events.session_id = ? AND events.at = ? ORDER BY tasks.id`
   )
   return sessions.map((session) => ({
@@ -235,7 +235,7 @@ export function listSessionRows(
     released:
       session.endedAt === null
         ? []
-        : (releasedBy.all(session.id, session.endedAt) as Array<{ id: number; title: string }>),
+        : (releasedBy.all(session.id, session.endedAt) as ListedSession['released']),
   }))
 }
 

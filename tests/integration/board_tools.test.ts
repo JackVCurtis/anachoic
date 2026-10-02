@@ -93,7 +93,7 @@ test('after a worker adds a task in another process, get_board returns a later b
   expect(props.revision).toBeGreaterThan(revision)
   expect(props.queue).toEqual([
     expect.objectContaining({
-      task: { id: '1', displayId: 'T-001', title: 'Add retries' },
+      task: { id: '1', displayId: 'T-001', title: 'Add retries', assignedTo: null },
       position: 1,
       nextOwner: 'agent',
     }),

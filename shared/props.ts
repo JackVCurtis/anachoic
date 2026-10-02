@@ -11,10 +11,18 @@ export const ownerSchema = z.enum(['agent', 'you'])
 
 export const stepStatusSchema = z.enum(['pending', 'running', 'waiting', 'done'])
 
+/**
+ * A session the board names: a worker a task is assigned to, or one you can
+ * assign to.
+ */
+export const workerSchema = z.object({ id: z.string(), name: z.string() })
+
 export const taskRefSchema = z.object({
   id: z.string(),
   displayId: z.string(),
   title: z.string(),
+  /** The worker that alone may claim the task's agent steps. The server always sends it. */
+  assignedTo: workerSchema.nullable().optional(),
 })
 
 /**
@@ -122,6 +130,8 @@ export const boardPropsSchema = z.object({
   toSignOff: z.array(toSignOffItemSchema),
   signedOff: z.array(signedOffItemSchema).max(10),
   sessions: z.array(sessionItemSchema),
+  /** The live workers a task can be assigned to. The server always sends it. */
+  workers: z.array(workerSchema).optional(),
   counts: boardCountsSchema,
 })
 
@@ -147,6 +157,7 @@ export const unchangedSchema = z.object({
 
 export const getBoardResultSchema = z.union([unchangedSchema, boardPropsSchema])
 
+export type Worker = z.infer<typeof workerSchema>
 export type TaskRef = z.infer<typeof taskRefSchema>
 export type Pip = z.infer<typeof pipSchema>
 export type YourTurnItem = z.infer<typeof yourTurnItemSchema>

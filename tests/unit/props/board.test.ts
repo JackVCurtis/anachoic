@@ -174,7 +174,12 @@ describe('boardProps', () => {
         name: 'api-server',
         live: true,
         holding: {
-          task: { id: String(ids.working), displayId: 'T-003', title: 'Working' },
+          task: {
+            id: String(ids.working),
+            displayId: 'T-003',
+            title: 'Working',
+            assignedTo: null,
+          },
           step: { number: 1, title: 'Working 1' },
           status: 'running',
         },
@@ -241,7 +246,9 @@ describe('boardProps', () => {
         name: 'docs',
         live: false,
         endedAt,
-        released: [{ id: String(released), displayId: 'T-001', title: 'Released' }],
+        released: [
+          { id: String(released), displayId: 'T-001', title: 'Released', assignedTo: null },
+        ],
       },
     ])
     expect(listed(readBoardProps(database, now())).queue).toEqual([String(released)])

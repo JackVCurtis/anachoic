@@ -1,7 +1,8 @@
 /**
- * How wait_for_answer waits: how often it reads the board, how often it
- * sends progress, and how long before it returns with no answer. Progress
- * every minute keeps Claude Code's 30-minute idle limit from tripping.
+ * How wait_for_answer and wait_for_work wait: how often each reads the
+ * board, how often it sends progress, and how long before it returns empty.
+ * Progress every minute keeps Claude Code's 30-minute idle limit from
+ * tripping.
  */
 export interface WaitTimings {
   pollMs: number

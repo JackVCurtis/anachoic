@@ -21,6 +21,7 @@ describe('the empty board', () => {
       toSignOff: [],
       signedOff: [],
       sessions: [],
+      workers: [],
       counts: { yourTurn: 0, working: 0, queue: 0, toSignOff: 0 },
     })
   })

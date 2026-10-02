@@ -35,8 +35,15 @@ function quoted(text: string, length = TITLE_CHARS) {
   return `"${cut(text, length)}"`
 }
 
+/**
+ * " → api-server" after a task assigned to a worker, else nothing.
+ */
+function assignee(task: TaskRef) {
+  return task.assignedTo ? ` → ${task.assignedTo.name}` : ''
+}
+
 function titled(task: TaskRef) {
-  return `${task.displayId} ${quoted(task.title)}`
+  return `${task.displayId} ${quoted(task.title)}${assignee(task)}`
 }
 
 /**
@@ -96,7 +103,7 @@ export function boardSummary(board: BoardProps): string {
     list(
       'Your turn',
       board.yourTurn.map(({ task, step, session }) => {
-        const head = `${task.displayId} step ${step.number} ${quoted(step.title)}`
+        const head = `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)}`
         if (step.owner === 'you') return `${head} is yours`
         const asks = step.question ? ` asks: ${quoted(step.question, QUESTION_CHARS)}` : ' waits'
         return `${head}${asks}${session ? ` (${session.name})` : ''}`
@@ -106,7 +113,7 @@ export function boardSummary(board: BoardProps): string {
       'Working',
       board.working.map(
         ({ task, step, session }) =>
-          `${task.displayId} step ${step.number} ${quoted(step.title)} (${session.name}, ${since(step.runningSince, board.now)})`
+          `${task.displayId}${assignee(task)} step ${step.number} ${quoted(step.title)} (${session.name}, ${since(step.runningSince, board.now)})`
       )
     ),
     list(
@@ -117,7 +124,7 @@ export function boardSummary(board: BoardProps): string {
     ),
     list(
       'Backlog',
-      board.backlog.map(({ task }) => task.displayId),
+      board.backlog.map(({ task }) => `${task.displayId}${assignee(task)}`),
       ', '
     ),
     list(

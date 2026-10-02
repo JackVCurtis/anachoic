@@ -22,6 +22,7 @@ import { registerJoinBoard } from './tools/join_board.js'
 import { registerModelTools } from './tools/model.js'
 import { registerViewActions } from './tools/view_actions.js'
 import { registerWaitForAnswer } from './tools/wait_for_answer.js'
+import { registerWaitForWork } from './tools/wait_for_work.js'
 import { VERSION } from './version.js'
 import { registerViews, viewUris } from './views.js'
 import { waitTimings } from './wait_timings.js'
@@ -52,6 +53,7 @@ function createServer(shared: Shared, kind: SessionKind) {
     join_board: registerJoinBoard(server, context),
     ...registerModelTools(server, context),
     wait_for_answer: registerWaitForAnswer(server, context),
+    wait_for_work: registerWaitForWork(server, context),
   })
   registerViewActions(server, context)
   server.server.oninitialized = () => {

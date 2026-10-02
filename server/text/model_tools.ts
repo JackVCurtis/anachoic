@@ -21,15 +21,19 @@ function waitsOnYou({ task, steps: chain }: TaskState) {
   return `${formatTaskId(task.id)} is active: step ${step.number} "${step.title}" waits on you`
 }
 
-export function addTaskText(state: TaskState): string {
+/**
+ * `assignedName` is the worker the task was assigned to, if any.
+ */
+export function addTaskText(state: TaskState, assignedName?: string): string {
   const id = formatTaskId(state.task.id)
+  const assigned = assignedName ? `. It is assigned to ${assignedName}` : ''
   switch (state.task.status) {
     case 'queue':
-      return `Added ${id} to the queue at position ${state.task.queuePosition}`
+      return `Added ${id} to the queue at position ${state.task.queuePosition}${assigned}`
     case 'active':
-      return `Added ${id}. ${waitsOnYou(state)}`
+      return `Added ${id}${assigned}. ${waitsOnYou(state)}`
     default:
-      return `Added ${id} to the backlog`
+      return `Added ${id} to the backlog${assigned}`
   }
 }
 
@@ -53,10 +57,11 @@ function chainLine(step: Step) {
 }
 
 /**
- * The claimed step in full: what to do, the chain so far with each completed
- * step's summary, the steps after it, and what to call next.
+ * The claimed step in full: what to do, whether the task is assigned to the
+ * caller, the chain so far with each completed step's summary, the steps
+ * after it, and what to call next.
  */
-export function claimStepText(state: TaskState): string {
+export function claimStepText(state: TaskState, callerId?: string): string {
   const id = formatTaskId(state.task.id)
   const step = currentStep(state.steps)
   const done = state.steps.filter((each) => each.number < step.number)
@@ -64,6 +69,9 @@ export function claimStepText(state: TaskState): string {
   return [
     `Claimed ${id} step ${step.number} of ${state.steps.length}: "${step.title}"`,
     `Task: "${state.task.title}"`,
+    ...(callerId !== undefined && state.task.assignedTo === callerId
+      ? [`${id} is assigned to you: no other session may claim its agent steps.`]
+      : []),
     ...(step.detail ? [`Detail: ${step.detail}`] : []),
     ...(done.length === 0 ? ['Done so far: none'] : ['Done so far:', ...done.map(chainLine)]),
     ...(later.length === 0 ? [] : ['After this step:', ...later.map(chainLine)]),

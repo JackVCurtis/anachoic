@@ -218,7 +218,7 @@ describe('Liveness', () => {
     const listed = listSessions(database, now())
     expect(listed.map((each) => [each.session.id, each.live, each.released])).toEqual([
       ['session-a', true, []],
-      ['session-b', false, [{ id: taskId, title: `Task ${taskId}` }]],
+      ['session-b', false, [{ id: taskId, title: `Task ${taskId}`, assignedTo: null }]],
     ])
 
     clock = 200 + 10 * 60 + 1

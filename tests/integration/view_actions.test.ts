@@ -128,7 +128,7 @@ test('each action performs its transition as you and returns the next board', as
   expect(added.text).toBe('Added T-001 to the backlog')
   expect(added.kinds).toEqual(['added'])
   expect(added.props.acted).toEqual({
-    task: { id: '1', displayId: 'T-001', title: 'Add retries' },
+    task: { id: '1', displayId: 'T-001', title: 'Add retries', assignedTo: null },
     status: 'backlog',
     position: null,
   })

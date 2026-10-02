@@ -24,6 +24,7 @@ import {
 } from '../text/model_tools.js'
 import { asCaller, type ToolContext } from './context.js'
 import {
+  assignToInput,
   linksInput,
   noteInput,
   questionInput,
@@ -33,6 +34,7 @@ import {
   titleInput,
 } from './inputs.js'
 import { sessionInput } from './session_input.js'
+import { resolveWorker } from './workers.js'
 
 /**
  * The result of a service as a model tool returns it: the text built from
@@ -72,14 +74,19 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
           title: titleInput,
           steps: stepsInput,
           queue: z.boolean().default(true),
+          assign_to: assignToInput,
           ...sessionInput,
         }),
       },
-      asCaller(context, 'add_task', ({ title, steps, queue }, caller) =>
-        answer(addTask(database, caller.id, now(), { title, steps, queue }), ({ state }) =>
-          addTaskText(state)
+      asCaller(context, 'add_task', ({ title, steps, queue, assign_to: assignTo }, caller) => {
+        const at = now()
+        const worker = assignTo === undefined ? undefined : resolveWorker(database, at, assignTo)
+        if (isRefusal(worker)) return refusalResult(worker)
+        return answer(
+          addTask(database, caller.id, at, { title, steps, queue, assignTo: worker?.id }),
+          ({ state }) => addTaskText(state, worker?.name)
         )
-      )
+      })
     ),
 
     queue_task: server.registerTool(
@@ -121,7 +128,9 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         inputSchema: z.object({ task: taskInput.optional(), ...sessionInput }),
       },
       asCaller(context, 'claim_step', ({ task }, caller) =>
-        answer(claimStep(database, caller.id, now(), task), ({ state }) => claimStepText(state))
+        answer(claimStep(database, caller.id, now(), task), ({ state }) =>
+          claimStepText(state, caller.id)
+        )
       )
     ),
 

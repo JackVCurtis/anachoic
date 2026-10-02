@@ -66,8 +66,10 @@ export interface NewStep {
  * draws at once, or to the refusal's sentence.
  */
 export const actions = {
-  addTask: (app: App, input: { title: string; steps: NewStep[]; queue: boolean }) =>
-    callAppTool<ActionResult>(app, 'add_task_from_view', { ...input }),
+  addTask: (
+    app: App,
+    input: { title: string; steps: NewStep[]; queue: boolean; assignTo?: string }
+  ) => callAppTool<ActionResult>(app, 'add_task_from_view', { ...input }),
   queueTask: (app: App, task: TaskArg) =>
     callAppTool<ActionResult>(app, 'queue_task_from_view', { task }),
   reorderQueue: (app: App, task: TaskArg, position: number) =>

@@ -69,9 +69,15 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
         const result = act(args, at)
         if (isRefusal(result)) return refusalResult(result)
         const { task } = result.value.state
+        const board = readBoardProps(database, at)
+        const names = new Map(board.sessions.map((session) => [session.id, session.name]))
         const structured: ActionResult = {
-          ...readBoardProps(database, at),
-          acted: { task: taskRef(task), status: task.status, position: task.queuePosition },
+          ...board,
+          acted: {
+            task: taskRef(task, (id) => names.get(id) ?? id),
+            status: task.status,
+            position: task.queuePosition,
+          },
         }
         return {
           content: [{ type: 'text', text: text(result.value, args) }],
@@ -87,9 +93,15 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
     add_task_from_view: register(
       'add_task_from_view',
       'Add a task',
-      'Adds a task you created, to the queue or the backlog.',
-      { title: titleInput, steps: stepsInput, queue: z.boolean().default(true) },
-      ({ title, steps, queue }, at) => addTask(database, YOU, at, { title, steps, queue }),
+      'Adds a task you created, to the queue or the backlog, assigned to the live worker whose session id is assignTo when given.',
+      {
+        title: titleInput,
+        steps: stepsInput,
+        queue: z.boolean().default(true),
+        assignTo: z.string().min(1).max(100).optional(),
+      },
+      ({ title, steps, queue, assignTo }, at) =>
+        addTask(database, YOU, at, { title, steps, queue, assignTo }),
       ({ state }) => viewActionText.addTask(state)
     ),
     queue_task_from_view: register(

@@ -1,4 +1,4 @@
-import type { CallToolResult, McpServer, ServerContext } from '@modelcontextprotocol/server'
+import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
 import { invalid, isRefusal, type Refusal } from '../../domain/refusal.js'
 import { formatTaskId, toTaskNumber } from '../../shared/task_id.js'
@@ -14,48 +14,13 @@ import { refusalResult, textResult } from '../results.js'
 import { asCaller, type ToolContext } from './context.js'
 import { taskInput } from './inputs.js'
 import { sessionInput } from './session_input.js'
+import { keepAlive, pause } from './waiting.js'
 
 export const NO_ANSWER_YET = 'No answer yet. Call wait_for_answer again to keep waiting.'
 export const DEDICATED_WAIT = 'The answer arrives as a message in this chat'
 
 function answeredText(task: TaskRef, answer: string) {
   return `The person answered your question on ${formatTaskId(toTaskNumber(task))}:\n${answer}`
-}
-
-/**
- * Resolves after `ms`, or as soon as the signal aborts.
- */
-function pause(ms: number, signal: AbortSignal) {
-  return new Promise<void>((resolve) => {
-    const done = () => {
-      clearTimeout(timer)
-      signal.removeEventListener('abort', done)
-      resolve()
-    }
-    const timer = setTimeout(done, ms)
-    signal.addEventListener('abort', done, { once: true })
-  })
-}
-
-/**
- * Sends progress at each interval while the call waits, when the client
- * asked for it with a progressToken. Returns the function that stops it.
- */
-function keepAlive(
-  request: ServerContext,
-  intervalMs: number,
-  onFailure: (error: unknown) => void
-) {
-  const progressToken = request.mcpReq._meta?.progressToken
-  if (progressToken === undefined) return () => {}
-  let progress = 0
-  const timer = setInterval(() => {
-    progress += 1
-    request.mcpReq
-      .notify({ method: 'notifications/progress', params: { progressToken, progress } })
-      .catch(onFailure)
-  }, intervalMs)
-  return () => clearInterval(timer)
 }
 
 /**
