@@ -26,6 +26,8 @@ Each process opens one `DatabaseSync` from `node:sqlite` and keeps it for its li
 | `synchronous` | `NORMAL` | Safe with WAL. A power cut can lose the last commit, but never corrupts the database. |
 | `foreign_keys` | `ON` | |
 
+**A brand-new file.** `busy_timeout` does not cover switching a new database file to WAL. When several processes create the file at once, `PRAGMA journal_mode = WAL` can fail with "database is locked". Opening therefore retries that pragma for up to 5 s. The spike missed this, because it created the file before starting its processes.
+
 `node:sqlite` prints an ExperimentalWarning on stderr under Node 24. That is harmless, because stdout carries only the protocol.
 
 ## Migrations
