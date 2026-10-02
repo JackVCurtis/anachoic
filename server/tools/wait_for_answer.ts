@@ -17,7 +17,7 @@ import { sessionInput } from './session_input.js'
 import { keepAlive, pause } from './waiting.js'
 
 export const NO_ANSWER_YET = 'No answer yet. Call wait_for_answer again to keep waiting.'
-export const DEDICATED_WAIT = 'The answer arrives as a message in this chat'
+export const DEDICATED_WAIT = 'This chat does not wait'
 
 function answeredText(task: TaskRef, answer: string) {
   return `The person answered your question on ${formatTaskId(toTaskNumber(task))}:\n${answer}`

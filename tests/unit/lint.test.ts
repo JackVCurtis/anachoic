@@ -71,6 +71,11 @@ describe('lint refuses', () => {
       'view/bridge/example.ts',
       "app.updateModelContext({ content: [{ type: 'text', text: 'hi' }] })",
     ],
+    [
+      'sendMessage in view/',
+      'view/entries/board/example.ts',
+      "app.sendMessage({ role: 'user', content: [{ type: 'text', text: 'hi' }] })",
+    ],
   ])('%s', async (_name, filePath, code) => {
     expect(await errors(filePath, code)).not.toEqual([])
   })

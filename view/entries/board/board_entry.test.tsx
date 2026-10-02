@@ -354,7 +354,7 @@ describe('reordering the queue', () => {
     })
   }
 
-  test('a drop calls reorder_queue with the display id and position, draws the result and sends the sentence once', async () => {
+  test('a drop calls reorder_queue with the display id and position, draws the result and posts nothing', async () => {
     const app = reorderApp({
       content: [{ type: 'text', text: 'Moved T-019 to position 1.' }],
       structuredContent: {
@@ -375,6 +375,7 @@ describe('reordering the queue', () => {
       'Upgrade the queue client',
       'Add retries',
     ])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
   test('a refusal is shown as an error and the queue keeps the order the props give', async () => {

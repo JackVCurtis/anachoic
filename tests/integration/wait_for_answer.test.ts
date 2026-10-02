@@ -173,9 +173,9 @@ test('wait_for_answer on a step the worker does not hold is refused', async () =
   })
 })
 
-test('the dedicated session is told its answer arrives as a message', async () => {
+test('wait_for_answer from the dedicated session is refused', async () => {
   expect(await call(view, 'wait_for_answer', { task: 'T-001' })).toEqual({
-    text: 'The answer arrives as a message in this chat',
+    text: 'This chat does not wait',
     isError: true,
   })
 })

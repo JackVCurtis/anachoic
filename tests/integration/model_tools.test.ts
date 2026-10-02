@@ -180,14 +180,24 @@ test('complete_step on a step waiting on you is refused as unanswered', async ()
   })
 })
 
-test('the dedicated session is told its answer arrives as a message', async () => {
+test('ask_you from the dedicated session is refused, and a worker’s still works', async () => {
   const chat = await connect({ dataDir, clientName: 'claude-ai' })
   clients.push(chat)
   await ok(chat, 'add_task', TWO_AGENT_STEPS)
   await ok(chat, 'claim_step')
+  const before = boardRows()
 
-  expect(await ok(chat, 'ask_you', { task: 'T-001', question: 'Which?' })).toBe(
-    'Asked. Your answer will arrive as a message from the board.'
+  expect(await call(chat, 'ask_you', { task: 'T-001', question: 'Which?' })).toEqual({
+    text: 'Ask in this chat instead',
+    isError: true,
+  })
+  expect(boardRows()).toEqual(before)
+
+  const api = await worker('worker-a', 'api-server')
+  await ok(api, 'add_task', TWO_AGENT_STEPS)
+  await ok(api, 'claim_step', { task: 'T-002' })
+  expect(await ok(api, 'ask_you', { task: 'T-002', question: 'Which?' })).toBe(
+    'Asked. Call wait_for_answer with task T-002 next.'
   )
 })
 

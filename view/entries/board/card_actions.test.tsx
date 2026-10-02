@@ -97,18 +97,12 @@ function cardOf(title: string): HTMLElement {
   return (titleButton.closest('article') ?? titleButton.closest('li')) as HTMLElement
 }
 
-function sentences(app: FakeApp) {
-  return app.calls.sendMessage.map(({ content }) =>
-    content.map((block) => ('text' in block ? block.text : '')).join('')
-  )
-}
-
 async function settle() {
   await act(() => Promise.resolve())
 }
 
 describe('the card actions', () => {
-  test('Sign off calls sign_off with the display id, draws the result and sends its sentence once', async () => {
+  test('Sign off calls sign_off with the display id, draws the result and posts nothing', async () => {
     const app = fakeApp({
       sign_off: actionResult({ task: FINISHED.task, status: 'done', position: null }),
     })
@@ -118,11 +112,11 @@ describe('the card actions', () => {
     await settle()
 
     expect(app.callsTo('sign_off')).toEqual([{ name: 'sign_off', arguments: { task: 'T-006' } }])
-    expect(sentences(app)).toEqual(['I signed off T-006.'])
+    expect(app.calls.sendMessage).toEqual([])
     expect(screen.queryByRole('button', { name: FINISHED.task.title })).toBeNull()
   })
 
-  test('a follow-up placed at the front calls add_follow_up_from_view with its steps and sends its sentence once', async () => {
+  test('a follow-up placed at the front calls add_follow_up_from_view with its steps and posts nothing', async () => {
     const app = fakeApp({
       add_follow_up_from_view: actionResult({ task: FINISHED.task, status: 'queue', position: 1 }),
     })
@@ -155,7 +149,7 @@ describe('the card actions', () => {
         },
       },
     ])
-    expect(sentences(app)).toEqual(['I added 2 follow-up steps to T-006.'])
+    expect(app.calls.sendMessage).toEqual([])
     expect(screen.queryByRole('form', { name: done.followUpTitle })).toBeNull()
   })
 
@@ -174,10 +168,10 @@ describe('the card actions', () => {
     expect(app.callsTo('add_follow_up_from_view')[0].arguments).toMatchObject({
       placement: 'last',
     })
-    expect(sentences(app)).toEqual(['I added 1 follow-up step to T-006.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('a confirmed Archive on a Done card calls archive_task and sends its sentence once', async () => {
+  test('a confirmed Archive on a Done card calls archive_task and posts nothing', async () => {
     const app = fakeApp({
       archive_task: actionResult({ task: FINISHED.task, status: 'done', position: null }),
     })
@@ -194,10 +188,10 @@ describe('the card actions', () => {
     expect(app.callsTo('archive_task')).toEqual([
       { name: 'archive_task', arguments: { task: 'T-006' } },
     ])
-    expect(sentences(app)).toEqual(['I archived T-006.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('Move to backlog on a Queue card calls move_to_backlog once and sends its sentence', async () => {
+  test('Move to backlog on a Queue card calls move_to_backlog once and posts nothing', async () => {
     const app = fakeApp({
       move_to_backlog: actionResult({ task: QUEUED.task, status: 'backlog', position: null }),
     })
@@ -211,10 +205,10 @@ describe('the card actions', () => {
     expect(app.callsTo('move_to_backlog')).toEqual([
       { name: 'move_to_backlog', arguments: { task: 'T-015' } },
     ])
-    expect(sentences(app)).toEqual(['I moved T-015 to the backlog.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('a confirmed Archive on a Backlog card calls archive_task once and sends its sentence', async () => {
+  test('a confirmed Archive on a Backlog card calls archive_task once and posts nothing', async () => {
     const app = fakeApp({
       archive_task: actionResult({ task: BACKLOGGED.task, status: 'backlog', position: null }),
     })
@@ -230,7 +224,7 @@ describe('the card actions', () => {
     expect(app.callsTo('archive_task')).toEqual([
       { name: 'archive_task', arguments: { task: 'T-008' } },
     ])
-    expect(sentences(app)).toEqual(['I archived T-008.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
   test('the button that started an action is busy, and the card’s others disabled, until the result', async () => {

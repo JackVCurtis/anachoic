@@ -1,5 +1,5 @@
 import { currentStep } from '../../domain/chain.js'
-import type { Event, SessionKind, Step, TaskState } from '../../domain/types.js'
+import type { Event, Step, TaskState } from '../../domain/types.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import { formatTaskId } from '../../shared/task_id.js'
 
@@ -100,10 +100,8 @@ export function updateStepText(state: TaskState): string {
   return `Noted on ${formatTaskId(state.task.id)} step ${currentStep(state.steps).number}`
 }
 
-export function askYouText(state: TaskState, kind: SessionKind): string {
-  return kind === 'dedicated'
-    ? 'Asked. Your answer will arrive as a message from the board.'
-    : `Asked. Call wait_for_answer with task ${formatTaskId(state.task.id)} next.`
+export function askYouText(state: TaskState): string {
+  return `Asked. Call wait_for_answer with task ${formatTaskId(state.task.id)} next.`
 }
 
 /**

@@ -18,9 +18,11 @@ Showing the board: call show_board whenever the person asks about work, what is 
 
 Planning: plan work as tasks with chains of steps, through add_task. Give each step an owner: "you" for a step the person does, or "agent" for a step a worker (or this chat) does. Queue the task unless the person wants it kept in the backlog; queue_task queues a backlog task. add_task can assign the task to one live worker by name with assign_to, when the person wants that worker to do it; only that worker may then claim its agent steps. Tasks cannot be edited once added, and a chain changes only by add_follow_up on a done task that is not signed off. Never try to change a task any other way.
 
-Messages from the board view: messages that begin "I finished", "I answered", "I added", "I moved", "I queued", "I parked", "I signed off" or "I archived" come from the board view, after the person acted on the board. Reply in one line when the action needs nothing from Claude. Carry on with the work when it concerns work this chat holds or coordinates, such as the answer to a question this chat asked.
+The person's board actions: the board view posts nothing to this chat. This chat learns of the person's board actions only by calling show_board, so call it again before relying on what the board showed earlier.
 
-Doing work: this chat may claim an agent step like a worker, with claim_step, then update_step, ask_you and complete_step. When this chat asks the person a question with ask_you, the answer arrives as a message from the view in this chat. Never call wait_for_answer, and never wait in a tool.`
+Asking the person: this chat asks the person questions directly in this chat, never with ask_you.
+
+Doing work: this chat may claim an agent step like a worker, with claim_step, then update_step and complete_step. Never call wait_for_answer, and never wait in a tool.`
 
 const WORKER_INSTRUCTIONS = `You are a worker session on Anachoic, a board of tasks shared between the person and Claude sessions. You take agent steps from the board and report on them there.
 
@@ -57,7 +59,7 @@ const WORKER_DESCRIPTIONS: ToolDescriptions = {
   claim_step:
     'Claims an agent step for this session. With no task, it claims the current agent step of the first queued task assigned to this session, or else of the first unassigned queued task, never one assigned to another session; with task (T-012 or 12), that queued task’s current agent step. The step is then this session’s: only it can note, ask about or complete it. A task assigned to another session is refused: "T-012 is assigned to api-server". Hold one claim at a time. Returns the task, the step’s number, title and detail, whether the task is assigned to this session, the chain so far with each completed step’s summary and artifact links, and what to call next; or "Nothing in the queue needs an agent".',
   update_step: `Records a progress note (1–500 characters) and optional links (up to 10 of {label, url}) on the current step of the task (T-012 or 12). The note shows on the board. ${CLAIMED_ONLY} Returns "Noted on T-012 step 2".`,
-  ask_you: `Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Call wait_for_answer with task T-012 next."; then call wait_for_answer to receive the answer.`,
+  ask_you: `For worker sessions only. Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Call wait_for_answer with task T-012 next."; then call wait_for_answer to receive the answer.`,
   wait_for_answer: `Waits for the person’s answer to the question asked with ask_you on the current step of the task (T-012 or 12). Call it right after ask_you. ${CLAIMED_ONLY} It returns the answer as soon as the person gives it, or after 20 minutes "No answer yet. Call wait_for_answer again to keep waiting.", or, when the task was parked or archived or the claim ended, a sentence saying to stop work on it. Returns the answer only once.`,
   wait_for_work: `Waits until the queue holds a task this session may claim: one assigned to it, which comes first, or one that is unassigned. No input. Call it when there is nothing to claim, and call it again whenever it returns "No work yet. Call wait_for_work again to keep waiting.", which it does after 20 minutes. It claims nothing. Returns the task to claim, such as "T-012 is assigned to you. Call claim_step with task T-012." or "T-015 is in the queue. Call claim_step with task T-015."`,
   complete_step: `Completes the current step of the task (T-012 or 12), with a summary (1–2,000 characters) of what was done and optional links (up to 10 of {label, url}). ${CLAIMED_ONLY} It is refused while the step waits for the person’s answer. Returns what happens next: the task is done, the next step waits on the person, or the task is back in the queue at position 1 with "Call claim_step with task T-012 to continue it."`,
@@ -69,9 +71,9 @@ const DEDICATED_DESCRIPTIONS: ToolDescriptions = {
     'Shows the Anachoic board in this chat: what waits on the person, what is running, the queue, the backlog, what is ready to sign off, and the sessions. No input. Call it whenever the person asks about work. Returns a compact summary: a revision line, then one line each for Your turn, Working, Queue, Backlog, To sign off and Sessions.',
   join_board:
     'Joins the Anachoic board as this chat, the dedicated session, and optionally sets its display name (name: 1–40 characters). Returns the session’s id, kind and name. This chat is on the board without it.',
-  ask_you: `Asks the person a question (1–2,000 characters) about the current step of the task (T-012 or 12). The step then waits on the person, on the board. ${CLAIMED_ONLY} Returns "Asked. Your answer will arrive as a message from the board."; the answer arrives as a message from the view in this chat.`,
+  ask_you: `For worker sessions only. A worker asks the person a question (1–2,000 characters) about the current step of a task it claimed; this chat asks the person directly in this chat instead, never with this tool. ${CLAIMED_ONLY} Returns "Ask in this chat instead" as an error.`,
   wait_for_answer:
-    'For worker sessions in Claude Code only. This chat never waits in a tool: the answer to its question arrives as a message from the board. Returns "The answer arrives as a message in this chat" as an error.',
+    'For worker sessions in Claude Code only. This chat never waits in a tool. Returns "This chat does not wait" as an error.',
   wait_for_work:
     'For worker sessions in Claude Code only. This chat never waits in a tool. Returns "This chat does not wait" as an error.',
 }

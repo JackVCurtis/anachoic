@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import { isRefusal } from '../../domain/refusal.js'
+import { invalid, isRefusal } from '../../domain/refusal.js'
 import {
   addFollowUp,
   addTask,
@@ -44,6 +44,12 @@ import { resolveWorker } from './workers.js'
 function answer<T>(result: ServiceResult<T>, text: (value: T) => string) {
   return isRefusal(result) ? refusalResult(result) : textResult(text(result.value))
 }
+
+/**
+ * The dedicated session is a conversation with the person, so it asks in its
+ * own chat: an answer given on the board would never reach it.
+ */
+export const DEDICATED_ASK = 'Ask in this chat instead'
 
 export const MODEL_TOOLS = [
   'add_task',
@@ -171,9 +177,11 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
         inputSchema: z.object({ task: taskInput, question: questionInput, ...sessionInput }),
       },
       asCaller(context, 'ask_you', ({ task, question }, caller) =>
-        answer(askYou(database, caller.id, now(), task, question), ({ state }) =>
-          askYouText(state, caller.kind)
-        )
+        caller.kind === 'dedicated'
+          ? refusalResult(invalid(DEDICATED_ASK))
+          : answer(askYou(database, caller.id, now(), task, question), ({ state }) =>
+              askYouText(state)
+            )
       )
     ),
 

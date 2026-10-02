@@ -1,8 +1,9 @@
+import type { App } from '@modelcontextprotocol/ext-apps'
 import type { CallToolResult } from '@modelcontextprotocol/client'
 import type { HostApp, HostContext } from '../connect'
 
 type CallParams = Parameters<HostApp['callServerTool']>[0]
-type MessageParams = Parameters<HostApp['sendMessage']>[0]
+type MessageParams = Parameters<App['sendMessage']>[0]
 type DisplayModeParams = Parameters<HostApp['requestDisplayMode']>[0]
 type ToolResultHandler = NonNullable<HostApp['ontoolresult']>
 type HostContextHandler = NonNullable<HostApp['onhostcontextchanged']>
@@ -69,6 +70,10 @@ export class FakeApp implements HostApp {
     return answer
   }
 
+  /**
+   * Not part of HostApp, since the view never posts a message; recorded so a
+   * test can show that nothing was posted.
+   */
   async sendMessage(params: MessageParams) {
     this.calls.sendMessage.push(params)
     return {}

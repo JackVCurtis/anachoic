@@ -77,14 +77,8 @@ async function renderBoard(app: FakeApp) {
   return userEvent.setup()
 }
 
-function sentences(app: FakeApp) {
-  return app.calls.sendMessage.map(({ content }) =>
-    content.map((block) => ('text' in block ? block.text : '')).join('')
-  )
-}
-
 describe('your actions on Your turn', () => {
-  test('Mark done calls complete_my_step with the note, redraws from the result and posts its sentence once', async () => {
+  test('Mark done calls complete_my_step with the note, redraws from the result and posts nothing', async () => {
     const app = fakeApp(written(board(4, [QUESTION]), YOUR_STEP))
     const user = await renderBoard(app)
 
@@ -96,7 +90,7 @@ describe('your actions on Your turn', () => {
     ])
     expect(screen.queryByText(YOUR_STEP.task.title)).toBeNull()
     expect(app.callsTo('get_board')).toHaveLength(1)
-    expect(sentences(app)).toEqual(['I finished step 2 of T-012, “Review the PR”. Note: Merged'])
+    expect(app.calls.sendMessage).toEqual([])
     expect(document.activeElement).toBe(
       screen.getByRole('heading', { level: 2, name: yourTurn.title })
     )
@@ -109,10 +103,10 @@ describe('your actions on Your turn', () => {
     await user.click(screen.getByRole('button', { name: yourTurn.markDone }))
 
     expect(app.callsTo('complete_my_step')[0].arguments).toEqual({ task: 'T-012' })
-    expect(sentences(app)).toEqual(['I finished step 2 of T-012, “Review the PR”.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('Answer calls answer_question with the answer and posts its sentence once', async () => {
+  test('Answer calls answer_question with the answer and posts nothing', async () => {
     const app = fakeApp(written(board(4, [YOUR_STEP]), QUESTION))
     const user = await renderBoard(app)
 
@@ -124,10 +118,10 @@ describe('your actions on Your turn', () => {
     ])
     expect(screen.queryByText(QUESTION.task.title)).toBeNull()
     expect(app.callsTo('get_board')).toHaveLength(1)
-    expect(sentences(app)).toEqual(['I answered step 3 of T-014: “Redis”'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('Park, confirmed, calls move_to_backlog and posts its sentence once', async () => {
+  test('Park, confirmed, calls move_to_backlog and posts nothing', async () => {
     const app = fakeApp(written(board(4, [QUESTION]), YOUR_STEP))
     const user = await renderBoard(app)
 
@@ -139,10 +133,10 @@ describe('your actions on Your turn', () => {
       { name: 'move_to_backlog', arguments: { task: 'T-012' } },
     ])
     expect(screen.queryByText(YOUR_STEP.task.title)).toBeNull()
-    expect(sentences(app)).toEqual(['I parked T-012 and moved it to the backlog.'])
+    expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('a refusal sends no sentence, keeps the card and the draft, and shows the refusal', async () => {
+  test('a refusal posts nothing, keeps the card and the draft, and shows the refusal', async () => {
     const app = fakeApp({
       content: [{ type: 'text', text: 'Step 3 of T-014 is not the current step' }],
       isError: true,
@@ -152,7 +146,7 @@ describe('your actions on Your turn', () => {
     await user.type(screen.getByRole('textbox', { name: yourTurn.answerLabel }), 'Redis')
     await user.click(screen.getByRole('button', { name: yourTurn.answer }))
 
-    expect(sentences(app)).toEqual([])
+    expect(app.calls.sendMessage).toEqual([])
     expect(screen.getByRole('alert')).toHaveTextContent('Step 3 of T-014 is not the current step')
     expect(screen.getByRole('textbox', { name: yourTurn.answerLabel })).toHaveValue('Redis')
     expect(screen.getByRole('button', { name: yourTurn.answer })).toBeEnabled()

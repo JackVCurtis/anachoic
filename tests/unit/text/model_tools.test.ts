@@ -114,10 +114,7 @@ describe('the worker tools', () => {
       'Noted on T-012 step 2'
     )
     const asked = stateOf(ask(second, ctx(A), 'Redis?'))
-    expect(askYouText(asked, 'worker')).toBe('Asked. Call wait_for_answer with task T-012 next.')
-    expect(askYouText(asked, 'dedicated')).toBe(
-      'Asked. Your answer will arrive as a message from the board.'
-    )
+    expect(askYouText(asked)).toBe('Asked. Call wait_for_answer with task T-012 next.')
   })
 
   test('complete_step says the task is back in the queue, waits on you, or is done', () => {

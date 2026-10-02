@@ -127,7 +127,7 @@ export default configApp(
     rules: { 'no-restricted-properties': ['error', ...STDOUT_CONSOLE] },
   },
   {
-    name: 'Anachoic the view never calls updateModelContext',
+    name: 'Anachoic the view never posts to the chat',
     files: VIEW_FILES,
     rules: {
       'no-restricted-syntax': [
@@ -135,7 +135,12 @@ export default configApp(
         {
           selector: "MemberExpression[property.name='updateModelContext']",
           message:
-            'Desktop accepts updateModelContext but the model never sees it. Post a sentence with sendMessage (view/bridge/wake.ts).',
+            'The view never posts to the dedicated chat, and desktop never shows updateModelContext to the model (06, waking the dedicated session).',
+        },
+        {
+          selector: "CallExpression[callee.property.name='sendMessage']",
+          message:
+            'The view never posts a message to the dedicated chat, which reads the board with show_board (06, waking the dedicated session).',
         },
       ],
     },

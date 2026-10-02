@@ -32,20 +32,21 @@ describe('the dedicated session’s instructions', () => {
     'Give each step an owner: "you"',
     '"agent"',
     'Tasks cannot be edited once added, and a chain changes only by add_follow_up on a done task that is not signed off',
-    '"I finished"',
-    '"I answered"',
-    '"I added"',
-    '"I moved"',
-    '"I signed off"',
-    '"I archived"',
-    'come from the board view',
-    'Reply in one line when the action needs nothing from Claude',
-    'Carry on with the work when it concerns work this chat holds or coordinates',
     'Never call wait_for_answer, and never wait in a tool',
     'this chat may claim an agent step like a worker',
-    'the answer arrives as a message from the view',
+    "This chat learns of the person's board actions only by calling show_board",
+    'asks the person questions directly in this chat, never with ask_you',
   ])('says %s', (phrase) => {
     expect(text).toContain(phrase)
+  })
+
+  test.each([
+    '"I finished"',
+    '"I answered"',
+    'Messages from the board view',
+    'arrives as a message',
+  ])('no longer says %s', (phrase) => {
+    expect(text).not.toContain(phrase)
   })
 
   test('mentions wait_for_answer only to forbid it', () => {
@@ -122,9 +123,12 @@ describe('both versions', () => {
     }
   )
 
-  test('the two versions differ in what ask_you says comes next', () => {
+  test('ask_you is for workers only, and the dedicated version says it is refused', () => {
+    expect(TOOL_DESCRIPTIONS.worker.ask_you).toMatch(/^For worker sessions only\./)
     expect(TOOL_DESCRIPTIONS.worker.ask_you).toContain('call wait_for_answer')
-    expect(TOOL_DESCRIPTIONS.dedicated.ask_you).toContain('arrives as a message')
+    expect(TOOL_DESCRIPTIONS.dedicated.ask_you).toMatch(/^For worker sessions only\./)
+    expect(TOOL_DESCRIPTIONS.dedicated.ask_you).toContain('"Ask in this chat instead"')
+    expect(TOOL_DESCRIPTIONS.dedicated.wait_for_answer).toContain('"This chat does not wait"')
     expect(INSTRUCTIONS.dedicated).not.toBe(INSTRUCTIONS.worker)
   })
 })

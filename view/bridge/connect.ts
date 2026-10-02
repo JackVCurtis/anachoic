@@ -11,7 +11,6 @@ export type HostApp = Pick<
   | 'connect'
   | 'getHostContext'
   | 'callServerTool'
-  | 'sendMessage'
   | 'requestDisplayMode'
   | 'ontoolresult'
   | 'onhostcontextchanged'

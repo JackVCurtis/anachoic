@@ -101,7 +101,7 @@ describe('adding a task from the board', () => {
     expect(screen.getByRole('button', { name: ADDED.title })).toBeVisible()
     expect(screen.queryByRole('textbox', { name: taskEntry.title })).toBeNull()
     expect(screen.getByRole('button', { name: taskEntry.addTask })).toHaveFocus()
-    expect(app.calls.sendMessage).toHaveLength(1)
+    expect(app.calls.sendMessage).toEqual([])
 
     await user.click(screen.getByRole('button', { name: taskEntry.addTask }))
     expect(screen.getByRole('textbox', { name: taskEntry.title })).toHaveValue('')
