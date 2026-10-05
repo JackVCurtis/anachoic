@@ -11,7 +11,6 @@ import { joinClasses } from '../../helpers/join_classes'
 import { fillTemplate, fold } from '../../helpers/strings'
 import { Disclosure } from '../../patterns/disclosure/disclosure'
 import { SectionHeader } from '../../patterns/section_header/section_header'
-import { Frame } from '../../primitives/frame/frame'
 import styles from './board_section.module.css'
 
 /**
@@ -28,8 +27,6 @@ export interface BoardSectionProps {
   cards: readonly SectionCard[]
   /** Drawn in place of the list when it is empty. Nothing unless given. */
   empty?: ReactNode
-  /** Draws the header on the inverse surface, as Your turn's is. */
-  inverseHeader?: boolean
   /** A list longer than FOLD_AFTER shows only its first cards until opened. */
   folds?: boolean
   /** `ol` for a list whose order means something, as the queue's does. */
@@ -53,7 +50,6 @@ export function BoardSection({
   count,
   cards,
   empty,
-  inverseHeader = false,
   folds = true,
   listElement: List = 'ul',
   cardGap = 'tight',
@@ -90,29 +86,19 @@ export function BoardSection({
   const shown = folded ? cards.slice(0, FOLD_AFTER) : cards
   const rest = folded ? cards.slice(FOLD_AFTER) : []
 
-  const header = (
-    <SectionHeader
-      headingLevel={2}
-      headingRef={headingRef}
-      title={title}
-      summary={count}
-      spacing="roomy"
-    />
-  )
-
   return (
     <section
       className={joinClasses(styles.section, className)}
       onFocus={onFocus}
       onPointerDown={onPointerDown}
     >
-      {inverseHeader ? (
-        <Frame tone="inverse" className={styles.inverseHeader}>
-          {header}
-        </Frame>
-      ) : (
-        header
-      )}
+      <SectionHeader
+        headingLevel={2}
+        headingRef={headingRef}
+        title={title}
+        summary={count}
+        spacing="roomy"
+      />
       {cards.length === 0 ? (
         empty
       ) : (

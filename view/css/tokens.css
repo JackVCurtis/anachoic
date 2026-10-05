@@ -4,7 +4,7 @@
   --color-bg: #f2f2f3;
   --color-surface: #e9e9ea;
   --color-text: #1d1f20;
-  --color-accent: #5980a6;
+  --color-accent: #279595;
   --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
 
   /* Neutral ramp; unused steps stay so the ramp is complete */
@@ -19,15 +19,15 @@
   --color-neutral-900: #2b2b2d;
 
   /* Accent ramp; unused steps stay so the ramp is complete */
-  --color-accent-100: #eef6ff;
-  --color-accent-200: #d6ebff;
-  --color-accent-300: #b5d9fd;
-  --color-accent-400: #94bce3;
-  --color-accent-500: #749dc4;
-  --color-accent-600: #597ea3;
-  --color-accent-700: #416180;
-  --color-accent-800: #2c455d;
-  --color-accent-900: #1d2d3d;
+  --color-accent-100: #e8f6f6;
+  --color-accent-200: #ccecec;
+  --color-accent-300: #a3dcdc;
+  --color-accent-400: #6fc4c4;
+  --color-accent-500: #45acac;
+  --color-accent-600: #279595;
+  --color-accent-700: #007070;
+  --color-accent-800: #005555;
+  --color-accent-900: #003a3a;
 
   /* Fonts */
   --font-heading: 'Barlow Condensed', system-ui, sans-serif;
@@ -70,16 +70,16 @@
   --tint-selection: color-mix(in srgb, var(--color-accent) 30%, transparent);
   --color-backdrop: color-mix(in srgb, var(--color-neutral-900) 38%, transparent);
 
-  /* Inverted surface values */
-  --inverse-bg: var(--color-accent-900);
-  --inverse-fg: var(--color-bg);
-  --inverse-fg-subtle: rgba(242, 242, 243, 0.75);
+  /* Inverted surface values: white on teal measures 4.77:1, so its text is never dimmed */
+  --inverse-bg: #008080;
+  --inverse-fg: #ffffff;
+  --inverse-fg-subtle: var(--inverse-fg);
   --inverse-rule: rgba(255, 255, 255, 0.28);
   --inverse-border-quiet: rgba(255, 255, 255, 0.4);
-  --inverse-border: rgba(255, 255, 255, 0.45);
+  --inverse-border: rgba(255, 255, 255, 0.72);
   --inverse-chip-border: rgba(255, 255, 255, 0.5);
   --inverse-pip-border: rgba(255, 255, 255, 0.55);
-  --inverse-border-strong: rgba(255, 255, 255, 0.7);
+  --inverse-border-strong: rgba(255, 255, 255, 0.9);
   --inverse-well: rgba(0, 0, 0, 0.22);
   --inverse-tint-hover: rgba(255, 255, 255, 0.08);
   --inverse-tint-pressed: rgba(255, 255, 255, 0.14);
@@ -161,7 +161,7 @@
   --tone-bg: var(--inverse-bg);
   --tone-fg: var(--inverse-fg);
   --tone-fg-subtle: var(--inverse-fg-subtle);
-  --tone-fg-accent: var(--color-accent-300);
+  --tone-fg-accent: var(--inverse-fg);
   --tone-border: var(--inverse-bg);
   --tone-rule: var(--inverse-rule);
   --tone-well-bg: var(--inverse-well);
@@ -172,7 +172,7 @@
   --tone-field-fg: var(--inverse-fg);
   --tone-field-border: var(--inverse-border);
   --tone-field-border-hover: var(--inverse-border-strong);
-  --tone-field-placeholder: rgba(242, 242, 243, 0.6);
+  --tone-field-placeholder: var(--inverse-fg);
   --tone-field-caret: var(--color-accent-300);
   --tone-chip-agent-border: var(--inverse-chip-border);
   --tone-chip-agent-fg: var(--inverse-fg);
@@ -186,6 +186,10 @@
   --tone-tint-hover: var(--inverse-tint-hover);
   --tone-tint-pressed: var(--inverse-tint-pressed);
   --tone-focus: var(--color-accent-300);
+  --dim-1: 1;
+  --dim-2: 1;
+  --dim-3: 1;
+  --dim-4: 1;
 }
 
 [data-tone='light'] {

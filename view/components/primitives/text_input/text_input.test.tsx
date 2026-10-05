@@ -52,11 +52,10 @@ function contrast(color: string, backdrop: string): number {
 }
 
 /**
- * From anachoic ui/16-accessibility.md, "Measured ratios", the row
- * "White at 45% | Accent-900 | 4.11": the border of the outlined button and of
- * a field on the inverted field.
+ * White at 72% on the teal inverted field: the border of the outlined button
+ * and of a field there, above the 3:1 that a control's edge needs.
  */
-const WHITE_45_ON_ACCENT_900 = 4.11
+const WHITE_72_ON_INVERSE_BG = 3.23
 
 describe('TextInput on the light surface', () => {
   test('rests on the field tokens at the documented measurements', () => {
@@ -150,7 +149,7 @@ describe('TextInput on the inverted surface', () => {
     expect(style.borderTopColor).toBe(resolvedColor('--inverse-border'))
     expect(style.color).toBe(resolvedColor('--inverse-fg'))
     expect(style.caretColor).toBe(resolvedColor('--color-accent-300'))
-    expect(getComputedStyle(field(), '::placeholder').color).toBe('rgba(242, 242, 243, 0.6)')
+    expect(getComputedStyle(field(), '::placeholder').color).toBe(resolvedColor('--inverse-fg'))
   })
 
   test('hover takes --inverse-border-strong and focus takes accent-300', async () => {
@@ -167,13 +166,13 @@ describe('TextInput on the inverted surface', () => {
     expect(style.outlineColor).toBe(resolvedColor('--color-accent-300'))
   })
 
-  test('the border measures 4.11:1 against accent-900, as the token table says', () => {
+  test('the border measures 3.23:1 against the inverted field', () => {
     renderInTone(<TextInput label="Instruction" value="" onChange={() => {}} />, 'inverse')
     const border = getComputedStyle(field()).borderTopColor
-    const ratio = contrast(border, resolvedColor('--color-accent-900'))
+    const ratio = contrast(border, resolvedColor('--inverse-bg'))
 
-    expect(border).toBe('rgba(255, 255, 255, 0.45)')
-    expect(ratio.toFixed(2)).toBe(WHITE_45_ON_ACCENT_900.toFixed(2))
+    expect(border).toBe('rgba(255, 255, 255, 0.72)')
+    expect(ratio.toFixed(2)).toBe(WHITE_72_ON_INVERSE_BG.toFixed(2))
     expect(ratio).toBeGreaterThanOrEqual(3)
   })
 })

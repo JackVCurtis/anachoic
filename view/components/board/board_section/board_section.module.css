@@ -5,15 +5,6 @@
   min-width: 0;
 }
 
-.inverseHeader {
-  padding: var(--space-3) var(--space-4);
-}
-
-/* On the inverse band the count is as strong as the title */
-.inverseHeader span {
-  color: var(--tone-fg);
-}
-
 .list {
   display: flex;
   flex-direction: column;

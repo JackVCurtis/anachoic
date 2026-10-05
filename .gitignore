@@ -15,3 +15,6 @@ debug-storybook.log
 playwright-report/
 
 .DS_Store
+
+# Demo screenshots from pnpm demo:screenshots
+screenshots/

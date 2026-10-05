@@ -101,9 +101,9 @@
 }
 
 .inverseSolid {
-  border-color: var(--color-bg);
-  background-color: var(--color-bg);
-  color: var(--color-accent-900);
+  border-color: var(--inverse-fg);
+  background-color: var(--inverse-fg);
+  color: var(--color-accent-800);
 }
 
 .inverseSolid:enabled:not([aria-disabled='true']):hover {

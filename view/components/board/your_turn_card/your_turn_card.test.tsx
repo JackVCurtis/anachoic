@@ -97,7 +97,7 @@ describe('YourTurnCard', () => {
   test('the card is inverted, padded --space-4, and does not change on hover', async () => {
     const { card } = renderCard(YOUR_TURN.yourStep)
     const style = getComputedStyle(card)
-    const fill = resolvedColor('--color-accent-900')
+    const fill = resolvedColor('--inverse-bg')
 
     expect(card.getAttribute('data-tone')).toBe('inverse')
     expect(style.backgroundColor).toBe(fill)

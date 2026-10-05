@@ -111,9 +111,9 @@ const LOOKS: Array<{
   },
   {
     variant: 'inverse-solid',
-    fill: '--color-bg',
-    border: '--color-bg',
-    text: '--color-accent-900',
+    fill: '--inverse-fg',
+    border: '--inverse-fg',
+    text: '--color-accent-800',
     hover: '--color-accent-100',
   },
   {

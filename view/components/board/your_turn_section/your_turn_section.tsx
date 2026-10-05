@@ -19,10 +19,7 @@ export interface YourTurnSectionProps extends Pick<
   pending?: YourTurnPending | null
 }
 
-/**
- * What waits on the user, under a header on the inverse surface. It folds
- * after eight cards.
- */
+/** What waits on the user. It folds after eight cards. */
 export function YourTurnSection({
   tasks,
   onOpenTask,
@@ -37,7 +34,6 @@ export function YourTurnSection({
     <BoardSection
       title={yourTurn.title}
       count={tasks.length}
-      inverseHeader
       empty={<EmptyState variant="dashed" message={yourTurn.nothingWaiting} />}
       cards={tasks.map((item) => ({
         id: item.task.id,

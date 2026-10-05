@@ -16,11 +16,11 @@ function renderSection(tasks: readonly YourTurnTask[]) {
 }
 
 describe('YourTurnSection', () => {
-  test('one card per task, in the server order, under a header on the inverse surface', () => {
+  test('one card per task, in the server order, under a plain header', () => {
     const { section } = renderSection([YOUR_TURN.yourStep, YOUR_TURN.question])
     const heading = within(section).getByRole('heading', { level: 2 })
 
-    expect(heading.closest('[data-tone]')?.getAttribute('data-tone')).toBe('inverse')
+    expect(heading.closest('[data-tone]')).toBeNull()
     expect(within(section).getByText('2')).toBeVisible()
     expect(
       within(section)
