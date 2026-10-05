@@ -37,6 +37,8 @@ export interface BoardViewActions {
   onFollowUp?: (taskId: string, followUp: FollowUpInput) => void
   /** A confirmed "Archive" on a Backlog or Done card. Without it no card offers the button. */
   onArchive?: (taskId: string) => void
+  /** "Send back" on a Done card, with the note. Without it no Done card offers "Reject". */
+  onRejectFinished?: (taskId: string, note: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
   /** Asks the host to open an artifact link. Without it no card draws its links. */
@@ -65,7 +67,7 @@ export interface BoardViewAnnouncement {
 /** Your actions on the Your turn cards. Without one, no card offers it. */
 export interface BoardViewYourTurn extends Pick<
   YourTurnCardProps,
-  'onCompleteStep' | 'onAnswer' | 'onPark'
+  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onReject'
 > {
   /** The Your turn action in flight, if any. */
   yourTurnPending?: YourTurnPending | null
@@ -127,6 +129,7 @@ export function BoardView({
   onSignOff,
   onFollowUp,
   onArchive,
+  onRejectFinished,
   pending = null,
   onOpenLink,
   onRemoveSession,
@@ -138,6 +141,7 @@ export function BoardView({
   onCompleteStep,
   onAnswer,
   onPark,
+  onReject,
   yourTurnPending = null,
 }: BoardViewProps) {
   const heading = useRef<HTMLHeadingElement>(null)
@@ -158,6 +162,7 @@ export function BoardView({
         onCompleteStep={onCompleteStep}
         onAnswer={onAnswer}
         onPark={onPark}
+        onReject={onReject}
         onOpenLink={onOpenLink}
         pending={yourTurnPending}
       />
@@ -194,6 +199,7 @@ export function BoardView({
         onSignOff={onSignOff}
         onFollowUp={onFollowUp}
         onArchive={onArchive}
+        onReject={onRejectFinished}
         pending={pending}
         onOpenLink={onOpenLink}
         onShowHistory={onShowHistory}

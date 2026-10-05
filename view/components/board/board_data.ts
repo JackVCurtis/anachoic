@@ -69,7 +69,8 @@ export interface YourTurnTask {
    */
   blocked?: BoardBlock | null
   steps: readonly BoardStep[]
-  canAct: { complete?: boolean; answer?: boolean; park: boolean }
+  /** `reject`: the agent step before a user step can be sent back. */
+  canAct: { complete?: boolean; answer?: boolean; park: boolean; reject?: boolean }
 }
 
 export interface BoardBlock {
@@ -125,14 +126,15 @@ export interface SignOffTask {
   steps: readonly BoardStep[]
   /** The links from its done steps. */
   artifacts?: readonly BoardArtifact[]
-  canAct: { signOff: boolean; followUp: boolean; archive: boolean }
+  /** `reject`: the last step, an agent's, can be sent back. */
+  canAct: { signOff: boolean; followUp: boolean; archive: boolean; reject?: boolean }
 }
 
 /**
  * An action pressed on a card that waits for the server: sign off, follow-up,
- * archive, or move to the backlog.
+ * archive, move to the backlog, or reject.
  */
-export type CardAction = 'signOff' | 'followUp' | 'archive' | 'backlog'
+export type CardAction = 'signOff' | 'followUp' | 'archive' | 'backlog' | 'reject'
 
 /** The card action in flight, and the task it acts on. */
 export interface PendingCardAction {

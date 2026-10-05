@@ -446,3 +446,16 @@ export const OUTPUTS = {
     [PULL_REQUEST, TICKET]
   ),
 } as const
+
+/**
+ * Rejecting an agent's output: a user step handed a pull request, and a
+ * finished task whose last step is an agent's, each of which can send that
+ * step back.
+ */
+export const REJECTABLE = {
+  yourStep: {
+    ...OUTPUTS.handedPullRequest,
+    canAct: { ...OUTPUTS.handedPullRequest.canAct, reject: true },
+  },
+  finished: { ...DONE.noLinks, canAct: { ...DONE.noLinks.canAct, reject: true } },
+} as const

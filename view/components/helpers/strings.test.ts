@@ -222,9 +222,10 @@ describe('voice and punctuation', () => {
   )
 
   /**
-   * "Cancel" closes something: the task entry and the follow-up composer.
+   * "Cancel" closes something: the task entry, the follow-up composer and the
+   * reject form.
    */
-  const CLOSES = new Set(['taskEntry.cancel', 'done.cancel'])
+  const CLOSES = new Set(['taskEntry.cancel', 'done.cancel', 'reject.cancel'])
 
   test('"Cancel" is only the label of a button that closes something', () => {
     const cancels = ALL.filter(({ value }) => /^cancel\b/i.test(value)).map(({ path }) => path)

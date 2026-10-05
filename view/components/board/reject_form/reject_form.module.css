@@ -1,0 +1,35 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  cursor: auto;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* On the inverted card the label and hint take the tone's color */
+.inverse .label,
+.inverse .hint {
+  color: inherit;
+}
+
+.inverse .label {
+  opacity: var(--dim-2);
+}
+
+.inverse .hint {
+  opacity: var(--dim-3);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

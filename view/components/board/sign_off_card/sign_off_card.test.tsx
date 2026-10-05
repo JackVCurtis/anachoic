@@ -1,7 +1,8 @@
 import { screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
-import { DONE } from '../../fixtures/board_sections'
+import { DONE, REJECTABLE } from '../../fixtures/board_sections'
+import { reject } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { SignOffTask } from '../board_data'
@@ -189,5 +190,22 @@ describe('SignOffCard actions', () => {
     expect(screen.getByText('The composer')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Sign off' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Follow up' })).toBeNull()
+  })
+
+  test('offers Reject only where the server allows it, and Cancel brings the actions back', async () => {
+    const onReject = vi.fn()
+    const { user, unmount } = renderComponent(
+      <SignOffCard task={DONE.noLinks} onOpenTask={vi.fn()} onReject={onReject} />
+    )
+    expect(screen.queryByRole('button', { name: reject.reject })).toBeNull()
+    unmount()
+
+    renderComponent(
+      <SignOffCard task={REJECTABLE.finished} onOpenTask={vi.fn()} onReject={onReject} />
+    )
+    await user.click(screen.getByRole('button', { name: reject.reject }))
+    await user.click(screen.getByRole('button', { name: reject.cancel }))
+    expect(screen.getByRole('button', { name: reject.reject })).toHaveFocus()
+    expect(onReject).not.toHaveBeenCalled()
   })
 })

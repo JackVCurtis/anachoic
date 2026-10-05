@@ -11,13 +11,16 @@ import type {
 import type { FailedWrite } from './use_board_messages'
 
 /**
- * The actions on the Waiting on user cards: Mark done, Answer and Park. Each
+ * The actions on the Waiting on user cards: Mark done, Answer, Reject and Park. Each
  * calls its tool through yourActions, and the board is drawn from the result,
  * which also resets the poll timer. A failure goes to onFailure, and the card
  * keeps its draft.
  */
 export function useYourTurnActions(
-  yourActions: Pick<YourActions, 'completeMyStep' | 'answerQuestion' | 'moveToBacklog'>,
+  yourActions: Pick<
+    YourActions,
+    'completeMyStep' | 'answerQuestion' | 'moveToBacklog' | 'rejectStep'
+  >,
   source: Pick<BoardSource, 'replace'>,
   board: BoardProps,
   onFailure: (failure: FailedWrite) => void
@@ -58,5 +61,7 @@ export function useYourTurnActions(
       ),
     onPark: (taskId) =>
       void run(taskId, 'park', ({ task }) => yourActions.moveToBacklog(task, true)),
+    onReject: (taskId, note) =>
+      void run(taskId, 'reject', ({ task }) => yourActions.rejectStep(task, note)),
   }
 }

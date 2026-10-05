@@ -85,6 +85,7 @@ function stateOf(
     artifactUrl: null,
     blockedReason: pip.status === 'waiting' ? (facts.blocked?.reason ?? null) : null,
     blockedAt: pip.status === 'waiting' ? (facts.blocked?.since ?? null) : null,
+    rejection: null,
     startedAt: pip.status === 'pending' ? null : board.now,
     runningSince: pip.status === 'running' ? (facts.runningSince ?? null) : null,
     waitingSince: pip.status === 'waiting' ? (facts.waitingSince ?? null) : null,

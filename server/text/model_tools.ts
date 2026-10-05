@@ -113,7 +113,7 @@ export function artifactLines(chain: readonly Step[], before: number): string[] 
 
 /**
  * The claimed step in full: its input, the previous step's artifact, first;
- * what to do and what it must produce; whether the task is assigned to the
+ * the user's note when they rejected the last attempt; what to do and what it must produce; whether the task is assigned to the
  * caller; the chain so far with each completed step's summary, past blocks
  * and artifacts; the steps after it; and what to call next.
  */
@@ -133,6 +133,12 @@ export function claimStepText(
     ...(input
       ? [
           `Input from step ${input.stepNumber}: ${OUTPUT_FORMAT_WORDS[input.format].shown} ${input.url}`,
+        ]
+      : []),
+    ...(step.rejection
+      ? [
+          `The user rejected the last attempt: ${step.rejection}`,
+          ...(step.summary ? [`Last attempt: ${step.summary}`] : []),
         ]
       : []),
     `Task: "${state.task.title}"`,

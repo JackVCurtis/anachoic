@@ -16,6 +16,7 @@ import {
   completeMyStep,
   completeStep,
   moveToBacklog,
+  rejectStep,
   type Acted,
   type ServiceResult,
 } from '../../../store/services.js'
@@ -37,7 +38,7 @@ function touch(id: string) {
 }
 
 beforeEach(() => {
-  directory = mkdtempSync(join(tmpdir(), 'anachoic-resume-'))
+  directory = mkdtempSync(join(tmpdir(), 'anachoic-reject-'))
   database = openDatabase(join(directory, 'board.sqlite'))
   clock = 0
   registerLiveness(database, { now, deadWindowMs: DEAD_WINDOW_MS })
@@ -83,76 +84,65 @@ function handToYou(owners: Owner[] = ['agent', 'you', 'agent']) {
   return task
 }
 
-describe('resume_with in the store', () => {
-  test('is set when A completes the step before yours, and kept when your step is done', () => {
+const NOTE = 'The PR targets the wrong branch'
+
+describe('rejectStep in the store', () => {
+  test('reopens the step, queues the task first and hands it back to the worker that did it', () => {
+    const other = add(['agent'])
     const task = handToYou()
-    expect(resumeWith(task)).toBe(A)
-    ok(completeMyStep(database, 'you', now(), task, { note: 'Looks good' }))
-    expect(readTask(database, task)!.state.task.status).toBe('queue')
-    expect(resumeWith(task)).toBe(A)
+    const acted = ok(rejectStep(database, 'you', now(), task, NOTE))
+    expect(acted.state.task).toMatchObject({ status: 'queue', queuePosition: 1, resumeWith: A })
+    expect(acted.state.steps[0]).toMatchObject({ status: 'pending', rejection: NOTE })
+    expect(readTask(database, task)!.state.steps[0].rejection).toBe(NOTE)
+    expect(readTask(database, other)!.state.task.queuePosition).toBe(2)
+    expect(readTask(database, task)!.events.at(-2)).toMatchObject({
+      kind: 'rejected',
+      detail: NOTE,
+      sessionId: 'you',
+    })
   })
 
-  test.each([
-    ['a claim by A', (task: number) => claimStep(database, A, now(), task)],
-    ['a claim by B', (task: number) => claimStep(database, B, now(), task)],
-    ['moving it to the backlog', (task: number) => moveToBacklog(database, 'you', now(), task)],
-    ['archiving it', (task: number) => archiveTask(database, 'you', now(), task)],
-  ])('is cleared by %s', (_name, apply) => {
+  test('wait_for_work names the rejected step and the note to that worker only', () => {
     const task = handToYou()
-    ok(completeMyStep(database, 'you', now(), task))
-    ok(apply(task))
-    expect(resumeWith(task)).toBeNull()
-  })
-
-  test('is cleared in the write that ends A, which leaves the task to B', () => {
-    const task = handToYou()
-    ok(completeMyStep(database, 'you', now(), task))
-    expect(firstClaimable(database, B)).toBeNull()
-
-    clock += DEAD_WINDOW_MS / 1000 + 1
-    touch(B)
-
-    expect(resumeWith(task)).toBeNull()
-    expect(firstClaimable(database, B)).toMatchObject({ taskId: task, handedBack: false })
-  })
-})
-
-describe('firstClaimable with hand-backs', () => {
-  test('prefers a task assigned to the caller, then one handed back to it, then an unassigned one', () => {
-    const unassigned = add(['agent'])
-    const handedBack = handToYou()
-    ok(completeMyStep(database, 'you', now(), handedBack))
-    expect(firstClaimable(database, A)).toMatchObject({ taskId: handedBack, handedBack: true })
-
-    const assigned = add(['agent'], A)
-    expect(firstClaimable(database, A)).toMatchObject({ taskId: assigned, assigned: true })
-
-    ok(claimStep(database, A, now(), assigned))
-    ok(claimStep(database, A, now(), handedBack))
-    expect(firstClaimable(database, A)).toMatchObject({ taskId: unassigned, handedBack: false })
-  })
-
-  test('wait_for_work leaves a task handed back to another session to it, while claim_step may take it', () => {
-    const task = handToYou()
-    ok(completeMyStep(database, 'you', now(), task))
-    expect(firstClaimable(database, B)).toBeNull()
-    expect(ok(claimStep(database, B, now())).state.task.id).toBe(task)
-  })
-
-  test('names your step, with its note', () => {
-    const task = handToYou()
-    ok(completeMyStep(database, 'you', now(), task, { note: 'Looks good' }))
+    ok(rejectStep(database, 'you', now(), task, NOTE))
     expect(firstClaimable(database, A)).toEqual({
       taskId: task,
       assigned: false,
       handedBack: true,
-      handBack: {
-        stepNumber: 2,
-        title: 'Review the PR',
-        note: 'Looks good',
-        artifactUrl: null,
-      },
-      rejected: null,
+      handBack: null,
+      rejected: { stepNumber: 1, title: 'Step 1', note: NOTE },
+    })
+    expect(firstClaimable(database, B)).toBeNull()
+  })
+
+  test('rejects the last agent step of a done task', () => {
+    const task = add(['agent'])
+    ok(claimStep(database, A, now(), task))
+    ok(completeStep(database, A, now(), task, { summary: 'Opened the PR' }))
+    const acted = ok(rejectStep(database, 'you', now(), task, NOTE))
+    expect(acted.state.task).toMatchObject({ status: 'queue', finishedAt: null, resumeWith: A })
+  })
+
+  test('prefers no one when the worker that did the step has ended', () => {
+    const task = handToYou()
+    clock += DEAD_WINDOW_MS / 1000 + 1
+    touch(B)
+    const acted = ok(rejectStep(database, 'you', now(), task, NOTE))
+    expect(acted.state.task.resumeWith).toBeNull()
+    expect(firstClaimable(database, B)).toMatchObject({ taskId: task, rejected: null })
+  })
+
+  test('refuses an empty note, a session, and a task with nothing to reject', () => {
+    const task = handToYou()
+    expect(rejectStep(database, 'you', now(), task, '  ')).toEqual({
+      code: 'invalid',
+      sentence: 'note must be 1 to 2,000 characters',
+    })
+    expect(rejectStep(database, A, now(), task, NOTE)).toMatchObject({ code: 'not_yours' })
+    const queued = add(['agent', 'you'])
+    expect(rejectStep(database, 'you', now(), queued, NOTE)).toEqual({
+      code: 'wrong_status',
+      sentence: `T-00${queued} has no agent output to reject`,
     })
   })
 })

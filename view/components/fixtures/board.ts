@@ -41,7 +41,7 @@ export interface YourTurnSample {
   sessionName?: string
   blocked?: { reason: string; since: string }
   steps: readonly PipStepSample[]
-  canAct: { complete?: boolean; answer?: boolean; park: boolean }
+  canAct: { complete?: boolean; answer?: boolean; park: boolean; reject?: boolean }
 }
 
 export interface WorkingSample {
@@ -82,7 +82,7 @@ export interface SignOffSample {
   linkCount: number
   steps: readonly PipStepSample[]
   artifacts?: ArtifactSample[]
-  canAct: { signOff: boolean; followUp: boolean; archive: boolean }
+  canAct: { signOff: boolean; followUp: boolean; archive: boolean; reject?: boolean }
 }
 
 export interface SignedOffSample {

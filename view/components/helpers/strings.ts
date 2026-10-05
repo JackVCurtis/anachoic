@@ -113,6 +113,20 @@ export const yourTurn = {
   unblockInUnnamed: 'Unblock it in the worker’s session',
 } as const
 
+/**
+ * Rejecting the agent step whose output waits on the user, on a Waiting on
+ * user card or a Done card.
+ */
+export const reject = {
+  reject: 'Reject',
+  label: 'What was wrong',
+  placeholder: 'What the agent should change',
+  needsNote: 'A rejection needs a note',
+  redoes: 'The agent redoes its step with this',
+  sendBack: 'Send back',
+  cancel: 'Cancel',
+} as const
+
 export const sessions = {
   title: 'Sessions',
   session: 'Session',
@@ -284,6 +298,7 @@ export const events = {
     blocked: 'Blocked',
     unblocked: 'Unblocked',
     removed: 'Removed',
+    rejected: 'Rejected',
   },
   step: 'step {n}',
   byUser: 'user',
@@ -380,6 +395,7 @@ export const strings = {
   outputFormat,
   card,
   yourTurn,
+  reject,
   sessions,
   working,
   queue,

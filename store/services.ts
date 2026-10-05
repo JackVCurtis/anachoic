@@ -11,7 +11,15 @@ import {
 } from '../domain/refusal.js'
 import * as transitions from '../domain/transitions.js'
 import type { Context, Outcome, Placement } from '../domain/transitions.js'
-import type { Actor, Event, Instant, Link, StepInput, TaskState } from '../domain/types.js'
+import {
+  YOU,
+  type Actor,
+  type Event,
+  type Instant,
+  type Link,
+  type StepInput,
+  type TaskState,
+} from '../domain/types.js'
 import {
   checkLinks,
   checkOptionalText,
@@ -375,6 +383,44 @@ export function addFollowUp(
     (state, ctx) => transitions.followUp(state, ctx, input),
     checked
   )
+}
+
+/**
+ * Rejects the agent step whose output is in front of you, with a note. The
+ * task prefers the session that completed the step, unless it has ended.
+ */
+export function rejectStep(
+  database: Database,
+  actor: Actor,
+  now: Instant,
+  task: TaskRef,
+  note: string
+): ServiceResult {
+  const id = taskNumber(task)
+  if (isRefusal(id)) return id
+  const checked = checkText('rejection', note, 'note')
+  if (checked) return checked
+  return write(database, (sqlite) => {
+    const state = loadTaskState(sqlite, id)
+    if (!state) return notFound(id)
+    const ctx = contextFor(sqlite, actor, now)
+    const index = transitions.rejectable(state)
+    const completer =
+      index === null
+        ? undefined
+        : (
+            sqlite
+              .prepare(
+                `SELECT session_id FROM events
+                 WHERE step_id = ? AND kind = 'completed' AND session_id <> ?
+                 ORDER BY id DESC LIMIT 1`
+              )
+              .get(state.steps[index].id, YOU) as { session_id: string } | undefined
+          )?.session_id
+    const session = completer === undefined ? null : loadSession(sqlite, completer)
+    const resumeWith = session && session.endedAt === null ? session.id : null
+    return commit(sqlite, transitions.reject(state, ctx, { note, resumeWith }))
+  })
 }
 
 export function archiveTask(

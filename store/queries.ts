@@ -1,4 +1,5 @@
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
+import { currentStep } from '../domain/chain.js'
 import { DEAD_WINDOW_MS } from '../domain/derived.js'
 import {
   YOU,
@@ -288,21 +289,39 @@ export interface HandBack {
   artifactUrl: string | null
 }
 
+/**
+ * The agent step you rejected, which a task handed back for it names.
+ */
+export interface Rejected {
+  stepNumber: number
+  title: string
+  note: string
+}
+
 export interface Work extends Claimable {
   handBack: HandBack | null
+  rejected: Rejected | null
 }
 
 /**
  * The work wait_for_work polls for, as a read only: firstClaimableIn without
  * the tasks handed back to other sessions, and for a task handed back to this
- * one, your step it names.
+ * one, the step you rejected or else your step it names.
  */
 export function firstClaimable(database: Database, sessionId: SessionId): Work | null {
   return read(database, (sqlite) => {
     const found = firstClaimableIn(sqlite, sessionId, { othersHandBacks: false })
     if (!found) return null
-    if (!found.handedBack) return { ...found, handBack: null }
+    if (!found.handedBack) return { ...found, handBack: null, rejected: null }
     const state = loadTaskState(sqlite, found.taskId)!
+    const current = currentStep(state.steps)
+    if (current.rejection !== null) {
+      return {
+        ...found,
+        handBack: null,
+        rejected: { stepNumber: current.number, title: current.title, note: current.rejection },
+      }
+    }
     const yours = state.steps.findLast((step) => step.owner === 'you' && step.status === 'done')
     return {
       ...found,
@@ -314,6 +333,7 @@ export function firstClaimable(database: Database, sessionId: SessionId): Work |
             artifactUrl: yours.artifactUrl,
           }
         : null,
+      rejected: null,
     }
   })
 }

@@ -30,6 +30,7 @@ export function createYourActions(app: ActionApp) {
     addFollowUp: (task: TaskName, input: { steps: NewStep[]; placement: 'first' | 'last' }) =>
       actions.addFollowUp(app, task.displayId, input),
     archiveTask: (task: TaskName) => actions.archiveTask(app, task.displayId),
+    rejectStep: (task: TaskName, note: string) => actions.rejectStep(app, task.displayId, note),
     removeSession: (sessionId: string) => actions.removeSession(app, sessionId),
   }
 }

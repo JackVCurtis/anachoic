@@ -12,8 +12,8 @@ export class InvariantError extends Error {
 
 /**
  * The invariants of 03 that hold for one task, numbered as 03 numbers them,
- * with the open-interval rule for time on a step, and those of 11 and 12. An
- * archived task is held only to invariant 8.
+ * with the open-interval rule for time on a step, and those of 11, 12 and
+ * 15. An archived task is held only to invariant 8.
  */
 export function taskViolations({ task, steps }: TaskState): string[] {
   const found: string[] = []
@@ -58,6 +58,12 @@ export function taskViolations({ task, steps }: TaskState): string[] {
       broken(
         'blocked',
         `${name} has a blocked reason while ${step.owner === 'you' ? 'yours' : step.status}`
+      )
+    }
+    if (step.rejection !== null && !(step.owner === 'agent' && step.status !== 'done')) {
+      broken(
+        'rejected',
+        `${name} has a rejection while ${step.owner === 'you' ? 'yours' : step.status}`
       )
     }
     if ((step.blockedReason !== null) !== (step.blockedAt !== null)) {

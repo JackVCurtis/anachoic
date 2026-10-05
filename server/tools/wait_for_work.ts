@@ -18,10 +18,15 @@ function sentence(text: string) {
 
 /**
  * The work found, and the call that takes it. A task handed back to the
- * caller names the user's step, with its artifact and note when present.
+ * caller names the step the user rejected, with the user's note, or the
+ * user's step, with its artifact and note when present.
  */
-export function workText({ taskId, assigned, handBack }: Work): string {
+export function workText({ taskId, assigned, handBack, rejected }: Work): string {
   const id = formatTaskId(taskId)
+  if (rejected) {
+    const { stepNumber, title, note } = rejected
+    return `The user rejected step ${stepNumber} of ${id}, “${title}”: ${sentence(note)} Call claim_step with task ${id} to redo it.`
+  }
   if (handBack) {
     const { stepNumber, title, artifactUrl, note } = handBack
     return [
@@ -73,7 +78,13 @@ export function registerWaitForWork(server: McpServer, context: ToolContext) {
           const found = firstClaimable(database, caller.id)
           if (found) {
             return end(
-              found.assigned ? 'assigned' : found.handedBack ? 'handed_back' : 'queued',
+              found.assigned
+                ? 'assigned'
+                : found.rejected
+                  ? 'rejected'
+                  : found.handedBack
+                    ? 'handed_back'
+                    : 'queued',
               textResult(workText(found)),
               found.taskId
             )

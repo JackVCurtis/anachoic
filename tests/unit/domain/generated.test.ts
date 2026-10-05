@@ -17,6 +17,7 @@ import {
   note,
   park,
   queue,
+  reject,
   release,
   reorder,
   signOff,
@@ -55,6 +56,7 @@ const OPERATIONS: Operation[] = [
   ['moveToBacklog', (s, a, t) => moveToBacklog(s, ctx(a, t))],
   ['release', (s, a, t) => release(s, ctx(a, t))],
   ['signOff', (s, a, t) => signOff(s, ctx(a, t))],
+  ['reject', (s, a, t) => reject(s, ctx(a, t), { note: 'Wrong branch', resumeWith: 'session-a' })],
   [
     'followUp agent',
     (s, a, t) =>
@@ -188,6 +190,7 @@ const AS_YOU: Record<keyof ReturnType<typeof canAct>, (state: TaskState) => Outc
   queue: (s) => queue(s, ctx('you', 999)),
   archive: (s) => archive(s, ctx('you', 999)),
   signOff: (s) => signOff(s, ctx('you', 999)),
+  reject: (s) => reject(s, ctx('you', 999), { note: 'Wrong branch', resumeWith: null }),
   followUp: (s) =>
     followUp(s, ctx('you', 999), { placement: 'last', steps: [{ title: 'x', owner: 'agent' }] }),
 }

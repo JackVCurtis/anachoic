@@ -116,7 +116,12 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
               ? null
               : { reason: step.blockedReason, since: step.blockedAt ?? now },
           steps: pips(steps),
-          canAct: { complete: can.complete, answer: can.answer, park: can.park },
+          canAct: {
+            complete: can.complete,
+            answer: can.answer,
+            park: can.park,
+            reject: can.reject,
+          },
         })
         break
       }
@@ -165,7 +170,12 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
           linkCount: linkCount(steps),
           steps: pips(steps),
           ...artifactsOf(steps),
-          canAct: { signOff: can.signOff, followUp: can.followUp, archive: can.archive },
+          canAct: {
+            signOff: can.signOff,
+            followUp: can.followUp,
+            archive: can.archive,
+            reject: can.reject,
+          },
         })
         break
       default:

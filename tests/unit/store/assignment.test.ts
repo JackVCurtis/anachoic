@@ -206,12 +206,14 @@ describe('firstClaimable', () => {
       assigned: false,
       handedBack: false,
       handBack: null,
+      rejected: null,
     })
     expect(firstClaimable(database, B)).toEqual({
       taskId: forB,
       assigned: true,
       handedBack: false,
       handBack: null,
+      rejected: null,
     })
     ok(claimStep(database, A, now()))
     const afterClaim = readRevision(database)
@@ -224,6 +226,7 @@ describe('firstClaimable', () => {
       assigned: true,
       handedBack: false,
       handBack: null,
+      rejected: null,
     })
     expect(readRevision(database)).toBe(afterClaim + 2)
     expect(revision).toBeLessThan(afterClaim)

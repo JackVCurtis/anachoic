@@ -63,6 +63,7 @@ These are your actions, together with the view's reads. Each write returns the f
 | `sign_off` | `task` | Sign off |
 | `add_follow_up_from_view` | as `add_follow_up` | Follow-up |
 | `archive_task` | `task` | Archive |
+| `reject_step` | `task`, `note` (1–2,000 characters) | Reject the agent step whose output waits on the user ([15](15-rejecting-steps.md)) |
 
 ## Results
 

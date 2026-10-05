@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type FormEvent } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
 import { inputLinkLabel } from '../../helpers/output_format'
-import { fillTemplate, yourTurn } from '../../helpers/strings'
+import { fillTemplate, reject, yourTurn } from '../../helpers/strings'
 import { formatWaited } from '../../helpers/time'
 import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
@@ -12,13 +12,14 @@ import { StatusSquare } from '../../primitives/status_square/status_square'
 import { Tag } from '../../primitives/tag/tag'
 import { TextArea } from '../../primitives/text_area/text_area'
 import { ArtifactLink } from '../artifact_links/artifact_links'
+import { RejectForm } from '../reject_form/reject_form'
 import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
 import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
 /** What can be done with a step that waits on the user. */
-export type YourTurnAction = 'complete' | 'answer' | 'park'
+export type YourTurnAction = 'complete' | 'answer' | 'park' | 'reject'
 
 /** The Waiting on user action in flight, and the task it acts on. */
 export interface YourTurnPending {
@@ -35,6 +36,8 @@ export interface YourTurnCardProps {
   onAnswer?: (taskId: string, answer: string) => void
   /** A confirmed "Park". Without it the card offers no Park. */
   onPark?: (taskId: string) => void
+  /** "Send back" on a user step, with the note trimmed. Without it the card offers no Reject. */
+  onReject?: (taskId: string, note: string) => void
   /** This card's action in flight, if any. */
   busy?: YourTurnAction | null
   /** Asks the host to open the step's input link. Without it the card draws no link. */
@@ -67,6 +70,7 @@ export function YourTurnCard({
   onCompleteStep,
   onAnswer,
   onPark,
+  onReject,
   busy = null,
   onOpenLink,
 }: YourTurnCardProps) {
@@ -80,6 +84,7 @@ export function YourTurnCard({
       onCompleteStep={onCompleteStep}
       onAnswer={onAnswer}
       onPark={onPark}
+      onReject={onReject}
       busy={busy}
       onOpenLink={onOpenLink}
     />
@@ -150,6 +155,7 @@ function WaitingCard({
   onCompleteStep,
   onAnswer,
   onPark,
+  onReject,
   busy = null,
   onOpenLink,
 }: YourTurnCardProps) {
@@ -201,6 +207,7 @@ function WaitingCard({
         onCompleteStep={onCompleteStep}
         onAnswer={onAnswer}
         onPark={onPark}
+        onReject={onReject}
         busy={busy}
       />
     </ActionCard>
@@ -222,15 +229,25 @@ function completesHere(
 /**
  * The card's actions, offered only where the server says they can act: Mark
  * done with an optional note on a user step, an answer field on an agent's
- * question, and Park behind a confirmation on either. The draft is kept by
- * step, so a new step on the same task starts empty.
+ * question, Reject behind a note on a user step that follows an agent's, and
+ * Park behind a confirmation on either. The draft is kept by step, so a new
+ * step on the same task starts empty.
  */
-function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourTurnActionsProps) {
+function YourTurnActions({
+  item,
+  onCompleteStep,
+  onAnswer,
+  onPark,
+  onReject,
+  busy,
+}: YourTurnActionsProps) {
   const { task, step, canAct, sessionName } = item
   const labelId = useId()
   const noteId = useId()
   const parkButton = useRef<HTMLButtonElement>(null)
+  const rejectButton = useRef<HTMLButtonElement>(null)
   const [confirming, setConfirming] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
   const stepKey = `${task.id}:${step.number}`
   const [draft, setDraft] = useState({ stepKey, text: '' })
   const text = draft.stepKey === stepKey ? draft.text : ''
@@ -238,8 +255,21 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
   const completes = completesHere(item, onCompleteStep)
   const answers = step.owner === 'agent' && canAct.answer === true && onAnswer !== undefined
   const parks = canAct.park && onPark !== undefined
-  if (!completes && !answers && !parks) {
+  const rejects = step.owner === 'you' && canAct.reject === true && onReject !== undefined
+  if (!completes && !answers && !parks && !rejects) {
     return null
+  }
+
+  if (rejecting && rejects) {
+    return (
+      <RejectForm
+        tone="inverse"
+        busy={busy === 'reject'}
+        onSend={(note) => onReject?.(task.id, note)}
+        onCancel={() => setRejecting(false)}
+        returnFocusTo={rejectButton}
+      />
+    )
   }
 
   const answerEmpty = text.trim() === ''
@@ -295,6 +325,16 @@ function YourTurnActions({ item, onCompleteStep, onAnswer, onPark, busy }: YourT
           disabled={(busy !== null && busy !== 'answer') || (answerEmpty && busy === null)}
         >
           {yourTurn.answer}
+        </Button>
+      )}
+      {rejects && (
+        <Button
+          ref={rejectButton}
+          variant="inverse-outline"
+          disabled={busy !== null}
+          onPress={() => setRejecting(true)}
+        >
+          {reject.reject}
         </Button>
       )}
       {parks && (

@@ -94,6 +94,10 @@ export function blocked(taskId: number, stepNumber: number): Refusal {
   )
 }
 
+export function nothingToReject(taskId: number): Refusal {
+  return refusal('wrong_status', `${formatTaskId(taskId)} has no agent output to reject`)
+}
+
 export function claimedByAnother(taskId: number, stepNumber: number, sessionName: string): Refusal {
   return refusal('not_yours', `${stepOf(taskId, stepNumber)} is claimed by ${sessionName}`)
 }

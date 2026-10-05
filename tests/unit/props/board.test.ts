@@ -206,6 +206,7 @@ describe('boardProps', () => {
         complete: accepts.complete,
         answer: accepts.answer,
         park: accepts.park,
+        reject: accepts.reject,
       })
     }
     for (const item of props.queue) {
@@ -222,11 +223,12 @@ describe('boardProps', () => {
         signOff: accepts.signOff,
         followUp: accepts.followUp,
         archive: accepts.archive,
+        reject: accepts.reject,
       })
     }
     expect(props.yourTurn.map(({ canAct: can }) => can)).toEqual([
-      { complete: true, answer: false, park: true },
-      { complete: false, answer: true, park: true },
+      { complete: true, answer: false, park: true, reject: false },
+      { complete: false, answer: true, park: true, reject: false },
     ])
   })
 

@@ -29,4 +29,6 @@ export const viewActionText = {
   signOff: (state: TaskState) => `Signed off ${formatTaskId(state.task.id)}`,
   addFollowUp: (state: TaskState, added: number) => addFollowUpText(state, added),
   archiveTask: (state: TaskState) => `Archived ${formatTaskId(state.task.id)}`,
+  rejectStep: (state: TaskState, events: readonly Event[], resumeName?: string) =>
+    `Rejected step ${stepOf(state, events, 'rejected')} of ${formatTaskId(state.task.id)}. It is back in the queue at position ${state.task.queuePosition}${resumeName ? ` for ${resumeName}` : ''}.`,
 }

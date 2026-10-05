@@ -122,6 +122,8 @@ export const actions = {
   ) => callAppTool<ActionResult>(app, 'add_follow_up_from_view', { task, ...input }),
   archiveTask: (app: App, task: TaskArg) =>
     callAppTool<ActionResult>(app, 'archive_task', { task }),
+  rejectStep: (app: App, task: TaskArg, note: string) =>
+    callAppTool<ActionResult>(app, 'reject_step', { task, note }),
   removeSession: (app: App, session: string) =>
     callAppTool<BoardProps>(app, 'remove_session', { session }),
 }

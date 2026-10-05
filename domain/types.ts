@@ -42,6 +42,7 @@ export const EVENT_KINDS = [
   'blocked',
   'unblocked',
   'removed',
+  'rejected',
 ] as const
 
 export type EventKind = (typeof EVENT_KINDS)[number]
@@ -111,6 +112,11 @@ export interface Step {
    */
   blockedReason: string | null
   blockedAt: Instant | null
+  /**
+   * Agent steps only. The user's note from the latest rejection, kept until
+   * the step is completed again.
+   */
+  rejection: string | null
   startedAt: Instant | null
   runningSince: Instant | null
   waitingSince: Instant | null

@@ -13,6 +13,7 @@ import {
   completeMyStep,
   moveToBacklog,
   queueTask,
+  rejectStep,
   reorderQueue,
   signOff,
   type Acted,
@@ -36,6 +37,7 @@ export const VIEW_ACTION_TOOLS = [
   'sign_off',
   'add_follow_up_from_view',
   'archive_task',
+  'reject_step',
 ] as const
 
 export type ViewActionTool = (typeof VIEW_ACTION_TOOLS)[number]
@@ -54,7 +56,11 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
     description: string,
     input: Shape,
     act: (args: z.infer<z.ZodObject<Shape>>, at: string) => ServiceResult,
-    text: (acted: Acted, args: z.infer<z.ZodObject<Shape>>) => string
+    text: (
+      acted: Acted,
+      args: z.infer<z.ZodObject<Shape>>,
+      nameOf: (id: string) => string
+    ) => string
   ) {
     return registerAppTool(
       server,
@@ -73,16 +79,17 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
         const { task } = result.value.state
         const board = readBoardProps(database, at)
         const names = new Map(board.sessions.map((session) => [session.id, session.name]))
+        const nameOf = (id: string) => names.get(id) ?? id
         const structured: ActionResult = {
           ...board,
           acted: {
-            task: taskRef(task, (id) => names.get(id) ?? id),
+            task: taskRef(task, nameOf),
             status: task.status,
             position: task.queuePosition,
           },
         }
         return {
-          content: [{ type: 'text', text: text(result.value, args) }],
+          content: [{ type: 'text', text: text(result.value, args, nameOf) }],
           structuredContent: structured,
         }
       })
@@ -194,6 +201,19 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
       task,
       ({ task: ref }, at) => archiveTask(database, YOU, at, ref),
       ({ state }) => viewActionText.archiveTask(state)
+    ),
+    reject_step: register(
+      'reject_step',
+      'Reject a step',
+      'Sends the agent step whose output waits on the user back to the queue, with the user’s note on what was wrong, preferring the worker that did it.',
+      { ...task, note: z.string().min(LIMITS.rejection.min).max(LIMITS.rejection.max) },
+      ({ task: ref, note }, at) => rejectStep(database, YOU, at, ref, note),
+      ({ state, events }, _args, nameOf) =>
+        viewActionText.rejectStep(
+          state,
+          events,
+          state.task.resumeWith === null ? undefined : nameOf(state.task.resumeWith)
+        )
     ),
   }
 }

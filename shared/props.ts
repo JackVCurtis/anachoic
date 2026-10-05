@@ -87,6 +87,8 @@ export const yourTurnItemSchema = z.object({
     complete: z.boolean().optional(),
     answer: z.boolean().optional(),
     park: z.boolean(),
+    /** On a user step's item: whether the agent step before it can be rejected. */
+    reject: z.boolean().optional(),
   }),
 })
 
@@ -129,7 +131,13 @@ export const toSignOffItemSchema = z.object({
   linkCount: z.number().int().nonnegative(),
   steps: pips,
   artifacts,
-  canAct: z.object({ signOff: z.boolean(), followUp: z.boolean(), archive: z.boolean() }),
+  canAct: z.object({
+    signOff: z.boolean(),
+    followUp: z.boolean(),
+    archive: z.boolean(),
+    /** Whether the last step, an agent's, can be rejected. */
+    reject: z.boolean().optional(),
+  }),
 })
 
 export const signedOffItemSchema = z.object({

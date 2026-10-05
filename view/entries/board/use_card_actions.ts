@@ -8,7 +8,10 @@ import type { CardAction, PendingCardAction } from '../../components/board/board
 import type { FailedWrite } from './use_board_messages'
 
 type CardActionProps = Required<
-  Pick<BoardViewActions, 'onMoveToBacklog' | 'onSignOff' | 'onFollowUp' | 'onArchive'>
+  Pick<
+    BoardViewActions,
+    'onMoveToBacklog' | 'onSignOff' | 'onFollowUp' | 'onArchive' | 'onRejectFinished'
+  >
 > &
   Pick<BoardViewActions, 'pending'>
 
@@ -18,7 +21,10 @@ type CardActionProps = Required<
  * A failure goes to onFailure, and a follow-up's draft stays in its composer.
  */
 export function useCardActions(
-  yourActions: Pick<YourActions, 'moveToBacklog' | 'signOff' | 'addFollowUp' | 'archiveTask'>,
+  yourActions: Pick<
+    YourActions,
+    'moveToBacklog' | 'signOff' | 'addFollowUp' | 'archiveTask' | 'rejectStep'
+  >,
   source: Pick<BoardSource, 'replace'>,
   board: BoardProps,
   onFailure: (failure: FailedWrite) => void
@@ -65,6 +71,12 @@ export function useCardActions(
       const item = finished(taskId)
       if (item) {
         void run(taskId, 'followUp', () => yourActions.addFollowUp(item.task, followUp))
+      }
+    },
+    onRejectFinished: (taskId, note) => {
+      const item = finished(taskId)
+      if (item) {
+        void run(taskId, 'reject', () => yourActions.rejectStep(item.task, note))
       }
     },
     onArchive: (taskId) => {

@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { DONE, OUTPUTS } from '../../fixtures/board_sections'
+import { DONE, OUTPUTS, REJECTABLE } from '../../fixtures/board_sections'
 import { FOLLOW_UP_DRAFTS } from '../../fixtures/follow_up'
 import type { FollowUpDraft } from '../../helpers/follow_up'
 import { artifactLinkLabel } from '../../helpers/output_format'
-import { assistive, done } from '../../helpers/strings'
+import { assistive, done, reject } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { FollowUpComposer } from '../follow_up_composer/follow_up_composer'
 import { SignOffCard } from './sign_off_card'
@@ -207,4 +207,27 @@ export const WithArtifactsNarrow: Story = {
   name: 'With artifact links, narrow',
   globals: { viewport: { value: 'narrow', isRotated: false } },
   parameters: { frame: 'narrow' },
+}
+
+export const Rejectable: Story = {
+  name: 'Its last step, an agent’s, can be rejected',
+  args: { task: REJECTABLE.finished, ...ACTIONS, onReject: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: reject.reject }))
+    await expect(canvas.queryByRole('button', { name: done.signOff })).toBeNull()
+    await userEvent.type(canvas.getByRole('textbox', { name: reject.label }), 'Missed two vars')
+    await userEvent.click(canvas.getByRole('button', { name: reject.sendBack }))
+    await expect(args.onReject).toHaveBeenCalledWith(REJECTABLE.finished.task.id, 'Missed two vars')
+  },
+}
+
+export const RejectingBusy: Story = {
+  name: 'Rejecting',
+  args: { task: REJECTABLE.finished, ...ACTIONS, onReject: fn(), pending: 'reject' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: reject.reject })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: done.signOff })).toBeDisabled()
+  },
 }

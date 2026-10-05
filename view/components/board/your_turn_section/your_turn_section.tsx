@@ -10,7 +10,7 @@ import {
 
 export interface YourTurnSectionProps extends Pick<
   YourTurnCardProps,
-  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onOpenLink'
+  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onReject' | 'onOpenLink'
 > {
   /** In the server's order. */
   tasks: readonly YourTurnTask[]
@@ -29,6 +29,7 @@ export function YourTurnSection({
   onCompleteStep,
   onAnswer,
   onPark,
+  onReject,
   onOpenLink,
   pending = null,
 }: YourTurnSectionProps) {
@@ -47,6 +48,7 @@ export function YourTurnSection({
             onCompleteStep={onCompleteStep}
             onAnswer={onAnswer}
             onPark={onPark}
+            onReject={onReject}
             onOpenLink={onOpenLink}
             busy={pending?.taskId === item.task.id ? pending.action : null}
           />

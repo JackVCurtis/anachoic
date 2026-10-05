@@ -15,6 +15,7 @@ import {
   notAWebAddress,
   notBlocked,
   notRunning,
+  nothingToReject,
   onlyASession,
   onlyYou,
   signedOff,
@@ -177,6 +178,7 @@ function newSteps(
     artifactUrl: null,
     blockedReason: null,
     blockedAt: null,
+    rejection: null,
     startedAt: null,
     runningSince: null,
     waitingSince: null,
@@ -192,6 +194,22 @@ function mergeLinks(existing: readonly Link[], added: readonly Link[] | undefine
     if (!merged.some((each) => each.url === link.url)) merged.push(link)
   }
   return merged
+}
+
+/**
+ * The index of the agent step whose output is in front of you: the done
+ * agent step just before your waiting step on an active task, or the last
+ * step of a done task when it is an agent's. Null when there is none.
+ */
+export function rejectable({ task, steps }: TaskState): number | null {
+  const index = currentStepIndex(steps)
+  const step = steps[index]
+  if (task.status === 'done') {
+    return step.owner === 'agent' && step.status === 'done' ? index : null
+  }
+  if (task.status !== 'active' || step.owner !== 'you' || step.status !== 'waiting') return null
+  const previous = steps[index - 1]
+  return previous?.owner === 'agent' && previous.status === 'done' ? index - 1 : null
 }
 
 // Preconditions. Each returns the refusal a transition would give, or null.
@@ -404,6 +422,13 @@ export const preconditions = {
       () => notArchived(state),
       () => (state.task.signedOffAt === null ? null : signedOff(state.task.id)),
       () => inStatus(state, 'done')
+    ),
+  reject: (state: TaskState, ctx: Context) =>
+    first(
+      () => notArchived(state),
+      () => byYou(state, ctx, 'reject a step of {task}'),
+      () => (state.task.signedOffAt === null ? null : signedOff(state.task.id)),
+      () => (rejectable(state) === null ? nothingToReject(state.task.id) : null)
     ),
   archive: (state: TaskState, ctx: Context) =>
     first(
@@ -744,6 +769,7 @@ export function completeStep(state: TaskState, ctx: Context, input: CompleteInpu
     summary: input.summary,
     links: mergeLinks(step.links, input.links),
     artifactUrl,
+    rejection: null,
     finishedAt: ctx.now,
   }
   const steps = withStep(state.steps, index, done)
@@ -903,6 +929,49 @@ export function followUp(state: TaskState, ctx: Context, input: FollowUpInput): 
   return withEvents(
     queueOrStart(extended, ctx, input.placement),
     event(ctx, state.task.id, null, 'followed_up', `Followed up with ${count}`)
+  )
+}
+
+export interface RejectInput {
+  note: string
+  /**
+   * The session that completed the rejected step, if it has not ended,
+   * which needs the events and sessions this module cannot see.
+   */
+  resumeWith: SessionId | null
+}
+
+/**
+ * Reject: you send the agent step whose output is in front of you back to
+ * pending, with a note. Your waiting step after it, if any, returns to
+ * pending, and the task goes to the front of the queue, preferring the
+ * worker that did the step. The step keeps its summary, links and time.
+ */
+export function reject(state: TaskState, ctx: Context, input: RejectInput): Outcome {
+  const refused = preconditions.reject(state, ctx)
+  if (refused) return refused
+  const index = rejectable(state)!
+  const target = state.steps[index]
+  const reopened: Step = {
+    ...target,
+    status: 'pending',
+    artifactUrl: null,
+    finishedAt: null,
+    rejection: input.note,
+  }
+  let steps = withStep(state.steps, index, reopened)
+  const yours = steps[index + 1]
+  if (yours?.status === 'waiting') steps = withStep(steps, index + 1, backToPending(yours, ctx.now))
+  return withEvents(
+    queueOrStart(
+      {
+        task: { ...state.task, status: 'backlog', finishedAt: null, resumeWith: input.resumeWith },
+        steps,
+      },
+      ctx,
+      'first'
+    ),
+    event(ctx, state.task.id, reopened, 'rejected', brief(input.note))
   )
 }
 

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
-import { done, fillTemplate } from '../../helpers/strings'
+import { done, fillTemplate, reject } from '../../helpers/strings'
 import { formatDuration, formatFinished } from '../../helpers/time'
 import { plural } from '../../helpers/words'
 import { LABEL_TICK, useNow, useTimeZone } from '../../hooks/use_now/use_now'
@@ -9,6 +9,7 @@ import { MetaLine } from '../../patterns/meta_line/meta_line'
 import { Button } from '../../primitives/button/button'
 import { Frame } from '../../primitives/frame/frame'
 import { ArtifactLinks } from '../artifact_links/artifact_links'
+import { RejectForm } from '../reject_form/reject_form'
 import type { CardAction, SignOffTask } from '../board_data'
 import styles from './sign_off_card.module.css'
 
@@ -21,6 +22,8 @@ export interface SignOffCardProps {
   onStartFollowUp?: (taskId: string) => void
   /** Archives the task once confirmed. Without it the card offers no "Archive". */
   onArchive?: (taskId: string) => void
+  /** "Send back" on the last agent step, with the note trimmed. Without it the card offers no "Reject". */
+  onReject?: (taskId: string, note: string) => void
   /** The follow-up composer open on this card, drawn in place of the actions row. */
   composer?: ReactNode
   /** The action in flight on this card, whose button is busy while the others are disabled. */
@@ -47,9 +50,9 @@ function hasFocus(element: Element | null): boolean {
 /**
  * One finished task that waits for your sign-off, with when it finished, the
  * time it took and the links its done steps produced, and its actions: "Sign
- * off", "Follow up", which the composer replaces while it is open, and
- * "Archive", which asks first. The card as a whole is not clickable; its
- * title is.
+ * off", "Follow up", which the composer replaces while it is open, "Reject",
+ * which asks for a note, and "Archive", which asks first. The card as a whole
+ * is not clickable; its title is.
  */
 export function SignOffCard({
   task,
@@ -57,6 +60,7 @@ export function SignOffCard({
   onSignOff,
   onStartFollowUp,
   onArchive,
+  onReject,
   composer,
   pending = null,
   onOpenLink,
@@ -65,13 +69,16 @@ export function SignOffCard({
   const timeZone = useTimeZone()
   const followUpButton = useRef<HTMLButtonElement>(null)
   const archiveButton = useRef<HTMLButtonElement>(null)
+  const rejectButton = useRef<HTMLButtonElement>(null)
   const [confirming, setConfirming] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
   const composing = composer !== undefined && composer !== null
   const wasComposing = useRef(composing)
 
   const canSignOff = task.canAct.signOff && onSignOff !== undefined
   const canFollowUp = task.canAct.followUp && onStartFollowUp !== undefined
   const canArchive = task.canAct.archive && onArchive !== undefined
+  const canReject = task.canAct.reject === true && onReject !== undefined
 
   /*
    * A composer that closes while it held focus, by Cancel or Escape, leaves
@@ -103,7 +110,18 @@ export function SignOffCard({
         />
       )
     }
-    if (!canSignOff && !canFollowUp && !canArchive) {
+    if (rejecting && canReject) {
+      return (
+        <RejectForm
+          tone="plain"
+          busy={pending === 'reject'}
+          onSend={(note) => onReject?.(task.task.id, note)}
+          onCancel={() => setRejecting(false)}
+          returnFocusTo={rejectButton}
+        />
+      )
+    }
+    if (!canSignOff && !canFollowUp && !canArchive && !canReject) {
       return null
     }
     return (
@@ -128,6 +146,17 @@ export function SignOffCard({
             onPress={() => onStartFollowUp?.(task.task.id)}
           >
             {done.followUp}
+          </Button>
+        )}
+        {canReject && (
+          <Button
+            ref={rejectButton}
+            variant="secondary"
+            size="sm"
+            disabled={pending !== null}
+            onPress={() => setRejecting(true)}
+          >
+            {reject.reject}
           </Button>
         )}
         {canArchive && (

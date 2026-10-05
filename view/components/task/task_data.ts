@@ -91,6 +91,7 @@ export const TASK_EVENT_KINDS = [
   'blocked',
   'unblocked',
   'removed',
+  'rejected',
 ] as const
 
 export type TaskEventKind = (typeof TASK_EVENT_KINDS)[number]

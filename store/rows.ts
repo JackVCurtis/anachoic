@@ -52,6 +52,7 @@ export function stepFromRow(row: Row): Step {
     artifactUrl: row.artifact_url as string | null,
     blockedReason: row.blocked_reason as string | null,
     blockedAt: row.blocked_at as string | null,
+    rejection: row.rejection as string | null,
     startedAt: row.started_at as string | null,
     runningSince: row.running_since as string | null,
     waitingSince: row.waiting_since as string | null,
@@ -135,17 +136,17 @@ function writeStep(sqlite: DatabaseSync, step: Step) {
   sqlite
     .prepare(
       `INSERT INTO steps (id, task_id, number, owner, title, detail, status, origin, claimed_by, question, answer,
-         note, summary, links_json, output_format, artifact_url, blocked_reason, blocked_at, started_at, running_since,
-         waiting_since, finished_at, elapsed_seconds, waited_seconds)
+         note, summary, links_json, output_format, artifact_url, blocked_reason, blocked_at, rejection, started_at,
+         running_since, waiting_since, finished_at, elapsed_seconds, waited_seconds)
        VALUES (:id, :task_id, :number, :owner, :title, :detail, :status, :origin, :claimed_by, :question, :answer,
-         :note, :summary, :links_json, :output_format, :artifact_url, :blocked_reason, :blocked_at, :started_at, :running_since,
-         :waiting_since, :finished_at, :elapsed_seconds, :waited_seconds)
+         :note, :summary, :links_json, :output_format, :artifact_url, :blocked_reason, :blocked_at, :rejection, :started_at,
+         :running_since, :waiting_since, :finished_at, :elapsed_seconds, :waited_seconds)
        ON CONFLICT (id) DO UPDATE SET
          status = excluded.status, claimed_by = excluded.claimed_by, question = excluded.question,
          answer = excluded.answer, note = excluded.note, summary = excluded.summary,
          links_json = excluded.links_json, artifact_url = excluded.artifact_url,
          blocked_reason = excluded.blocked_reason, blocked_at = excluded.blocked_at,
-         started_at = excluded.started_at,
+         rejection = excluded.rejection, started_at = excluded.started_at,
          running_since = excluded.running_since, waiting_since = excluded.waiting_since,
          finished_at = excluded.finished_at, elapsed_seconds = excluded.elapsed_seconds,
          waited_seconds = excluded.waited_seconds`
@@ -169,6 +170,7 @@ function writeStep(sqlite: DatabaseSync, step: Step) {
       artifact_url: step.artifactUrl,
       blocked_reason: step.blockedReason,
       blocked_at: step.blockedAt,
+      rejection: step.rejection,
       started_at: step.startedAt,
       running_since: step.runningSince,
       waiting_since: step.waitingSince,

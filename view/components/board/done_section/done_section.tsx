@@ -37,6 +37,8 @@ export interface DoneSectionProps {
   onFollowUp?: (taskId: string, followUp: FollowUpInput) => void
   /** Archives a task once confirmed. Without it no card offers "Archive". */
   onArchive?: (taskId: string) => void
+  /** Sends a card's last agent step back, with the note. Without it no card offers "Reject". */
+  onReject?: (taskId: string, note: string) => void
   /** The card action in flight, if any. */
   pending?: PendingCardAction | null
   /** Asks the host to open an artifact link. Without it no card draws its links. */
@@ -66,6 +68,7 @@ export function DoneSection({
   onSignOff,
   onFollowUp,
   onArchive,
+  onReject,
   pending = null,
   onOpenLink,
   onShowHistory,
@@ -119,6 +122,7 @@ export function DoneSection({
               onFollowUp && ((taskId) => setComposing({ taskId, draft: emptyFollowUpDraft() }))
             }
             onArchive={onArchive}
+            onReject={onReject}
             composer={composerFor(task)}
             pending={pending?.taskId === task.task.id ? pending.action : null}
             onOpenLink={onOpenLink}

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
-import { assistive, yourTurn } from '../../helpers/strings'
+import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
+import { assistive, reject, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
@@ -23,6 +23,7 @@ const meta = {
     onCompleteStep: fn(),
     onAnswer: fn(),
     onPark: fn(),
+    onReject: fn(),
     onOpenLink: fn(),
     busy: null,
   },
@@ -295,4 +296,48 @@ export const BlockedLongNarrow: Story = {
   name: 'Blocked, with a reason of 2,000 characters, a long title and worker name, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
+}
+
+export const Rejectable: Story = {
+  name: 'User step whose agent step can be rejected',
+  args: { item: REJECTABLE.yourStep },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const buttons = canvas.getAllByRole('button').map((button) => button.textContent)
+    await expect(buttons.slice(-3)).toEqual([yourTurn.markDone, reject.reject, yourTurn.park])
+    await userEvent.click(canvas.getByRole('button', { name: reject.reject }))
+    await expect(canvas.getByRole('textbox', { name: reject.label })).toHaveFocus()
+    await expect(canvas.queryByRole('button', { name: yourTurn.markDone })).toBeNull()
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: reject.label }),
+      'The PR targets the wrong branch'
+    )
+    await userEvent.click(canvas.getByRole('button', { name: reject.sendBack }))
+    await expect(args.onReject).toHaveBeenCalledWith(
+      REJECTABLE.yourStep.task.id,
+      'The PR targets the wrong branch'
+    )
+    await expect(args.onOpenTask).not.toHaveBeenCalled()
+  },
+}
+
+export const RejectingNarrow: Story = {
+  name: 'Rejecting, narrow',
+  args: { item: REJECTABLE.yourStep },
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: reject.reject }))
+    await expectNoSidewaysScroll()
+  },
+}
+
+export const RejectBusy: Story = {
+  name: 'User step, rejecting',
+  args: { item: REJECTABLE.yourStep, busy: 'reject' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: reject.reject })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: yourTurn.markDone })).toBeDisabled()
+  },
 }

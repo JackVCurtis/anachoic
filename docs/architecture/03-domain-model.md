@@ -71,6 +71,8 @@ Every change to a task appends an event: `{taskId, stepId?, sessionId or "you", 
 
 - added, queued, reordered, claimed, started, noted, asked, answered, completed, parked, released, signed_off, followed_up and archived
 
+[11](11-assignment-and-outputs.md), [12](12-blocked-steps.md), [13](13-ending-sessions.md) and [15](15-rejecting-steps.md) add assigned, unassigned, blocked, unblocked, removed and rejected.
+
 The task view shows the events ([06](06-tools-and-views.md#views)), and they are the board's audit trail.
 
 ## The current step
@@ -166,7 +168,7 @@ These hold after every transaction for every task that is not archived. An archi
 | `waiting` | `done` | Your step only: you mark it done. An agent step that is waiting cannot be completed until it is answered. |
 | `running`, `waiting` | `pending` | Park (you) or Release (a dead session) |
 
-A step that is `done` never changes again.
+A step that is `done` never changes again, except by Reject ([15](15-rejecting-steps.md)): the user sends an agent step whose output is in front of them back to `pending`.
 
 ### What you can do with a waiting step
 

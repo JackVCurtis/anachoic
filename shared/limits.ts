@@ -10,6 +10,7 @@ export const LIMITS = {
   note: { min: 1, max: 500 },
   question: { min: 1, max: 2000 },
   reason: { min: 1, max: 2000 },
+  rejection: { min: 1, max: 2000 },
   summary: { min: 1, max: 2000 },
   answer: { min: 1, max: 4000 },
   sessionName: { min: 1, max: 40 },

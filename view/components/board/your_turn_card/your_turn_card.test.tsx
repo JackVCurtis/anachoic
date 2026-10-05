@@ -1,9 +1,9 @@
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
-import { OUTPUTS, YOUR_TURN } from '../../fixtures/board_sections'
+import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
-import { assistive, yourTurn } from '../../helpers/strings'
+import { assistive, reject, yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
@@ -399,5 +399,41 @@ describe('YourTurnCard, blocked', () => {
       vi.advanceTimersByTime(60_000)
     })
     expect(screen.getByText('Blocked 22m')).toBeDefined()
+  })
+
+  test('offers Reject on a user step only where the server allows it, and never on a question', () => {
+    const onReject = vi.fn()
+    const { unmount } = renderComponent(
+      <YourTurnCard item={OUTPUTS.handedPullRequest} onOpenTask={vi.fn()} onReject={onReject} />
+    )
+    expect(screen.queryByRole('button', { name: reject.reject })).toBeNull()
+    unmount()
+    const question = {
+      ...YOUR_TURN.question,
+      canAct: { ...YOUR_TURN.question.canAct, reject: true },
+    }
+    renderComponent(<YourTurnCard item={question} onOpenTask={vi.fn()} onReject={onReject} />)
+    expect(screen.queryByRole('button', { name: reject.reject })).toBeNull()
+  })
+
+  test('a failed rejection keeps its note in the form', async () => {
+    const onReject = vi.fn()
+    const { user, rerender } = renderComponent(
+      <YourTurnCard item={REJECTABLE.yourStep} onOpenTask={vi.fn()} onReject={onReject} />
+    )
+    await user.click(screen.getByRole('button', { name: reject.reject }))
+    await user.type(screen.getByRole('textbox', { name: reject.label }), 'Wrong branch')
+    await user.click(screen.getByRole('button', { name: reject.sendBack }))
+    expect(onReject).toHaveBeenCalledWith(REJECTABLE.yourStep.task.id, 'Wrong branch')
+    rerender(
+      <YourTurnCard
+        item={REJECTABLE.yourStep}
+        onOpenTask={vi.fn()}
+        onReject={onReject}
+        busy="reject"
+      />
+    )
+    rerender(<YourTurnCard item={REJECTABLE.yourStep} onOpenTask={vi.fn()} onReject={onReject} />)
+    expect(screen.getByRole('textbox', { name: reject.label })).toHaveValue('Wrong branch')
   })
 })

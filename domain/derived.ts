@@ -78,6 +78,8 @@ export interface CanAct {
   archive: boolean
   signOff: boolean
   followUp: boolean
+  /** Send the agent step whose output is in front of you back, with a note */
+  reject: boolean
 }
 
 /**
@@ -97,6 +99,7 @@ export function canAct(state: TaskState): CanAct {
     archive: accepts(preconditions.archive),
     signOff: accepts(preconditions.signOff),
     followUp: accepts(preconditions.followUp),
+    reject: accepts(preconditions.reject),
   }
 }
 
