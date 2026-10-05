@@ -57,6 +57,37 @@ export function emptyTaskEntryDraft(): TaskEntryDraft {
 }
 
 /**
+ * A task to clone, as far as a draft needs it.
+ */
+export interface ClonedTask {
+  title: string
+  assignedTo?: { id: string } | null
+  steps: ReadonlyArray<{
+    title: string
+    owner: Owner
+    detail?: string | null
+    outputFormat?: OutputFormat | null
+  }>
+}
+
+/**
+ * A draft holding a copy of the task: its title, its worker, and every step
+ * of its chain, follow-ups included, held to the entry's limits.
+ */
+export function clonedDraft(task: ClonedTask): TaskEntryDraft {
+  return {
+    title: task.title.slice(0, TASK_ENTRY_LIMITS.title),
+    assignTo: task.assignedTo?.id ?? null,
+    steps: task.steps.slice(0, TASK_ENTRY_LIMITS.steps).map((step) => ({
+      ...newTaskEntryStep(step.owner),
+      title: step.title.slice(0, TASK_ENTRY_LIMITS.title),
+      detail: (step.detail ?? '').slice(0, TASK_ENTRY_LIMITS.detail),
+      outputFormat: step.owner === 'agent' ? (step.outputFormat ?? null) : null,
+    })),
+  }
+}
+
+/**
  * The worker the draft is assigned to, or null for "Any worker". A worker
  * that is no longer live counts as "Any worker".
  */

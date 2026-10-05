@@ -68,6 +68,8 @@ export interface TaskViewProps {
   onPark?: (taskId: string) => void
   /** A confirmed Archive. Without it the view offers no Archive. */
   onArchive?: (taskId: string) => void
+  /** "Clone task" was pressed. Without it the view offers no Clone task. */
+  onClone?: () => void
   /** The action on the task in flight, if any. */
   pending?: TaskAction | null
   /** What went wrong with the user's last actions here: none, or one of each kind. */
@@ -146,7 +148,7 @@ function metaFacts(task: TaskSummary, data: TaskViewData | null): string[] {
  * One task in one column: its header, its messages, its chain and its
  * events. The open step follows the chain until the user presses a step, and
  * then stays as the user left it until the view shows another task. Park
- * and Archive each confirm in place, one at a time.
+ * and Archive each confirm in place, one at a time; Clone task does not ask.
  */
 export function TaskView({
   task,
@@ -162,6 +164,7 @@ export function TaskView({
   titleRef,
   onPark,
   onArchive,
+  onClone,
   pending = null,
   messages = [],
   onDismissMessage = ignore,
@@ -182,6 +185,7 @@ export function TaskView({
 
   const canPark = !archived && data?.canAct.park === true && onPark !== undefined
   const canArchive = !archived && data?.canAct.archive === true && onArchive !== undefined
+  const canClone = !archived && data !== null && onClone !== undefined
   /* A confirmation closes once its action is no longer offered, as after it succeeded. */
   const asking =
     confirming !== null &&
@@ -237,6 +241,7 @@ export function TaskView({
             <TaskActions
               canPark={canPark}
               canArchive={canArchive}
+              onClone={canClone ? onClone : undefined}
               disabled={asking !== null || pending !== null}
               onRequest={(action) => setConfirming({ taskId: task.id, action })}
               parkRef={parkButton}

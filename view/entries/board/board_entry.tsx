@@ -21,6 +21,7 @@ import { createYourActions } from '../../bridge/wake'
 import { card } from '../../components/helpers/strings'
 import { BoardView, type BoardAnnouncement } from '../../components/board/board_view/board_view'
 import { announcement, type AnnouncementFact } from '../../components/helpers/announcement'
+import type { TaskEntryDraft } from '../../components/helpers/task_entry'
 import { HistoryPanel } from '../history/history_panel'
 import { TaskPanel } from './task_panel'
 import { toBoardData } from './to_board_data'
@@ -80,7 +81,7 @@ function arrivalAnnouncement(
  * The board's History panel: "Show all completed tasks" swaps the board for
  * the history, fetched with get_history and kept live by polling it. "Back
  * to board" swaps back, fetches the board, and returns focus to the link,
- * else the board's heading.
+ * else the board's heading. `closeHistory` swaps back without moving focus.
  */
 function useHistoryPanel(
   app: HostConnection['app'],
@@ -111,8 +112,8 @@ function useHistoryPanel(
     void history.refresh()
   }
 
-  async function backFromHistory() {
-    returning.current = true
+  async function backFromHistory(restoreFocus: boolean) {
+    returning.current = restoreFocus
     setHistorySource(null)
     const outcome = await getBoard(app)
     if (outcome.ok && !('changed' in outcome.props)) {
@@ -120,7 +121,16 @@ function useHistoryPanel(
     }
   }
 
-  return { historySource, showHistory, backFromHistory: () => void backFromHistory() }
+  return {
+    historySource,
+    showHistory,
+    backFromHistory: () => void backFromHistory(true),
+    closeHistory: () => {
+      if (historySource !== null) {
+        void backFromHistory(false)
+      }
+    },
+  }
 }
 
 interface LiveBoardProps {
@@ -143,15 +153,40 @@ function Board({ app, source }: LiveBoardProps) {
   }, [source])
 
   const { messages, dismiss, reportFailure } = useBoardMessages(source)
-  const taskEntry = useTaskEntry(yourActions, source, reportFailure, board.workers)
+  const { taskEntry, fill: fillTaskEntry } = useTaskEntry(
+    yourActions,
+    source,
+    reportFailure,
+    board.workers
+  )
   const yourTurnActions = useYourTurnActions(yourActions, source, board, reportFailure)
   const cardActions = useCardActions(yourActions, source, board, reportFailure)
   const removeSession = useRemoveSession(yourActions, source, reportFailure)
   const lists = useMemo(() => toBoardData(board), [board])
   const said = useMemo(() => arrivalAnnouncement(arrived, arrivals), [arrived, arrivals])
   const boardRoot = useRef<HTMLDivElement>(null)
-  const { panel, openTask, backToBoard } = useTaskPanel(app, board, source, boardRoot)
-  const { historySource, showHistory, backFromHistory } = useHistoryPanel(app, source, boardRoot)
+  const { panel, openTask, backToBoard, closeTask } = useTaskPanel(app, board, source, boardRoot)
+  const { historySource, showHistory, backFromHistory, closeHistory } = useHistoryPanel(
+    app,
+    source,
+    boardRoot
+  )
+  const [clones, setClones] = useState(0)
+
+  /* Runs once the board is shown again, so the filled task entry is in view. */
+  useLayoutEffect(() => {
+    if (clones > 0) {
+      window.scrollTo(0, 0)
+    }
+  }, [clones])
+
+  /** Swaps back to the board, from the task panel or the history, with the copy in task entry. */
+  function cloneTask(draft: TaskEntryDraft) {
+    closeTask()
+    closeHistory()
+    fillTaskEntry(draft)
+    setClones((count) => count + 1)
+  }
 
   async function reorder(taskId: string, position: number) {
     const item = board.queue.find((queued) => queued.task.id === taskId)
@@ -226,6 +261,7 @@ function Board({ app, source }: LiveBoardProps) {
           onBackToBoard={backFromHistory}
           focusOnShow
           onBoard={(props) => source.replace(props)}
+          onClone={cloneTask}
         />
       )}
       {panel && (
@@ -235,6 +271,7 @@ function Board({ app, source }: LiveBoardProps) {
           panel={panel}
           onBoard={(props) => source.replace(props)}
           onBackToBoard={backToBoard}
+          onClone={cloneTask}
         />
       )}
     </>
@@ -246,7 +283,8 @@ function Board({ app, source }: LiveBoardProps) {
  * Your actions call their app-only tools and the board is redrawn from each
  * result; nothing is posted to the dedicated chat. Artifact links are opened
  * by the host. Each failure is shown in the message region. A card's title
- * swaps the board for its task, in the same frame.
+ * swaps the board for its task, in the same frame. Clone task in the task
+ * panel swaps back to the top of the board, with task entry holding a copy.
  */
 export function BoardEntry({
   connection,

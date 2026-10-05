@@ -9,6 +9,7 @@ import type {
 import {
   emptyTaskEntryDraft,
   submittedTask,
+  type TaskEntryDraft,
   type TaskEntryFieldError,
 } from '../../components/helpers/task_entry'
 import { taskEntryFieldOf } from './task_entry_refusal'
@@ -20,18 +21,20 @@ import type { FailedWrite } from './use_board_messages'
  * The worker field lists the live workers of the latest board, so a worker
  * that ends drops out and the field falls back to "Any worker".
  * A refusal about one field is shown under it; any other failure goes to
- * onFailure.
+ * onFailure. `fill` replaces the draft, as with a cloned task, and opens the
+ * form with focus on its title.
  */
 export function useTaskEntry(
   yourActions: Pick<YourActions, 'addTask'>,
   source: Pick<BoardSource, 'replace'>,
   onFailure: (failure: FailedWrite) => void,
   workers: readonly Worker[] = []
-): TaskEntryProps {
+): { taskEntry: TaskEntryProps; fill: (draft: TaskEntryDraft) => void } {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(emptyTaskEntryDraft)
   const [busy, setBusy] = useState<TaskEntryDestination | null>(null)
   const [fieldError, setFieldError] = useState<TaskEntryFieldError | null>(null)
+  const [focusRequest, setFocusRequest] = useState(0)
 
   async function submit(destination: TaskEntryDestination) {
     setBusy(destination)
@@ -55,18 +58,29 @@ export function useTaskEntry(
     }
   }
 
+  function fill(next: TaskEntryDraft) {
+    setDraft(next)
+    setFieldError(null)
+    setOpen(true)
+    setFocusRequest((request) => request + 1)
+  }
+
   return {
-    open,
-    draft,
-    busy,
-    fieldError,
-    workers,
-    onOpen: () => setOpen(true),
-    onCancel: () => setOpen(false),
-    onDraftChange: (next) => {
-      setDraft(next)
-      setFieldError(null)
+    taskEntry: {
+      open,
+      draft,
+      busy,
+      fieldError,
+      workers,
+      focusRequest,
+      onOpen: () => setOpen(true),
+      onCancel: () => setOpen(false),
+      onDraftChange: (next) => {
+        setDraft(next)
+        setFieldError(null)
+      },
+      onSubmit: (destination) => void submit(destination),
     },
-    onSubmit: (destination) => void submit(destination),
+    fill,
   }
 }

@@ -77,6 +77,7 @@ Each section is a SectionHeader with a count, followed by its cards.
 - It is one column inside the host's fullscreen frame, or inline at 735 px when fullscreen is not available.
 - **Display buttons.** Small secondary buttons at the end of the header, in this order: "Back to board", when the view is the board's task panel; "Open in full screen", when it is inline and the host offers fullscreen; "Back to inline", when it is in fullscreen. With none of these, nothing is drawn.
 - Park and Archive sit at the end of the meta line, each confirmed in place.
+- **Clone task** comes before them, in the board's task panel only, whether the task was opened from a card or from the History panel. It asks nothing: it swaps back to the top of the board with TaskEntry open, holding a copy of the task (its title, its worker and every step, follow-ups included) and focus on the title. A draft already there is replaced. The `open_task` and `show_history` views have no TaskEntry, so they offer no Clone task.
 
 **Settled while building:**
 - **The follow-up composer** appends steps to a task to sign off, written as in TaskEntry (title, owner, detail, and Output for an agent step), and places the task at the Back or the Front of the queue. Its note reads "Extends the chain · re-enters the queue" once every step has a title.

@@ -50,6 +50,13 @@ async function renderTask(app: FakeApp) {
 }
 
 describe('the task entry', () => {
+  test('offers no Clone task, since it has no task entry to fill', async () => {
+    await renderTask(fakeApp())
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Add caching' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Clone task' })).toBeNull()
+  })
+
   test('takes only the task id from the replayed result and draws from get_task', async () => {
     const app = fakeApp()
     const { loaded } = await renderTask(app)

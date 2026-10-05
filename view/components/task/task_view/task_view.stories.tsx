@@ -93,6 +93,17 @@ export const BothActions: Story = {
   args: { onPark: fn(), onArchive: fn() },
 }
 
+export const WithClone: Story = {
+  name: 'With Clone task, Park and Archive',
+  args: { onClone: fn(), onPark: fn(), onArchive: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Clone task' }))
+    await expect(args.onClone).toHaveBeenCalledOnce()
+    await expect(canvas.queryByRole('button', { name: 'Keep task' })).toBeNull()
+  },
+}
+
 export const ParkConfirming: Story = {
   name: 'With Park confirming',
   args: { onPark: fn(), onArchive: fn() },

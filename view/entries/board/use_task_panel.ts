@@ -119,9 +119,25 @@ export function useTaskPanel(
     }
   }
 
+  /**
+   * Swaps back to the board without moving focus, for an action that sends
+   * focus elsewhere on the board itself.
+   */
+  async function closeTask() {
+    if (panel === null) {
+      return
+    }
+    setPanel(null)
+    const outcome = await getBoard(app)
+    if (outcome.ok && !('changed' in outcome.props)) {
+      boardSource.replace(outcome.props)
+    }
+  }
+
   return {
     panel,
     openTask,
     backToBoard: (section: ReturnSection | null = null) => void backToBoard(section),
+    closeTask: () => void closeTask(),
   }
 }

@@ -290,6 +290,7 @@ export const taskView = {
   archive: 'Archive',
   archiveQuestion: 'Archive “{title}”? It is taken off every list.',
   keepTask: 'Keep task',
+  clone: 'Clone task',
 } as const
 
 /**

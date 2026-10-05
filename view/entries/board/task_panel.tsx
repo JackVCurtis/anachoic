@@ -5,6 +5,7 @@ import { useHostContext } from '../../bridge/host_context'
 import { openLink, requestDisplayMode } from '../../bridge/tools'
 import type { YourActions } from '../../bridge/wake'
 import { card } from '../../components/helpers/strings'
+import { clonedDraft, type TaskEntryDraft } from '../../components/helpers/task_entry'
 import { TaskView } from '../../components/task/task_view/task_view'
 import { toTaskData } from './to_task_data'
 import { useMessages } from './use_board_messages'
@@ -21,13 +22,16 @@ export interface TaskPanelProps {
   onBackToBoard: (section?: ReturnSection | null) => void
   /** The way back's label, for a panel opened from somewhere else. "Back to board" unless given. */
   backLabel?: string
+  /** Takes a draft copied from the task to task entry. Without it the panel offers no Clone task. */
+  onClone?: (draft: TaskEntryDraft) => void
 }
 
 /**
  * The task the board swapped to, drawn from its task source. While it loads,
  * the header shows what the card knew. It opens scrolled to the top, with
  * focus on the task's title. Park keeps the panel on the task; Archive
- * returns to the board, with focus on the Backlog or Done heading.
+ * returns to the board, with focus on the Backlog or Done heading; Clone
+ * task hands a copy of the task to onClone.
  */
 export function TaskPanel({
   app,
@@ -36,6 +40,7 @@ export function TaskPanel({
   onBoard,
   onBackToBoard,
   backLabel,
+  onClone,
 }: TaskPanelProps) {
   const { displayMode, availableDisplayModes, safeAreaInsets } = useHostContext()
   const snapshot = useSyncExternalStore(panel.source.subscribe, panel.source.getSnapshot)
@@ -76,6 +81,11 @@ export function TaskPanel({
       titleRef={title}
       onPark={actions.onPark}
       onArchive={actions.onArchive}
+      onClone={
+        onClone && data
+          ? () => onClone(clonedDraft({ ...data.task, steps: data.steps }))
+          : undefined
+      }
       pending={actions.pending}
       messages={messages}
       onDismissMessage={dismiss}

@@ -11,6 +11,8 @@ export interface TaskActionsProps {
   canPark: boolean
   /** Draws Archive. */
   canArchive: boolean
+  /** "Clone task" was pressed. Without it there is no Clone task. */
+  onClone?: () => void
   /** A confirmation is showing, or an action is in flight. */
   disabled: boolean
   /** Park or Archive was pressed. It opens its confirmation; nothing is done yet. */
@@ -20,23 +22,29 @@ export interface TaskActionsProps {
 }
 
 /**
- * Park and Archive, each drawn only where the server allows it. Neither acts
- * at once: each opens its confirmation.
+ * Clone task, then Park and Archive, each drawn only where the server allows
+ * it. Clone task acts at once; Park and Archive each open their confirmation.
  */
 export function TaskActions({
   canPark,
   canArchive,
+  onClone,
   disabled,
   onRequest,
   parkRef,
   archiveRef,
 }: TaskActionsProps) {
-  if (!canPark && !canArchive) {
+  if (!canPark && !canArchive && !onClone) {
     return null
   }
 
   return (
     <div className={styles.actions}>
+      {onClone && (
+        <Button variant="ghost" size="sm" disabled={disabled} onPress={onClone}>
+          {taskView.clone}
+        </Button>
+      )}
       {canPark && (
         <Button
           ref={parkRef}

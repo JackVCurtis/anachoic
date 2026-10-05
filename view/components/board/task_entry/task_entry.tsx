@@ -30,6 +30,8 @@ export interface TaskEntryProps {
   fieldError?: TaskEntryFieldError | null
   /** The live workers a task can be assigned to. With none, there is no Worker field. */
   workers?: readonly TaskEntryWorker[]
+  /** A new value sends focus to the open form's title, as when a cloned task fills the draft. */
+  focusRequest?: number
   onOpen: () => void
   /** "Cancel" or Escape. */
   onCancel: () => void
@@ -56,6 +58,7 @@ export function TaskEntry({
   busy = null,
   fieldError = null,
   workers = NO_WORKERS,
+  focusRequest = 0,
   onOpen,
   onCancel,
   onDraftChange,
@@ -86,6 +89,7 @@ export function TaskEntry({
       busy={busy}
       fieldError={fieldError}
       workers={workers}
+      focusRequest={focusRequest}
       onCancel={onCancel}
       onDraftChange={onDraftChange}
       onSubmit={onSubmit}
@@ -100,6 +104,7 @@ interface TaskEntryFormProps extends Omit<TaskEntryProps, 'open' | 'onOpen'> {
   busy: TaskEntryDestination | null
   fieldError: TaskEntryFieldError | null
   workers: readonly TaskEntryWorker[]
+  focusRequest: number
   /** Told, as the form goes, whether it held focus. */
   onClosing: (heldFocus: boolean) => void
 }
@@ -109,6 +114,7 @@ function TaskEntryForm({
   busy,
   fieldError,
   workers,
+  focusRequest,
   onCancel,
   onDraftChange,
   onSubmit,
@@ -125,7 +131,7 @@ function TaskEntryForm({
 
   useEffect(() => {
     title.current?.focus()
-  }, [])
+  }, [focusRequest])
 
   const closing = useRef(onClosing)
   useLayoutEffect(() => {

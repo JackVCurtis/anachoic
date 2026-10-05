@@ -8,6 +8,7 @@ import { openLink } from '../../bridge/tools'
 import type { YourActions } from '../../bridge/wake'
 import { HistoryView } from '../../components/board/history_view/history_view'
 import { card, history } from '../../components/helpers/strings'
+import type { TaskEntryDraft } from '../../components/helpers/task_entry'
 import { useMessages } from '../board/use_board_messages'
 import { TaskPanel } from '../board/task_panel'
 import { toTaskSummary } from '../board/to_task_data'
@@ -27,6 +28,8 @@ export interface HistoryPanelProps {
   focusOnShow?: boolean
   /** Draws the fresh board an action in the task panel returned. */
   onBoard?: (props: ActionResult) => void
+  /** Takes a task the task panel cloned to the board's task entry. Without it there is no Clone task. */
+  onClone?: (draft: TaskEntryDraft) => void
 }
 
 function focusable(element: HTMLElement | null | undefined): element is HTMLElement {
@@ -50,6 +53,7 @@ export function HistoryPanel({
   onBackToBoard,
   focusOnShow = false,
   onBoard = ignore,
+  onClone,
 }: HistoryPanelProps) {
   const { safeAreaInsets } = useHostContext()
   const snapshot = useSyncExternalStore(source.subscribe, source.getSnapshot)
@@ -170,6 +174,7 @@ export function HistoryPanel({
           onBoard={onBoard}
           onBackToBoard={backToHistory}
           backLabel={history.backToHistory}
+          onClone={onClone}
         />
       )}
     </>
