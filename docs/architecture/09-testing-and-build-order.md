@@ -5,7 +5,7 @@
 | Suite | Runs in | Covers | Command |
 |---|---|---|---|
 | unit | Vitest, Node environment | `domain/` (rules, invariants, derived facts, queue order), `store/` against a temporary database, `server/text/`, `server/props/` | `pnpm test:unit` |
-| ui | Vitest browser mode with Playwright Chromium, plus the Storybook project | Components, helpers, hooks and the bridge, with a fake `App`. Every story passes the axe check. Copied from anachoic's `vitest.config.ts`, with time-zone projects. | `pnpm test:ui` |
+| ui | Vitest browser mode with Playwright Chromium, plus the Storybook project | Components, helpers, hooks and the bridge, with a fake `App`. Every story passes the axe check. Copied from anachoic's `vitest.config.ts`, with time-zone projects. Each browser project starts its own Chromium, so `pnpm test:ui` runs `ui`, the `time-` projects and `storybook` one after another, with at most two workers, to keep memory down. | `pnpm test:ui` |
 | integration | Vitest, Node environment | The built server driven by `@modelcontextprotocol/client` over stdio. Several server processes run against one temporary data directory, standing in for desktop and two workers. | `pnpm test:integration` |
 | e2e | Playwright | The built views in the ext-apps reference host, against the built server over `--http` | `pnpm test:e2e` |
 

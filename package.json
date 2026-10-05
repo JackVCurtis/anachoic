@@ -18,7 +18,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit --project view/tsconfig.json && tsc --noEmit --project .storybook/tsconfig.json",
     "test": "pnpm test:unit && pnpm test:ui && pnpm test:integration && pnpm test:e2e",
     "test:unit": "vitest run --project unit",
-    "test:ui": "vitest run --maxWorkers=2 --project ui --project 'time-*' --project storybook",
+    "test:ui": "vitest run --maxWorkers=2 --project ui && vitest run --maxWorkers=1 --project 'time-*' && vitest run --maxWorkers=2 --project storybook",
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test",
     "storybook": "storybook dev --host 127.0.0.1 --port 6006"
