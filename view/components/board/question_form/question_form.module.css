@@ -1,0 +1,83 @@
+/* The form takes its own presses, never the card's */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  cursor: auto;
+}
+
+/* text-status names a light color; on the inverted card it takes the tone's */
+.progress {
+  color: inherit;
+  opacity: var(--dim-2);
+}
+
+.progress:empty {
+  display: none;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* A question is shown in full, however long */
+.question {
+  min-width: 0;
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  color: inherit;
+  opacity: var(--dim-3);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: 24px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.control {
+  flex: none;
+  margin: 0;
+  margin-top: 2px;
+  accent-color: var(--tone-focus);
+  cursor: pointer;
+}
+
+.label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

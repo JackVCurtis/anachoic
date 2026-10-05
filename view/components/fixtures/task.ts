@@ -183,7 +183,7 @@ export const ASSIGNED: TaskViewSample = {
 }
 
 /**
- * A task whose agent step waits on a question of 2,000 characters, with the
+ * A task whose agent step waits on a question of 250 characters, with the
  * answer the user gave the first time it asked.
  */
 const ASKING_TASK = 30
@@ -193,7 +193,7 @@ export const ASKING: TaskViewSample = {
   steps: [
     stepOf(ASKING_TASK, 1, 'agent', 'waiting', 'Choose the retry policy', {
       sessionName: WEB_CLIENT,
-      question: LONG_TEXT.answer.slice(0, 2000),
+      question: LONG_TEXT.answer.slice(0, 250),
       answer: LONG_TEXT.answer.slice(0, 600),
       waitingSince: before({ minutes: 14 }),
       elapsedSeconds: 8 * 60,

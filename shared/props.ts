@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { FORM_CHOICES } from './form.js'
 import { OUTPUT_FORMATS } from './output_format.js'
 
 /**
@@ -13,6 +14,22 @@ export const ownerSchema = z.enum(['agent', 'you'])
 export const stepStatusSchema = z.enum(['pending', 'running', 'waiting', 'done'])
 
 export const outputFormatSchema = z.enum(OUTPUT_FORMATS)
+
+/**
+ * A worker's form, as shared/form.ts describes it. The domain checked it when
+ * it was asked.
+ */
+export const formSchema = z.object({
+  pages: z.array(
+    z.object({
+      id: z.string(),
+      question: z.string(),
+      choose: z.enum(FORM_CHOICES),
+      options: z.array(z.object({ label: z.string(), next: z.string().optional() })).optional(),
+      next: z.string().optional(),
+    })
+  ),
+})
 
 /**
  * A link to the artifact a done step with an output format produced.
@@ -65,7 +82,8 @@ export const yourTurnItemSchema = z.object({
     number: z.number().int().positive(),
     title: z.string(),
     owner: ownerSchema,
-    question: z.string().optional(),
+    /** An agent's form, while its step waits on the answers. */
+    form: formSchema.optional(),
     outputFormat: outputFormatSchema.optional(),
     waitingSince: instant,
   }),
@@ -230,9 +248,9 @@ export const taskStepSchema = z.object({
   /** The task's current step: the first not done, else the last. */
   current: z.boolean(),
   session: taskSessionSchema.nullable(),
-  /** An agent's question, while the step waits on it. */
-  question: z.string().nullable(),
-  /** The user's answer to the latest question, until the agent collects it. */
+  /** An agent's form, while the step waits on its answers. */
+  form: formSchema.nullable(),
+  /** The user's answer to the latest form, as markdown, until the agent collects it. */
   answer: z.string().nullable(),
   note: z.string().nullable(),
   summary: z.string().nullable(),

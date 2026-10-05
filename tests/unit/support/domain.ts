@@ -1,7 +1,13 @@
 import { expect } from 'vitest'
 import { isRefusal, type Refusal } from '../../../domain/refusal.js'
-import { add, type Change, type Context, type Outcome } from '../../../domain/transitions.js'
-import { YOU, type Actor, type Owner, type TaskState } from '../../../domain/types.js'
+import {
+  add,
+  type AnswerInput,
+  type Change,
+  type Context,
+  type Outcome,
+} from '../../../domain/transitions.js'
+import { YOU, type Actor, type Form, type Owner, type TaskState } from '../../../domain/types.js'
 
 const START = Date.UTC(2026, 9, 1, 12, 0, 0)
 
@@ -58,4 +64,18 @@ export function refused(outcome: Outcome): Refusal {
     expect.fail(`Expected a refusal, but the task became ${outcome.task.status}`)
   }
   return outcome
+}
+
+/**
+ * A form of one text page, for tests that need a form but not its shape.
+ */
+export function textForm(question: string): Form {
+  return { pages: [{ id: 'q', question, choose: 'text' }] }
+}
+
+/**
+ * An answer to textForm's one page, which renders as "### question\ntext".
+ */
+export function typed(text: string): AnswerInput {
+  return { responses: [{ page: 'q', text }] }
 }

@@ -77,7 +77,7 @@ export const Many: Story = {
 }
 
 export const LongText: Story = {
-  name: 'Long title and a question of 2,000 characters',
+  name: 'Long title and a form page at its longest',
   args: { tasks: [YOUR_TURN.longTitle, YOUR_TURN.longQuestion] },
   play: async () => {
     const [sideways] = await windowOverflow()
@@ -108,7 +108,7 @@ export const ManyNarrow: Story = {
 
 export const LongTextNarrow: Story = {
   ...LongText,
-  name: 'Long title and a question of 2,000 characters, narrow',
+  name: 'Long title and a form page at its longest, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }

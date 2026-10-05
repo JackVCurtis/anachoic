@@ -114,9 +114,9 @@ describe('both versions', () => {
         add_task: ['1–200 characters', '1–20 steps', 'up to 4,000 characters'],
         add_follow_up: ['1–20'],
         update_step: ['1–500 characters', 'up to 10'],
-        ask_you: ['1–2,000 characters'],
+        ask_you: ['1–10 pages', '1–250 characters'],
         complete_step: ['1–2,000 characters', 'up to 10'],
-        block_step: ['1–2,000 characters'],
+        block_step: ['1–250 characters'],
         unblock_step: ['up to 500 characters'],
       }
       for (const [tool, phrases] of Object.entries(limits)) {
@@ -146,5 +146,23 @@ describe('both versions', () => {
     expect(TOOL_DESCRIPTIONS.dedicated.ask_you).toContain('"Ask in this chat instead"')
     expect(TOOL_DESCRIPTIONS.dedicated.wait_for_answer).toContain('"This chat does not wait"')
     expect(INSTRUCTIONS.dedicated).not.toBe(INSTRUCTIONS.worker)
+  })
+
+  test('the worker ask_you names the form, its limits, branching and the direct answer', () => {
+    const description = TOOL_DESCRIPTIONS.worker.ask_you
+    for (const phrase of [
+      '1–10 pages',
+      '1–250 characters',
+      '1–150 characters',
+      '2–6 options',
+      'up to 500 characters',
+      "an option's next overrides it",
+      'A next must name a later page',
+      'answer directly',
+    ]) {
+      expect(description).toContain(phrase)
+    }
+    expect(TOOL_DESCRIPTIONS.worker.wait_for_answer).toContain('markdown')
+    expect(INSTRUCTIONS.worker).toContain('ask_you takes a form, not free text')
   })
 })

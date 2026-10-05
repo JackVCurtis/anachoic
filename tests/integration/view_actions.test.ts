@@ -198,9 +198,24 @@ test('answer_question makes the waiting step run again with the answer for its w
   const api = await worker()
   await act('add_task_from_view', { title: 'Cache', steps: [AGENT_STEP] })
   await ok(api, 'claim_step')
-  await ok(api, 'ask_you', { task: 'T-001', question: 'Redis or in-process?' })
+  await ok(api, 'ask_you', {
+    task: 'T-001',
+    form: {
+      pages: [
+        {
+          id: 'cache',
+          question: 'Redis or in-process?',
+          choose: 'one',
+          options: [{ label: 'Redis' }, { label: 'In-process' }],
+        },
+      ],
+    },
+  })
 
-  const answered = await act('answer_question', { task: 'T-001', answer: 'Redis' })
+  const answered = await act('answer_question', {
+    task: 'T-001',
+    responses: [{ page: 'cache', picked: [0] }],
+  })
 
   expect(answered.text).toBe('Answered T-001 step 1')
   expect(answered.kinds).toEqual(['answered'])
@@ -208,7 +223,7 @@ test('answer_question makes the waiting step run again with the answer for its w
     status: 'running',
     claimed_by: 'worker-a',
     question: null,
-    answer: 'Redis',
+    answer: '### Redis or in-process?\n- Redis',
   })
   expect(answered.props.working.map((item) => item.task.displayId)).toEqual(['T-001'])
 })
@@ -248,7 +263,10 @@ test.each([
   await act('add_task_from_view', { title: 'Cache', steps: [AGENT_STEP] })
   await act('add_task_from_view', { title: 'Later', steps: [AGENT_STEP], queue: false })
   await ok(api, 'claim_step', { task: 'T-001' })
-  await ok(api, 'ask_you', { task: 'T-001', question: 'Which?' })
+  await ok(api, 'ask_you', {
+    task: 'T-001',
+    form: { pages: [{ id: 'q', question: 'Which?', choose: 'text' }] },
+  })
   const before = boardRows()
 
   const result = await view.callTool({ name, arguments: args })

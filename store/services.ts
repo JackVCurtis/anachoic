@@ -10,11 +10,12 @@ import {
   type Refusal,
 } from '../domain/refusal.js'
 import * as transitions from '../domain/transitions.js'
-import type { Context, Outcome, Placement } from '../domain/transitions.js'
+import type { AnswerInput, Context, Outcome, Placement } from '../domain/transitions.js'
 import {
   YOU,
   type Actor,
   type Event,
+  type Form,
   type Instant,
   type Link,
   type StepInput,
@@ -27,6 +28,7 @@ import {
   checkText,
   firstRefusal,
 } from '../domain/validate.js'
+import { validateForm } from '../shared/form.js'
 import { formatTaskId, InvalidTaskIdError, toTaskNumber } from '../shared/task_id.js'
 import type { Database } from './database.js'
 import { firstClaimableIn } from './queries.js'
@@ -229,15 +231,16 @@ export function askYou(
   actor: Actor,
   now: Instant,
   task: TaskRef,
-  question: string
+  form: Form
 ): ServiceResult {
+  const problem = validateForm(form)
   return act(
     database,
     actor,
     now,
     task,
-    (state, ctx) => transitions.ask(state, ctx, question),
-    checkText('question', question)
+    (state, ctx) => transitions.ask(state, ctx, form),
+    problem === null ? null : invalid(problem)
   )
 }
 
@@ -281,7 +284,7 @@ export function answerQuestion(
   actor: Actor,
   now: Instant,
   task: TaskRef,
-  answer: string
+  answer: AnswerInput
 ): ServiceResult {
   return act(
     database,
@@ -289,7 +292,7 @@ export function answerQuestion(
     now,
     task,
     (state, ctx) => transitions.answer(state, ctx, answer),
-    checkText('answer', answer)
+    'direct' in answer ? checkText('answer', answer.direct) : null
   )
 }
 
@@ -477,11 +480,7 @@ export function checkWaiting(database: Database, task: TaskRef, session: string)
     const step = currentStep(state.steps)
     return step.status === 'waiting' || step.answer !== null
       ? null
-      : wrongStepStatus(
-          id,
-          step.number,
-          'has no question waiting for an answer. Call ask_you first.'
-        )
+      : wrongStepStatus(id, step.number, 'has no form waiting for an answer. Call ask_you first.')
   })
 }
 
@@ -499,7 +498,7 @@ export function readAnswerState(
 }
 
 /**
- * Returns your answer to the session's question and clears it, so it is
+ * Returns your answer to the session's form and clears it, so it is
  * collected once; or says the session's claim ended, and why.
  */
 export function collectAnswer(

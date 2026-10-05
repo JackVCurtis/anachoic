@@ -23,7 +23,7 @@ import {
   type ServiceResult,
 } from '../../../store/services.js'
 import { registerLiveness, touchSession } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, typed, textForm } from '../support/domain.js'
 import { allTaskStates } from '../support/store.js'
 
 const A = 'session-a'
@@ -129,12 +129,12 @@ describe('blockStep and unblockStep', () => {
     refuses(
       () => blockStep(database, A, now(), 'T-001', ''),
       'invalid',
-      'reason must be 1 to 2,000 characters'
+      'reason must be 1 to 250 characters'
     )
     refuses(
-      () => blockStep(database, A, now(), 'T-001', 'x'.repeat(2001)),
+      () => blockStep(database, A, now(), 'T-001', 'x'.repeat(251)),
       'invalid',
-      'reason must be 1 to 2,000 characters'
+      'reason must be 1 to 250 characters'
     )
 
     ok(blockStep(database, A, now(), 'T-001', 'needs AWS credentials'))
@@ -159,14 +159,14 @@ describe('blockStep and unblockStep', () => {
       'wrong_status',
       blocked
     )
-    refuses(() => askYou(database, A, now(), 'T-001', 'Which?'), 'wrong_status', blocked)
+    refuses(() => askYou(database, A, now(), 'T-001', textForm('Which?')), 'wrong_status', blocked)
     refuses(
       () => updateStep(database, A, now(), 'T-001', { note: 'Progress' }),
       'wrong_status',
       blocked
     )
     refuses(
-      () => answerQuestion(database, 'you', now(), 'T-001', 'Yes'),
+      () => answerQuestion(database, 'you', now(), 'T-001', typed('Yes')),
       'wrong_status',
       'Step 1 of T-001 is not waiting for an answer'
     )

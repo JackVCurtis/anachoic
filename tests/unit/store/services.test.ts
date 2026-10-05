@@ -28,7 +28,7 @@ import {
   type ServiceResult,
 } from '../../../store/services.js'
 import { registerLiveness, touchSession } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, typed, textForm } from '../support/domain.js'
 import { buildChild, forkChild } from '../support/child.js'
 import { allTaskStates } from '../support/store.js'
 
@@ -262,12 +262,12 @@ describe('Worker services', () => {
 
   test('askYou makes the step wait, and a second ask is unanswered', () => {
     const id = claimed(['agent'])
-    expect(ok(askYou(database, A, now(), id, 'Redis?')).state.steps[0]).toMatchObject({
+    expect(ok(askYou(database, A, now(), id, textForm('Redis?'))).state.steps[0]).toMatchObject({
       status: 'waiting',
-      question: 'Redis?',
+      form: textForm('Redis?'),
     })
     refuses(
-      () => askYou(database, A, now(), id, 'Again?'),
+      () => askYou(database, A, now(), id, textForm('Again?')),
       'unanswered',
       "Step 1 of T-001 is waiting for the user's answer"
     )
@@ -276,19 +276,19 @@ describe('Worker services', () => {
 
   test('answerQuestion runs the step again with the answer, recording answered', () => {
     const id = claimed(['agent'])
-    ok(askYou(database, A, now(), id, 'Redis?'))
-    const answered = ok(answerQuestion(database, 'you', now(), id, 'Redis'))
+    ok(askYou(database, A, now(), id, textForm('Redis?')))
+    const answered = ok(answerQuestion(database, 'you', now(), id, typed('Redis')))
     expect(answered.state.steps[0]).toMatchObject({
       status: 'running',
-      answer: 'Redis',
-      question: null,
+      answer: '### Redis?\nRedis',
+      form: null,
     })
     expect(answered.events).toMatchObject([
       { kind: 'answered', sessionId: 'you', stepId: `${id}.1` },
     ])
-    refuses(() => answerQuestion(database, 'you', now(), id, 'Again'), 'wrong_status')
+    refuses(() => answerQuestion(database, 'you', now(), id, typed('Again')), 'wrong_status')
     refuses(
-      () => answerQuestion(database, 'you', now(), id, ''),
+      () => answerQuestion(database, 'you', now(), id, { direct: '' }),
       'invalid',
       'answer must be 1 to 4,000 characters'
     )
@@ -410,8 +410,8 @@ describe('Events', () => {
     const id = add(['agent', 'you'])
     results.push(ok(claimStep(database, A, now(), id)))
     results.push(ok(updateStep(database, A, now(), id, { note: 'Going' })))
-    results.push(ok(askYou(database, A, now(), id, 'Which?')))
-    results.push(ok(answerQuestion(database, 'you', now(), id, 'That')))
+    results.push(ok(askYou(database, A, now(), id, textForm('Which?'))))
+    results.push(ok(answerQuestion(database, 'you', now(), id, typed('That'))))
     results.push(ok(completeStep(database, A, now(), id, { summary: 'Done' })))
     results.push(ok(completeMyStep(database, 'you', now(), id)))
     results.push(ok(signOff(database, 'you', now(), id)))
@@ -441,13 +441,14 @@ describe('Events', () => {
 describe('Collecting your answer', () => {
   test('collectAnswer returns the answer once', () => {
     const id = claimed(['agent'])
-    ok(askYou(database, A, now(), id, 'Which?'))
+    ok(askYou(database, A, now(), id, textForm('Which?')))
     expect(readAnswerState(database, id, A)).toEqual({ kind: 'waiting' })
-    ok(answerQuestion(database, 'you', now(), id, 'That one'))
-    expect(readAnswerState(database, id, A)).toEqual({ kind: 'answered', answer: 'That one' })
+    ok(answerQuestion(database, 'you', now(), id, typed('That one')))
+    const answer = '### Which?\nThat one'
+    expect(readAnswerState(database, id, A)).toEqual({ kind: 'answered', answer })
     const revision = readRevision(database)
     expect(collectAnswer(database, id, A)).toEqual({
-      value: { kind: 'answered', answer: 'That one' },
+      value: { kind: 'answered', answer },
       revision: revision + 1,
     })
     expect(collectAnswer(database, id, A)).toMatchObject({
@@ -471,7 +472,7 @@ describe('Collecting your answer', () => {
     ],
   ])('collectAnswer reports the end of the claim after %s', (_label, end, reason, sentence) => {
     const id = claimed(['agent'])
-    ok(askYou(database, A, now(), id, 'Which?'))
+    ok(askYou(database, A, now(), id, textForm('Which?')))
     ok(end(id))
     expect(readAnswerState(database, id, A)).toEqual({ kind: 'ended', reason, sentence })
     expect(collectAnswer(database, id, A)).toMatchObject({

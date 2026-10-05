@@ -1,7 +1,8 @@
 import { useId, useRef, useState, type FormEvent } from 'react'
 import { joinClasses } from '../../helpers/join_classes'
 import { inputLinkLabel } from '../../helpers/output_format'
-import { fillTemplate, reject, yourTurn } from '../../helpers/strings'
+import { DIRECT_ANSWER_MAX, type FormAnswer, type FormResponse } from '../../helpers/question_form'
+import { fillTemplate, questionForm, reject, yourTurn } from '../../helpers/strings'
 import { formatWaited } from '../../helpers/time'
 import { LABEL_TICK, useNow } from '../../hooks/use_now/use_now'
 import { InlineConfirm } from '../../patterns/inline_confirm/inline_confirm'
@@ -12,6 +13,7 @@ import { StatusSquare } from '../../primitives/status_square/status_square'
 import { Tag } from '../../primitives/tag/tag'
 import { TextArea } from '../../primitives/text_area/text_area'
 import { ArtifactLink } from '../artifact_links/artifact_links'
+import { QuestionForm } from '../question_form/question_form'
 import { RejectForm } from '../reject_form/reject_form'
 import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
@@ -32,8 +34,8 @@ export interface YourTurnCardProps {
   onOpenTask: (taskId: string) => void
   /** "Mark done" on a user step, with the note trimmed, or none. Without it the card offers no Mark done. */
   onCompleteStep?: (taskId: string, note?: string) => void
-  /** "Answer" to an agent's question, trimmed. Without it the card offers no answer field. */
-  onAnswer?: (taskId: string, answer: string) => void
+  /** "Answer" to an agent's form, or a direct answer trimmed. Without it the card offers no form. */
+  onAnswer?: (taskId: string, answer: FormAnswer) => void
   /** A confirmed "Park". Without it the card offers no Park. */
   onPark?: (taskId: string) => void
   /** "Send back" on a user step, with the note trimmed. Without it the card offers no Reject. */
@@ -44,9 +46,8 @@ export interface YourTurnCardProps {
   onOpenLink?: (url: string) => void
 }
 
-/** The longest note and answer the tools take, as shared/limits.ts sets them. */
+/** The longest note the tools take, as shared/limits.ts sets it. */
 const NOTE_MAX = 500
-const ANSWER_MAX = 4000
 
 /**
  * "User step" for a user step; for an agent's question, the session that
@@ -188,9 +189,9 @@ function WaitingCard({
         <span className={joinClasses('text-mono-xs', styles.id)}>{task.displayId}</span>
         <span className="text-body-sm">{step.title}</span>
       </p>
-      {step.owner === 'agent' && step.question && (
+      {step.owner === 'agent' && step.form && !(item.canAct.answer && onAnswer) && (
         <p data-raised className={joinClasses('text-body-sm', styles.question)}>
-          {step.question}
+          {step.form.pages[0]?.question}
         </p>
       )}
       {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
@@ -226,12 +227,21 @@ function completesHere(
   return step.owner === 'you' && canAct.complete === true && onCompleteStep !== undefined
 }
 
+interface Draft {
+  stepKey: string
+  /** The note on a user step, or the direct answer to an agent's form. */
+  text: string
+  responses: FormResponse[]
+  /** The user chose to answer in their own words instead of the form. */
+  direct: boolean
+}
+
 /**
  * The card's actions, offered only where the server says they can act: Mark
- * done with an optional note on a user step, an answer field on an agent's
- * question, Reject behind a note on a user step that follows an agent's, and
- * Park behind a confirmation on either. The draft is kept by step, so a new
- * step on the same task starts empty.
+ * done with an optional note on a user step, an agent's form page by page or
+ * a direct answer instead, Reject behind a note on a user step that follows
+ * an agent's, and Park behind a confirmation on either. The draft is kept by
+ * step, so a new step on the same task starts empty.
  */
 function YourTurnActions({
   item,
@@ -249,8 +259,12 @@ function YourTurnActions({
   const [confirming, setConfirming] = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const stepKey = `${task.id}:${step.number}`
-  const [draft, setDraft] = useState({ stepKey, text: '' })
-  const text = draft.stepKey === stepKey ? draft.text : ''
+  const empty: Draft = { stepKey, text: '', responses: [], direct: false }
+  const [stored, setDraft] = useState<Draft>(empty)
+  const draft = stored.stepKey === stepKey ? stored : empty
+  const { text } = draft
+  const form = step.owner === 'agent' ? step.form : null
+  const direct = draft.direct || !form
 
   const completes = completesHere(item, onCompleteStep)
   const answers = step.owner === 'agent' && canAct.answer === true && onAnswer !== undefined
@@ -280,7 +294,7 @@ function YourTurnActions({
       : yourTurn.answerReadyUnnamed
 
   function edit(next: string) {
-    setDraft({ stepKey, text: next.slice(0, answers ? ANSWER_MAX : NOTE_MAX) })
+    setDraft({ ...draft, text: next.slice(0, answers ? DIRECT_ANSWER_MAX : NOTE_MAX) })
   }
 
   function complete() {
@@ -290,7 +304,7 @@ function YourTurnActions({
   function answer(event?: FormEvent) {
     event?.preventDefault()
     if (!answerEmpty && busy === null) {
-      onAnswer?.(task.id, text.trim())
+      onAnswer?.(task.id, { direct: text.trim() })
     }
   }
 
@@ -317,7 +331,7 @@ function YourTurnActions({
           {yourTurn.markDone}
         </Button>
       )}
-      {answers && (
+      {answers && direct && (
         <Button
           variant="inverse-solid"
           type="submit"
@@ -325,6 +339,15 @@ function YourTurnActions({
           disabled={(busy !== null && busy !== 'answer') || (answerEmpty && busy === null)}
         >
           {yourTurn.answer}
+        </Button>
+      )}
+      {answers && direct && form && (
+        <Button
+          variant="inverse-outline"
+          disabled={busy !== null}
+          onPress={() => setDraft({ ...draft, direct: false })}
+        >
+          {questionForm.backToForm}
         </Button>
       )}
       {rejects && (
@@ -349,6 +372,23 @@ function YourTurnActions({
       )}
     </div>
   )
+
+  if (answers && !direct && form) {
+    return (
+      <div data-raised className={styles.actions}>
+        <QuestionForm
+          form={form}
+          responses={draft.responses}
+          busy={busy === 'answer'}
+          disabled={busy !== null && busy !== 'answer'}
+          onChange={(responses) => setDraft({ ...draft, responses })}
+          onSubmit={(responses) => onAnswer?.(task.id, { responses })}
+          onAnswerDirectly={() => setDraft({ ...draft, direct: true })}
+        />
+        {(parks || confirming) && actionRow}
+      </div>
+    )
+  }
 
   if (answers) {
     return (

@@ -50,7 +50,7 @@
   opacity: var(--dim-2);
 }
 
-/* A question or a block's reason is shown in full, however long */
+/* A form's first question, when the card cannot answer it, or a block's reason is shown in full */
 .question,
 .reason {
   min-width: 0;

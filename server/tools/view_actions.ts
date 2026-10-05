@@ -1,7 +1,7 @@
 import { registerAppTool } from '@modelcontextprotocol/ext-apps/server'
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import { isRefusal } from '../../domain/refusal.js'
+import { invalid, isRefusal } from '../../domain/refusal.js'
 import { YOU } from '../../domain/types.js'
 import { LIMITS } from '../../shared/limits.js'
 import { actionResultSchema, boardPropsSchema, type ActionResult } from '../../shared/props.js'
@@ -25,7 +25,13 @@ import { refusalResult } from '../results.js'
 import { formatTaskId } from '../../shared/task_id.js'
 import { viewActionText } from '../text/view_actions.js'
 import { asTool, type ToolContext } from './context.js'
-import { fromViewSteps, taskInput, titleInput, viewStepsInput } from './inputs.js'
+import {
+  formResponsesInput,
+  fromViewSteps,
+  taskInput,
+  titleInput,
+  viewStepsInput,
+} from './inputs.js'
 
 export const VIEW_ACTION_TOOLS = [
   'add_task_from_view',
@@ -171,10 +177,25 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
     ),
     answer_question: register(
       'answer_question',
-      'Answer a question',
-      'Answers the question an agent’s step waits on.',
-      { ...task, answer: z.string().min(LIMITS.answer.min).max(LIMITS.answer.max) },
-      ({ task: ref, answer }, at) => answerQuestion(database, YOU, at, ref, answer),
+      'Answer a form',
+      'Answers the form an agent’s step waits on: with responses that walk it to an end, or with direct, the user’s own words instead.',
+      {
+        ...task,
+        responses: formResponsesInput.optional(),
+        direct: z.string().min(LIMITS.answer.min).max(LIMITS.answer.max).optional(),
+      },
+      ({ task: ref, responses, direct }, at) => {
+        if ((responses === undefined) === (direct === undefined)) {
+          return invalid('Answer with either responses or direct')
+        }
+        return answerQuestion(
+          database,
+          YOU,
+          at,
+          ref,
+          direct === undefined ? { responses: responses ?? [] } : { direct }
+        )
+      },
       ({ state }) => viewActionText.answerQuestion(state)
     ),
     sign_off: register(

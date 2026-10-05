@@ -21,7 +21,7 @@ function step(number: number, fields: Partial<TaskStep> = {}): TaskStep {
     origin: 'chain',
     current: false,
     session: WORKER,
-    question: null,
+    form: null,
     answer: null,
     note: null,
     summary: `Summary ${number}`,

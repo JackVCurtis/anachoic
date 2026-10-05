@@ -13,6 +13,22 @@ const TIMEOUT_MS = 700
 /** What a result may take beyond a poll interval to cross two processes. */
 const SLACK_MS = 300
 
+/** Redis asks for a key prefix; in-process ends the form. */
+const FORM = {
+  pages: [
+    {
+      id: 'cache',
+      question: 'Redis or in-process?',
+      choose: 'one',
+      options: [{ label: 'Redis', next: 'prefix' }, { label: 'In-process' }],
+    },
+    { id: 'prefix', question: 'Which key prefix?', choose: 'text' },
+  ],
+}
+
+/** The first question of the step's stored form, and its status. */
+const STORED = "SELECT status, json_extract(question, '$.pages[0].question') AS question FROM steps"
+
 let dataDir: string
 let view: Client
 let api: Client
@@ -39,7 +55,7 @@ beforeEach(async () => {
     steps: [{ title: 'Pick a cache', owner: 'agent' }],
   })
   await call(api, 'claim_step')
-  await call(api, 'ask_you', { task: 'T-001', question: 'Redis or in-process?' })
+  await call(api, 'ask_you', { task: 'T-001', form: FORM })
 })
 
 afterEach(async () => {
@@ -83,12 +99,18 @@ test('your answer from another process ends the wait within one poll, and only o
   const waiting = waitForAnswer()
   await sleep(POLL_MS * 2)
 
-  await call(view, 'answer_question', { task: 'T-001', answer: 'Redis' })
+  await call(view, 'answer_question', {
+    task: 'T-001',
+    responses: [
+      { page: 'cache', picked: [0] },
+      { page: 'prefix', text: 'search:' },
+    ],
+  })
   const answeredAt = Date.now()
   const result = await waiting
 
   expect(result).toMatchObject({
-    text: 'The user answered your question on T-001:\nRedis',
+    text: 'The user answered your question on T-001:\n### Redis or in-process?\n- Redis\n\n### Which key prefix?\nsearch:',
     isError: false,
   })
   expect(result.at - answeredAt).toBeLessThan(POLL_MS + SLACK_MS)
@@ -97,7 +119,7 @@ test('your answer from another process ends the wait within one poll, and only o
   ])
 
   expect(await waitForAnswer()).toMatchObject({
-    text: 'Step 1 of T-001 has no question waiting for an answer. Call ask_you first.',
+    text: 'Step 1 of T-001 has no form waiting for an answer. Call ask_you first.',
     isError: true,
   })
 })
@@ -116,9 +138,7 @@ test('progress arrives at its interval with the request’s token, and the call 
   expect(Date.now() - started).toBeGreaterThanOrEqual(TIMEOUT_MS)
   expect(progress.length).toBeGreaterThanOrEqual(Math.floor(TIMEOUT_MS / PROGRESS_MS) - 1)
   expect(progress).toEqual(progress.map((_value, index) => index + 1))
-  expect(query(dataDir, 'SELECT status, question FROM steps')).toEqual([
-    { status: 'waiting', question: 'Redis or in-process?' },
-  ])
+  expect(query(dataDir, STORED)).toEqual([{ status: 'waiting', question: 'Redis or in-process?' }])
 })
 
 test.each([
@@ -149,16 +169,34 @@ test('cancelling the call logs its cancellation, keeps the question, and a later
       expect.objectContaining({ event: 'wait_start' }),
       expect.objectContaining({ event: 'wait_end', reason: 'cancelled' }),
     ])
-  expect(query(dataDir, 'SELECT status, question FROM steps')).toEqual([
-    { status: 'waiting', question: 'Redis or in-process?' },
-  ])
+  expect(query(dataDir, STORED)).toEqual([{ status: 'waiting', question: 'Redis or in-process?' }])
 
   const again = waitForAnswer()
   await sleep(POLL_MS)
-  await call(view, 'answer_question', { task: 'T-001', answer: 'In-process' })
+  await call(view, 'answer_question', { task: 'T-001', direct: 'In-process, no prefix' })
   expect(await again).toMatchObject({
-    text: 'The user answered your question on T-001:\nIn-process',
+    text: 'The user answered your question on T-001:\n### Answered directly\nThe user skipped the form and answered in their own words:\n\nIn-process, no prefix',
   })
+})
+
+test('answers that do not walk the form are refused, and the step keeps waiting', async () => {
+  expect(
+    await call(view, 'answer_question', {
+      task: 'T-001',
+      responses: [{ page: 'cache', picked: [0] }],
+    })
+  ).toEqual({
+    text: 'The answers stop before the form ends: "prefix" is not answered',
+    isError: true,
+  })
+  expect(
+    await call(view, 'answer_question', {
+      task: 'T-001',
+      responses: [{ page: 'cache', picked: [1] }],
+      direct: 'Both',
+    })
+  ).toEqual({ text: 'Answer with either responses or direct', isError: true })
+  expect(query(dataDir, STORED)).toEqual([{ status: 'waiting', question: 'Redis or in-process?' }])
 })
 
 test('wait_for_answer on a step the worker does not hold is refused', async () => {

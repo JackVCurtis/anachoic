@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
-import { assistive, reject, yourTurn } from '../../helpers/strings'
+import { assistive, questionForm, reject, yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
@@ -36,7 +36,7 @@ describe('YourTurnCard', () => {
     renderCard(YOUR_TURN.question)
 
     expect(screen.getByText('This chat asks')).toBeVisible()
-    expect(screen.getByText('Redis or in-process?')).toBeVisible()
+    expect(screen.getByText('Which cache should the search endpoint use?')).toBeVisible()
     expect(screen.queryByText('User step')).toBeNull()
   })
 
@@ -46,16 +46,20 @@ describe('YourTurnCard', () => {
     expect(screen.getByText('Asks')).toBeVisible()
   })
 
-  test('a question of 2,000 characters is shown in full and does not widen the card', () => {
+  test('a form at the longest a page takes is shown in full and does not widen the card', () => {
     renderComponent(
       <div style={{ width: 600 }}>
-        <YourTurnCard item={YOUR_TURN.longQuestion} onOpenTask={() => {}} />
+        <YourTurnCard item={YOUR_TURN.longQuestion} onOpenTask={() => {}} onAnswer={() => {}} />
       </div>
     )
-    const question = YOUR_TURN.longQuestion.step.question!
+    const page = YOUR_TURN.longQuestion.step.form!.pages[0]
 
-    expect(question).toHaveLength(2000)
-    expect(screen.getByText(question)).toBeVisible()
+    expect(page.question).toHaveLength(250)
+    expect(screen.getByText(page.question)).toBeVisible()
+    for (const option of page.options!) {
+      expect(option.label).toHaveLength(150)
+      expect(screen.getByRole('radio', { name: option.label })).toBeVisible()
+    }
     const article = screen.getByRole('article')
     expect(article.scrollWidth).toBeLessThanOrEqual(article.clientWidth)
     expect(article.getBoundingClientRect().width).toBeLessThanOrEqual(600)
@@ -133,26 +137,91 @@ describe('YourTurnCard actions', () => {
     expect(onOpenTask).not.toHaveBeenCalled()
   })
 
-  test('Answer is disabled while the answer is empty or spaces, and reports it trimmed', async () => {
+  test('the form walks the branch the answers lead to and reports every answer on it', async () => {
     const { user, onAnswer, onOpenTask } = renderActions(YOUR_TURN.question)
-    const field = screen.getByRole('textbox', { name: yourTurn.answerLabel })
 
+    expect(screen.getByText('Question 1 of 3')).toBeVisible()
+    expect(button(questionForm.next)).toBeDisabled()
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
+    await user.click(button(questionForm.next))
+
+    const prefix = screen.getByRole('textbox', { name: 'What key prefix should it use?' })
+    expect(prefix).toHaveFocus()
+    expect(screen.getByText('Question 2 of 3')).toBeVisible()
+    await user.type(prefix, '   ')
+    expect(button(questionForm.next)).toBeDisabled()
+    await user.type(prefix, 'search:')
+    await user.click(button(questionForm.next))
+
+    await user.click(screen.getByRole('radio', { name: '10 minutes' }))
+    expect(onAnswer).not.toHaveBeenCalled()
+    await user.click(button(questionForm.answer))
+
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.question.task.id, {
+      responses: [
+        { page: 'cache', picked: [0] },
+        { page: 'prefix', text: '   search:' },
+        { page: 'ttl', picked: [1] },
+      ],
+    })
+    expect(onOpenTask).not.toHaveBeenCalled()
+  })
+
+  test('Back keeps the answers, and changing one drops the pages after it', async () => {
+    const { user, onAnswer } = renderActions(YOUR_TURN.question)
+
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
+    await user.click(button(questionForm.next))
+    await user.type(screen.getByRole('textbox'), 'search:')
+    await user.click(button(questionForm.back))
+
+    expect(screen.getByRole('radio', { name: 'Redis' })).toBeChecked()
+    await user.click(button(questionForm.next))
+    expect(screen.getByRole('textbox')).toHaveValue('search:')
+    await user.click(button(questionForm.back))
+
+    await user.click(screen.getByRole('radio', { name: 'In-process' }))
+    await user.click(button(questionForm.next))
+    expect(screen.getByRole('group', { name: 'Which responses may it cache?' })).toBeVisible()
+    await user.click(screen.getByRole('checkbox', { name: 'Search results' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Suggestions' }))
+    await user.click(button(questionForm.next))
+    await user.click(screen.getByRole('radio', { name: '1 hour' }))
+    await user.click(button(questionForm.answer))
+
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.question.task.id, {
+      responses: [
+        { page: 'cache', picked: [1] },
+        { page: 'scope', picked: [0, 2] },
+        { page: 'ttl', picked: [2] },
+      ],
+    })
+  })
+
+  test('Answer directly takes the user’s own words instead, trimmed', async () => {
+    const { user, onAnswer } = renderActions(YOUR_TURN.question)
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
+    await user.click(button(questionForm.answerDirectly))
+
+    const field = screen.getByRole('textbox', { name: yourTurn.answerLabel })
     expect(button(yourTurn.answer)).toBeDisabled()
     expect(field).toHaveAccessibleDescription(yourTurn.needsAnswer)
     await user.type(field, '   ')
     expect(button(yourTurn.answer)).toBeDisabled()
 
-    await user.type(field, 'Redis{Enter}with a 5 m TTL  ')
-    expect(field).toHaveValue('   Redis\nwith a 5 m TTL  ')
-    expect(onAnswer).not.toHaveBeenCalled()
-    expect(field).toHaveAccessibleDescription('This chat resumes with this')
+    await user.click(button(questionForm.backToForm))
+    expect(screen.getByRole('textbox', { name: 'What key prefix should it use?' })).toBeVisible()
+    await user.click(button(questionForm.back))
+    expect(screen.getByRole('radio', { name: 'Redis' })).toBeChecked()
+    await user.click(button(questionForm.answerDirectly))
 
+    await user.type(screen.getByRole('textbox'), 'Neither{Enter}we drop the cache  ')
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('This chat resumes with this')
     await user.click(button(yourTurn.answer))
-    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(
-      YOUR_TURN.question.task.id,
-      'Redis\nwith a 5 m TTL'
-    )
-    expect(onOpenTask).not.toHaveBeenCalled()
+
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.question.task.id, {
+      direct: 'Neither\nwe drop the cache',
+    })
   })
 
   test('Park reports only after its confirmation, which does not open the task', async () => {
@@ -203,22 +272,25 @@ describe('YourTurnCard actions', () => {
     cleanup()
     renderActions({ ...YOUR_TURN.question, canAct: { answer: true, park: false } })
     expect(screen.queryByRole('button', { name: yourTurn.park })).toBeNull()
-    expect(button(yourTurn.answer)).toBeDisabled()
+    expect(button(questionForm.next)).toBeDisabled()
   })
 
-  test.each([
-    ['complete', YOUR_TURN.yourStep, yourTurn.markDone],
-    ['answer', YOUR_TURN.question, yourTurn.answer],
-  ] as const)(
-    'while %s is in flight its button is busy, the others disabled, the field editable',
-    (busy, item, label) => {
-      renderActions(item, busy)
+  test('while complete is in flight its button is busy, Park disabled, the field editable', () => {
+    renderActions(YOUR_TURN.yourStep, 'complete')
 
-      expect(button(label)).toHaveAttribute('aria-busy', 'true')
-      expect(button(yourTurn.park)).toBeDisabled()
-      expect(screen.getByRole('textbox')).toBeEnabled()
-    }
-  )
+    expect(button(yourTurn.markDone)).toHaveAttribute('aria-busy', 'true')
+    expect(button(yourTurn.park)).toBeDisabled()
+    expect(screen.getByRole('textbox')).toBeEnabled()
+  })
+
+  test('while an answer is in flight the form is busy and held still', () => {
+    renderActions(YOUR_TURN.question, 'answer')
+
+    expect(button(questionForm.next)).toHaveAttribute('aria-busy', 'true')
+    expect(button(questionForm.answerDirectly)).toBeDisabled()
+    expect(button(yourTurn.park)).toBeDisabled()
+    expect(screen.getByRole('radio', { name: 'Redis' })).toBeDisabled()
+  })
 
   test('while a park is in flight its confirmation is busy and the other button is disabled', async () => {
     const onPark = vi.fn()
@@ -251,11 +323,11 @@ describe('YourTurnCard actions', () => {
     const { user, rerender } = renderComponent(
       <YourTurnCard item={YOUR_TURN.question} onOpenTask={vi.fn()} onAnswer={vi.fn()} />
     )
-    await user.type(screen.getByRole('textbox'), 'Redis')
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
     const next = { ...YOUR_TURN.question, step: { ...YOUR_TURN.question.step, number: 3 } }
     rerender(<YourTurnCard item={next} onOpenTask={vi.fn()} onAnswer={vi.fn()} />)
 
-    expect(screen.getByRole('textbox')).toHaveValue('')
+    expect(screen.getByRole('radio', { name: 'Redis' })).not.toBeChecked()
   })
 })
 

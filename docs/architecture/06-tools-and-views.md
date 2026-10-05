@@ -40,7 +40,7 @@ The dedicated session can call these too. Each acts only on a step that the call
 |---|---|---|---|
 | `claim_step` | `task` (optional) | Claim ([05](05-sessions.md#claiming)) | The task, the step's number, title and detail, the chain so far with each completed step's summary, and what to call next |
 | `update_step` | `task`, `note` (1–500 characters), `links` (optional) | Records a progress note, which shows on the board | "Noted on T-012 step 2" |
-| `ask_you` | `task`, `question` (1–2,000 characters) | The step waits on you | For a worker: "Asked. Call wait_for_answer with task T-012 next." Refused for the dedicated session, which asks in its own chat ([05](05-sessions.md#waiting-for-your-answer)). |
+| `ask_you` | `task`, `form` (1–10 pages, each question 1–250 characters, labels 1–150; [16](16-question-forms.md)) | The step waits on you | For a worker: "Asked. Call wait_for_answer with task T-012 next." Refused for the dedicated session, which asks in its own chat ([05](05-sessions.md#waiting-for-your-answer)). |
 | `wait_for_answer` | `task` | Waits, as [05](05-sessions.md#waiting-for-your-answer) describes | Your answer, or "No answer yet…", or that the claim ended |
 | `complete_step` | `task`, `summary` (1–2,000 characters), `links` (optional) | Complete the current step | What happened next: done, waiting on you, or back in the queue at position 1. When the next step is an agent's, it adds "Call claim_step with task T-012 to continue it." |
 
@@ -59,7 +59,7 @@ These are your actions, together with the view's reads. Each write returns the f
 | `reorder_queue` | `task`, `position` | Reorder |
 | `move_to_backlog` | `task` | Park, for an active task. For a queued task, it moves the task back to the backlog. |
 | `complete_my_step` | `task`, `note` (optional) | Mark your step done |
-| `answer_question` | `task`, `answer` (1–4,000 characters) | Answer an agent's question |
+| `answer_question` | `task`, and either `responses` (one per page shown) or `direct` (1–4,000 characters) | Answer an agent's form, which the worker receives as markdown ([16](16-question-forms.md)) |
 | `sign_off` | `task` | Sign off |
 | `add_follow_up_from_view` | as `add_follow_up` | Follow-up |
 | `archive_task` | `task` | Archive |
@@ -107,7 +107,7 @@ The server computes every fact, and the view only formats. The prop types live i
 
 ```text
 revision, now
-yourTurn:   [{task, step (number, title, owner, question?, waitingSince), session?, steps (pips), canAct: {complete?, answer?, park}}]
+yourTurn:   [{task, step (number, title, owner, form?, waitingSince), session?, steps (pips), canAct: {complete?, answer?, park}}]
 working:    [{task, step (number, title, note?, runningSince), session, steps (pips)}]
 queue:      [{task, position, nextOwner, steps (pips), canAct: {reorder, backlog}}]
 backlog:    [{task, steps (pips), canAct: {queue, archive}}]

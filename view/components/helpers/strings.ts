@@ -114,6 +114,24 @@ export const yourTurn = {
 } as const
 
 /**
+ * The form an agent asks the user with, page by page, on a Waiting on user
+ * card.
+ */
+export const questionForm = {
+  progress: 'Question {n} of {m}',
+  progressUpTo: 'Question {n} of up to {m}',
+  pickOne: 'Pick one',
+  pickMany: 'Pick one or more',
+  typeAnswer: 'Type an answer',
+  textPlaceholder: 'What the agent needs to know',
+  next: 'Next',
+  back: 'Back',
+  answer: 'Answer',
+  answerDirectly: 'Answer directly',
+  backToForm: 'Back to the form',
+} as const
+
+/**
  * Rejecting the agent step whose output waits on the user, on a Waiting on
  * user card or a Done card.
  */
@@ -395,6 +413,7 @@ export const strings = {
   outputFormat,
   card,
   yourTurn,
+  questionForm,
   reject,
   sessions,
   working,

@@ -25,6 +25,7 @@ import {
   type YourTurnSample,
 } from './board.js'
 import { before, INSTANTS } from './clock.js'
+import { LONGEST_PAGE, PICK_THE_CACHE } from './forms.js'
 import { LONG_TEXT } from './long_text.js'
 
 /*
@@ -36,8 +37,8 @@ const [REVIEW_THE_PR, CHOOSE_THE_CACHE_KEY] = BUSY_BOARD.yourTurn
 const [DEPLOY_BLOCKED] = BLOCKED_BOARD.yourTurn
 
 /**
- * Your turn: your own step, an agent's question, a blocked step, a question
- * of 2,000 characters, a reason of 2,000 characters with a long title and
+ * Your turn: your own step, an agent's form, a blocked step, a form at the
+ * longest a page takes, a reason of 2,000 characters with a long title and
  * worker name, a long title, and twenty cards.
  */
 export const YOUR_TURN = {
@@ -61,7 +62,7 @@ export const YOUR_TURN = {
       ['agent', 'done', 'Read the webhook logs'],
       ['agent', 'waiting', 'Choose the retry policy', THIS_CHAT],
     ],
-    LONG_TEXT.answer.slice(0, 2000),
+    LONGEST_PAGE,
     before({ minutes: 2 })
   ),
   longTitle: LONG_TEXT_BOARD.yourTurn[0],
@@ -81,7 +82,7 @@ export const YOUR_TURN = {
           number,
           `Choose the approach for task ${number}`,
           [['agent', 'waiting', 'Choose the approach', THIS_CHAT]],
-          'Keep the current schema or add a column?',
+          PICK_THE_CACHE,
           before({ minutes: 20 - index })
         )
   }),

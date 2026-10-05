@@ -42,8 +42,8 @@ There is one board. Every task belongs to it, and every session reads and writes
 | status | `pending`, `running`, `waiting` or `done` | |
 | origin | `chain` or `follow_up` | Why the step exists |
 | claimedBy | Session id, or empty | Agent steps only. The session doing the step. Set by a claim, and cleared when the step returns to `pending`. |
-| question | Text or empty | Agent steps only. What the agent asked you. Set while the step waits. |
-| answer | Text or empty | Your answer to the latest question, kept until the agent collects it ([05](05-sessions.md#waiting-for-your-answer)) |
+| form | Form or empty | Agent steps only. The form the agent asks you with, set while the step waits ([16](16-question-forms.md)) |
+| answer | Markdown or empty | Your answers to the latest form, rendered as markdown, kept until the agent collects it ([05](05-sessions.md#waiting-for-your-answer)) |
 | note | Text or empty | The latest progress note from the agent, or your note when you mark your step done |
 | summary | Text or empty | What the agent reported when it completed the step |
 | links | List of `{label, url}`, up to 10 | Pull requests, files or pages the step produced. Recorded on completion or with a note. |
@@ -95,7 +95,7 @@ These hold after every transaction for every task that is not archived. An archi
 4. A task is `backlog` or `queue` only when its current step is `pending`.
 5. A task is `done` exactly when every step is `done`.
 6. An agent step has `claimedBy` exactly when it is `running` or `waiting`.
-7. A step has a `question` only while it is an agent step that is `waiting`.
+7. A step has a `form` only while it is an agent step that is `waiting`, and the form passes the shape check of [16](16-question-forms.md).
 8. `signedOffAt` is set only on a task that is `done`.
 9. A task has a queue position exactly when it is in the queue. Positions run from 1 to *n*, with no gap and no repeat.
 10. A task in the queue has an agent step as its current step. Your steps never wait in the queue.
@@ -162,7 +162,7 @@ These hold after every transaction for every task that is not archived. An archi
 |---|---|---|
 | `pending` | `running` | A session claims the agent step |
 | `pending` | `waiting` | Your step becomes current and the task is active |
-| `running` | `waiting` | The claiming session calls `ask_you` with a question |
+| `running` | `waiting` | The claiming session calls `ask_you` with a form ([16](16-question-forms.md)) |
 | `waiting` | `running` | Agent steps only. You answer the question. |
 | `running` | `done` | The claiming session calls `complete_step` |
 | `waiting` | `done` | Your step only: you mark it done. An agent step that is waiting cannot be completed until it is answered. |
@@ -175,7 +175,7 @@ A step that is `done` never changes again, except by Reject ([15](15-rejecting-s
 | The waiting step is | Primary | Secondary |
 |---|---|---|
 | Your step | **Mark done**, with an optional note. The chain moves on. | **Park**: the task goes to Backlog |
-| An agent's question | **Answer**, in free text. The step is `running` again, and the agent receives the answer. | **Park**: the claim is cleared and the task goes to Backlog. The worker is told on its next call. |
+| An agent's question | **Answer**, through its form page by page, or **Answer directly** in free text ([16](16-question-forms.md)). The step is `running` again, and the agent receives the answer. | **Park**: the claim is cleared and the task goes to Backlog. The worker is told on its next call. |
 
 Anachoic's Approve, Deny and Unblock command do not exist here. Every agent question is answered in words.
 

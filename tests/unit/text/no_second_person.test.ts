@@ -46,7 +46,7 @@ import { LEFT_THE_BOARD } from '../../../server/tools/leave_board.js'
 import { DEDICATED_ASK } from '../../../server/tools/model.js'
 import { answeredText, NO_ANSWER_YET } from '../../../server/tools/wait_for_answer.js'
 import { NO_WORK_YET, workText } from '../../../server/tools/wait_for_work.js'
-import { accepted, ctx, stateOf } from '../support/domain.js'
+import { accepted, ctx, typed, stateOf, textForm } from '../support/domain.js'
 
 /**
  * "You" in a text Claude reads is always Claude. These phrases are the only
@@ -100,8 +100,8 @@ const OPERATIONS: Array<(state: TaskState, actor: Actor) => Outcome> = [
   (s, a) => claim(s, ctx(a)),
   (s, a) => start(s, ctx(a)),
   (s, a) => note(s, ctx(a), { note: 'Progress' }),
-  (s, a) => ask(s, ctx(a), 'Which?'),
-  (s, a) => answer(s, ctx(a), 'That one'),
+  (s, a) => ask(s, ctx(a), textForm('Which?')),
+  (s, a) => answer(s, ctx(a), typed('That one')),
   (s, a) => block(s, ctx(a), 'Needs credentials'),
   (s, a) => unblock(s, ctx(a)),
   (s, a) => completeStep(s, ctx(a), { summary: 'Done' }),

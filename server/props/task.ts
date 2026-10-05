@@ -63,7 +63,7 @@ export function taskProps(snapshot: TaskSnapshot, now: Instant): TaskProps {
       origin: step.origin,
       current: step.id === current.id,
       session: stepSession(step),
-      question: step.question,
+      form: step.form,
       answer: step.answer,
       note: step.note,
       summary: step.summary,

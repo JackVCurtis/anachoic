@@ -4,9 +4,10 @@
  * `now` as an argument.
  */
 
+import type { Form } from '../shared/form.js'
 import type { OutputFormat } from '../shared/output_format.js'
 
-export type { OutputFormat }
+export type { Form, OutputFormat }
 
 export type Instant = string
 
@@ -98,7 +99,12 @@ export interface Step {
   status: StepStatus
   origin: StepOrigin
   claimedBy: SessionId | null
-  question: string | null
+  /**
+   * Agent steps only. The form the worker asks the user with, while the step
+   * waits on its answers.
+   */
+  form: Form | null
+  /** The user's answer to the latest form, as markdown, until the worker collects it. */
   answer: string | null
   note: string | null
   summary: string | null

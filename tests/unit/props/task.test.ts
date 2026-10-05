@@ -24,7 +24,7 @@ import {
   type ServiceResult,
 } from '../../../store/services.js'
 import { registerLiveness, removeSession, touchSession } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, typed, textForm } from '../support/domain.js'
 
 const A = 'session-a'
 const MINUTE = 60
@@ -109,7 +109,7 @@ function reviewed(): number {
   done(blockStep(database, A, now(), id, 'needs AWS credentials'))
   tick(14 * MINUTE)
   done(unblockStep(database, A, now(), id))
-  done(askYou(database, A, now(), id, 'Which region?'))
+  done(askYou(database, A, now(), id, textForm('Which region?')))
   tick(MINUTE)
   return id
 }
@@ -153,7 +153,7 @@ describe('the task props', () => {
       elapsedSeconds: 3 * MINUTE,
     })
     expect(task.steps[2]).toMatchObject({
-      question: 'Which region?',
+      form: textForm('Which region?'),
       blocked: null,
       session: { id: A, name: 'api-server' },
       waitingSince: at(22 * MINUTE),
@@ -205,7 +205,7 @@ describe('the task props', () => {
 
   test('keep the name of a session that was removed', () => {
     const id = reviewed()
-    done(answerQuestion(database, YOU, now(), id, 'eu-west-1'))
+    done(answerQuestion(database, YOU, now(), id, typed('eu-west-1')))
     done(removeSession(database, A, now()))
     const task = props(id)
     expect(task.steps[0].session).toEqual({ id: A, name: 'api-server', live: false })

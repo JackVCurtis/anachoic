@@ -160,7 +160,12 @@ test('a worker acting on another worker’s step is refused and nothing changes'
 
   const refused = { text: 'Step 1 of T-001 is claimed by api-server', isError: true }
   expect(await call(b, 'update_step', { task: 'T-001', note: 'Mine now' })).toEqual(refused)
-  expect(await call(b, 'ask_you', { task: 'T-001', question: 'Which?' })).toEqual(refused)
+  expect(
+    await call(b, 'ask_you', {
+      task: 'T-001',
+      form: { pages: [{ id: 'q', question: 'Which?', choose: 'text' }] },
+    })
+  ).toEqual(refused)
   expect(await call(b, 'complete_step', { task: 'T-001', summary: 'Done' })).toEqual(refused)
 
   expect(boardRows()).toEqual(before)
@@ -171,9 +176,12 @@ test('complete_step on a step waiting on you is refused as unanswered', async ()
   await ok(api, 'add_task', TWO_AGENT_STEPS)
   await ok(api, 'claim_step')
 
-  expect(await ok(api, 'ask_you', { task: 'T-001', question: 'Three tries or five?' })).toBe(
-    'Asked. Call wait_for_answer with task T-001 next.'
-  )
+  expect(
+    await ok(api, 'ask_you', {
+      task: 'T-001',
+      form: { pages: [{ id: 'q', question: 'Three tries or five?', choose: 'text' }] },
+    })
+  ).toBe('Asked. Call wait_for_answer with task T-001 next.')
   expect(await call(api, 'complete_step', { task: 'T-001', summary: 'Done' })).toEqual({
     text: "Step 1 of T-001 is waiting for the user's answer",
     isError: true,
@@ -187,7 +195,12 @@ test('ask_you from the dedicated session is refused, and a worker’s still work
   await ok(chat, 'claim_step')
   const before = boardRows()
 
-  expect(await call(chat, 'ask_you', { task: 'T-001', question: 'Which?' })).toEqual({
+  expect(
+    await call(chat, 'ask_you', {
+      task: 'T-001',
+      form: { pages: [{ id: 'q', question: 'Which?', choose: 'text' }] },
+    })
+  ).toEqual({
     text: 'Ask in this chat instead',
     isError: true,
   })
@@ -196,9 +209,38 @@ test('ask_you from the dedicated session is refused, and a worker’s still work
   const api = await worker('worker-a', 'api-server')
   await ok(api, 'add_task', TWO_AGENT_STEPS)
   await ok(api, 'claim_step', { task: 'T-002' })
-  expect(await ok(api, 'ask_you', { task: 'T-002', question: 'Which?' })).toBe(
-    'Asked. Call wait_for_answer with task T-002 next.'
-  )
+  expect(
+    await ok(api, 'ask_you', {
+      task: 'T-002',
+      form: { pages: [{ id: 'q', question: 'Which?', choose: 'text' }] },
+    })
+  ).toBe('Asked. Call wait_for_answer with task T-002 next.')
+})
+
+test('ask_you refuses a question over 250 characters and a form that cannot be walked', async () => {
+  const api = await worker('worker-a', 'api-server')
+  await ok(api, 'add_task', TWO_AGENT_STEPS)
+  await ok(api, 'claim_step')
+  const before = boardRows()
+
+  const long = await call(api, 'ask_you', {
+    task: 'T-001',
+    form: { pages: [{ id: 'q', question: 'x'.repeat(251), choose: 'text' }] },
+  })
+  expect(long.isError).toBe(true)
+  expect(long.text).toContain('question')
+  expect(
+    await call(api, 'ask_you', {
+      task: 'T-001',
+      form: {
+        pages: [
+          { id: 'a', question: 'First?', choose: 'text', next: 'b' },
+          { id: 'b', question: 'Second?', choose: 'text', next: 'a' },
+        ],
+      },
+    })
+  ).toEqual({ text: 'form.pages[1].next must name a later page', isError: true })
+  expect(boardRows()).toEqual(before)
 })
 
 test.each([

@@ -51,7 +51,7 @@ Only the claiming session may report on, ask about, or complete an agent step.
 
 The server cannot push to a worker. A worker that asks a question therefore waits for the answer inside a tool call. The limits come from Claude Code's documentation ([spike notes](../spikes/mcp-apps/notes.md#12-and-13-tool-call-timeouts-from-the-documentation)): a call is aborted after 30 minutes with no response and no progress, and after about 28 hours on the wall clock.
 
-1. The worker calls **`ask_you(task, question)`**. The step becomes `waiting`, the question is stored, and the task appears in Your turn on the board. The tool returns at once and tells the model to call `wait_for_answer` next.
+1. The worker calls **`ask_you(task, form)`** with a form of short pages that can branch ([16](16-question-forms.md)). The step becomes `waiting`, the form is stored, and the task appears in Your turn on the board. The tool returns at once and tells the model to call `wait_for_answer` next.
 2. The worker calls **`wait_for_answer(task)`**. The call:
    - polls the database every 2 s, with a read only
    - sends a progress notification every 60 s, using the request's `progressToken`, which keeps the idle timeout from tripping

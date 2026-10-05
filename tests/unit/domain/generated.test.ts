@@ -28,7 +28,7 @@ import {
   type Outcome,
 } from '../../../domain/transitions.js'
 import type { Actor, Owner, TaskState } from '../../../domain/types.js'
-import { backlogTask, ctx } from '../support/domain.js'
+import { backlogTask, ctx, typed, textForm } from '../support/domain.js'
 
 const ACTORS: Actor[] = ['you', 'session-a', 'session-b']
 
@@ -41,8 +41,8 @@ const OPERATIONS: Operation[] = [
   ['claim', (s, a, t) => claim(s, ctx(a, t))],
   ['start', (s, a, t) => start(s, ctx(a, t))],
   ['note', (s, a, t) => note(s, ctx(a, t), { note: 'Progress' })],
-  ['ask', (s, a, t) => ask(s, ctx(a, t), 'Which?')],
-  ['answer', (s, a, t) => answer(s, ctx(a, t), 'That one')],
+  ['ask', (s, a, t) => ask(s, ctx(a, t), textForm('Which?'))],
+  ['answer', (s, a, t) => answer(s, ctx(a, t), typed('That one'))],
   ['block', (s, a, t) => block(s, ctx(a, t), 'Needs credentials')],
   ['unblock', (s, a, t) => unblock(s, ctx(a, t), 'Resolved')],
   ['completeStep', (s, a, t) => completeStep(s, ctx(a, t), { summary: 'Done' })],
@@ -109,7 +109,7 @@ function shape({ task, steps }: TaskState): string {
       step.owner,
       step.status,
       step.claimedBy,
-      step.question !== null,
+      step.form !== null,
       step.answer !== null,
       step.blockedReason !== null,
       step.outputFormat,
@@ -183,7 +183,7 @@ const LIST_RULES: Record<BoardList, (state: TaskState) => boolean> = {
 
 const AS_YOU: Record<keyof ReturnType<typeof canAct>, (state: TaskState) => Outcome> = {
   complete: (s) => completeMyStep(s, ctx('you', 999)),
-  answer: (s) => answer(s, ctx('you', 999), 'Yes'),
+  answer: (s) => answer(s, ctx('you', 999), typed('Yes')),
   park: (s) => park(s, ctx('you', 999)),
   reorder: (s) => reorder(s, ctx('you', 999), 1),
   backlog: (s) => moveToBacklog(s, ctx('you', 999)),

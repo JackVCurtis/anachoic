@@ -1,3 +1,4 @@
+import { formShapeProblem } from '../shared/form.js'
 import { formatTaskId } from '../shared/task_id.js'
 import { currentStepIndex } from './chain.js'
 import type { Session, TaskState } from './types.js'
@@ -51,8 +52,12 @@ export function taskViolations({ task, steps }: TaskState): string[] {
     if (step.owner === 'you' && step.claimedBy !== null) broken('6', `${name} is yours but claimed`)
     if (step.owner === 'you' && step.status === 'running')
       broken('step', `${name} is yours but running`)
-    if (step.question !== null && !(step.owner === 'agent' && step.status === 'waiting')) {
-      broken('7', `${name} has a question while ${step.owner === 'you' ? 'yours' : step.status}`)
+    if (step.form !== null && !(step.owner === 'agent' && step.status === 'waiting')) {
+      broken('7', `${name} has a form while ${step.owner === 'you' ? 'yours' : step.status}`)
+    }
+    if (step.form !== null) {
+      const problem = formShapeProblem(step.form)
+      if (problem) broken('7', `${name} has a form that cannot be walked: ${problem}`)
     }
     if (step.blockedReason !== null && !(step.owner === 'agent' && step.status === 'waiting')) {
       broken(
@@ -72,11 +77,11 @@ export function taskViolations({ task, steps }: TaskState): string[] {
     if (
       step.owner === 'agent' &&
       step.status === 'waiting' &&
-      (step.question !== null) === (step.blockedReason !== null)
+      (step.form !== null) === (step.blockedReason !== null)
     ) {
       broken(
         'blocked',
-        `${name} waits with ${step.question === null ? 'neither a question nor' : 'both a question and'} a blocked reason`
+        `${name} waits with ${step.form === null ? 'neither a form nor' : 'both a form and'} a blocked reason`
       )
     }
     if ((step.runningSince !== null) !== (step.status === 'running')) {

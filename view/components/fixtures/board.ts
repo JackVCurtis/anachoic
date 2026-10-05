@@ -1,6 +1,8 @@
 // Adapted from anachoic inertia/components/fixtures/tasks.ts, task_lists.ts and slots.ts at fd99e0d
+import type { QuestionFormData } from '../helpers/question_form.js'
 import type { OutputFormat, Owner, StepStatus } from '../types.js'
 import { before, INSTANTS } from './clock.js'
+import { BRANCHING, LONGEST_PAGE } from './forms.js'
 import { LONG_TEXT } from './long_text.js'
 import type { PipStepSample } from './pip_steps.js'
 
@@ -34,7 +36,7 @@ export interface YourTurnSample {
     number: number
     title: string
     owner: Owner
-    question?: string
+    form?: QuestionFormData
     waitingSince: string
   }
   input?: ArtifactSample | null
@@ -172,7 +174,7 @@ export function agentAsks(
   number: number,
   title: string,
   specs: readonly StepSpec[],
-  question: string,
+  form: QuestionFormData,
   waitingSince: string
 ): YourTurnSample {
   const task = taskOf(number, title)
@@ -184,7 +186,7 @@ export function agentAsks(
       number: current.number,
       title: current.step.title,
       owner: 'agent',
-      question,
+      form,
       waitingSince,
     },
     sessionName: current.step.sessionName ?? undefined,
@@ -396,7 +398,7 @@ const CHOOSE_THE_CACHE_KEY = agentAsks(
     ['agent', 'waiting', 'Choose the cache key', THIS_CHAT],
     ['you', 'pending', 'Check the numbers on staging'],
   ],
-  'Redis or in-process?',
+  BRANCHING,
   before({ minutes: 6 })
 )
 
@@ -591,7 +593,7 @@ const LONG_ASKS = agentAsks(
     ['agent', 'waiting', LONG_TEXT.title, LONG_TEXT.name],
     ['you', 'pending', LONG_TEXT.title],
   ],
-  LONG_TEXT.message,
+  LONGEST_PAGE,
   before({ minutes: 3 })
 )
 

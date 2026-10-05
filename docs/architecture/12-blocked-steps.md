@@ -19,7 +19,7 @@ A blocked step is an agent step that is `waiting` because its worker blocked it.
 
 | Field | On | Type | Meaning |
 |---|---|---|---|
-| blockedReason | Step | Text, 1 to 2,000 characters, or empty | Agent steps only. Why the worker cannot go on. Set while the step is blocked. |
+| blockedReason | Step | Text, 1 to 250 characters ([16](16-question-forms.md)), or empty | Agent steps only. Why the worker cannot go on. Set while the step is blocked. |
 | blockedAt | Step | Instant, or empty | When it was blocked |
 
 **Transitions:**
@@ -38,7 +38,7 @@ A blocked step is an agent step that is `waiting` because its worker blocked it.
 
 **Invariants:**
 - A step has a `blockedReason` only while it is an agent step that is `waiting`.
-- A waiting agent step has exactly one of `question` and `blockedReason`.
+- A waiting agent step has exactly one of `form` and `blockedReason`.
 
 **List membership.** A blocked step is waiting on you, so its task is in **Your turn** ([03](03-domain-model.md#list-membership)), and it counts towards the Your turn count.
 
@@ -48,7 +48,7 @@ A blocked step is an agent step that is `waiting` because its worker blocked it.
 
 | Tool | Input | Does | Text result |
 |---|---|---|---|
-| `block_step` | `task`, `reason` (1–2,000 characters) | Block | "Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-012." |
+| `block_step` | `task`, `reason` (1–250 characters) | Block | "Blocked. The person will unblock this in this session. End your turn now and wait for them here; when they have resolved it, call unblock_step with task T-012." |
 | `unblock_step` | `task`, `note` (optional, up to 500 characters) | Unblock | "Unblocked. Carry on with step 2 of T-012." |
 
 Both are worker tools ([06](06-tools-and-views.md#worker-tools)). The dedicated session may use them too, on steps it claimed.

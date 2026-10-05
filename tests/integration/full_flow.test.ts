@@ -142,7 +142,19 @@ test('a chain assigned to one worker runs to sign-off through a hand-back, a que
   expect(merge).toMatch(/^Claimed T-001 step 3 of 3: "Merge it"/)
   expect(merge).toContain(`Artifacts:\nStep 1 (agent): Pull request ${PR}`)
 
-  await ok(api, 'ask_you', { task: 'T-001', question: 'Squash or merge?' })
+  await ok(api, 'ask_you', {
+    task: 'T-001',
+    form: {
+      pages: [
+        {
+          id: 'how',
+          question: 'Squash or merge?',
+          choose: 'one',
+          options: [{ label: 'Squash' }, { label: 'Merge' }],
+        },
+      ],
+    },
+  })
   const asked = await board()
   expect(asked.yourTurn[0]).toMatchObject({
     task: { displayId: 'T-001' },
@@ -150,9 +162,9 @@ test('a chain assigned to one worker runs to sign-off through a hand-back, a que
   })
   const answer = call(api, 'wait_for_answer', { task: 'T-001' })
   await sleep(POLL_MS * 2)
-  await ok(chat, 'answer_question', { task: 'T-001', answer: 'Squash' })
+  await ok(chat, 'answer_question', { task: 'T-001', responses: [{ page: 'how', picked: [0] }] })
   expect(await answer).toEqual({
-    text: 'The user answered your question on T-001:\nSquash',
+    text: 'The user answered your question on T-001:\n### Squash or merge?\n- Squash',
     isError: false,
   })
 

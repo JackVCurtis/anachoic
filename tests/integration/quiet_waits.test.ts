@@ -58,7 +58,10 @@ test('a 30-second wait polling every 50 ms writes no more than three log lines',
   await asking.callTool({ name: 'claim_step', arguments: { task: 'T-001' } })
   await asking.callTool({
     name: 'ask_you',
-    arguments: { task: 'T-001', question: 'Redis or in-process?' },
+    arguments: {
+      task: 'T-001',
+      form: { pages: [{ id: 'q', question: 'Redis or in-process?', choose: 'text' }] },
+    },
   })
   await idle.callTool({ name: 'join_board', arguments: { name: 'idle' } })
   const since = new Date().toISOString()

@@ -16,7 +16,7 @@ import {
 } from '../../../domain/invariants.js'
 import { claim, queue } from '../../../domain/transitions.js'
 import type { Session, Step, TaskState } from '../../../domain/types.js'
-import { at, backlogTask, ctx, stateOf } from '../support/domain.js'
+import { at, backlogTask, ctx, stateOf, textForm } from '../support/domain.js'
 
 function withStep(state: TaskState, index: number, change: Partial<Step>): TaskState {
   return {
@@ -44,7 +44,7 @@ describe('checkTask', () => {
     ['3', { ...running, task: { ...running.task, status: 'queue' as const } }],
     ['5', { ...running, task: { ...running.task, status: 'done' as const } }],
     ['6', withStep(running, 0, { claimedBy: null })],
-    ['7', withStep(running, 0, { question: 'Why?' })],
+    ['7', withStep(running, 0, { form: textForm('Why?') })],
     ['8', { ...running, task: { ...running.task, signedOffAt: at(5) } }],
     [
       '10',

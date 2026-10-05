@@ -1,4 +1,5 @@
 import type { OutputFormat, Owner, StepStatus } from '../types'
+import type { QuestionFormData } from '../helpers/question_form'
 
 /**
  * The shapes the board view is given, in the board's own terms. The entry
@@ -51,8 +52,8 @@ export interface YourTurnTask {
     number: number
     title: string
     owner: Owner
-    /** An agent's question. Absent for a user step. */
-    question?: string | null
+    /** An agent's form. Absent for a user step. */
+    form?: QuestionFormData | null
     /** An instant. */
     waitingSince: string
   }

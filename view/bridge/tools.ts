@@ -6,7 +6,10 @@ import type {
   GetTaskResult,
   OutputFormat,
 } from '../../shared/props'
+import type { FormResponse } from '../../shared/form'
 import type { HostApp } from './connect'
+
+export type FormAnswer = { responses: FormResponse[] } | { direct: string }
 
 /**
  * What an app-only tool call came to: the props it returned, the sentence of
@@ -112,8 +115,9 @@ export const actions = {
     callAppTool<ActionResult>(app, 'move_to_backlog', { task }),
   completeMyStep: (app: App, task: TaskArg, note?: string) =>
     callAppTool<ActionResult>(app, 'complete_my_step', { task, ...(note ? { note } : {}) }),
-  answerQuestion: (app: App, task: TaskArg, answer: string) =>
-    callAppTool<ActionResult>(app, 'answer_question', { task, answer }),
+  /** The form's responses, or the user's own words instead. */
+  answerQuestion: (app: App, task: TaskArg, answer: FormAnswer) =>
+    callAppTool<ActionResult>(app, 'answer_question', { task, ...answer }),
   signOff: (app: App, task: TaskArg) => callAppTool<ActionResult>(app, 'sign_off', { task }),
   addFollowUp: (
     app: App,

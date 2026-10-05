@@ -17,7 +17,7 @@ import {
   type Outcome,
 } from '../../../domain/transitions.js'
 import type { TaskState } from '../../../domain/types.js'
-import { accepted, ctx, refused, stateOf } from '../support/domain.js'
+import { accepted, ctx, typed, refused, stateOf, textForm } from '../support/domain.js'
 
 const A = 'session-a'
 const B = 'session-b'
@@ -64,7 +64,7 @@ describe('Block', () => {
       blockedAt: ctx(A, 80).now,
       waitingSince: ctx(A, 80).now,
       runningSince: null,
-      question: null,
+      form: null,
       elapsedSeconds: 60,
     })
     expect(change.events.map((event) => [event.kind, event.detail, event.sessionId])).toEqual([
@@ -83,7 +83,7 @@ describe('Block', () => {
 
   test.each([
     ['already blocked', () => blockedState()],
-    ['waiting on a question', () => stateOf(ask(running(), ctx(A, 30), 'Which?'))],
+    ['waiting on a question', () => stateOf(ask(running(), ctx(A, 30), textForm('Which?')))],
   ])('a step %s is refused as not running', (_name, state) => {
     expectRefusal(
       block(state(), ctx(A, 90), 'again'),
@@ -120,7 +120,7 @@ describe('Unblock', () => {
   test('a step that is not blocked is refused', () => {
     expectRefusal(unblock(running(), ctx(A, 90)), 'wrong_status', 'Step 2 of T-012 is not blocked')
     expectRefusal(
-      unblock(stateOf(ask(running(), ctx(A, 30), 'Which?')), ctx(A, 90)),
+      unblock(stateOf(ask(running(), ctx(A, 30), textForm('Which?'))), ctx(A, 90)),
       'wrong_status',
       'Step 2 of T-012 is not blocked'
     )
@@ -138,7 +138,7 @@ describe('Unblock', () => {
 describe('A blocked step', () => {
   test.each([
     ['complete_step', (state: TaskState) => completeStep(state, ctx(A, 90), { summary: 'Done' })],
-    ['ask_you', (state: TaskState) => ask(state, ctx(A, 90), 'Which?')],
+    ['ask_you', (state: TaskState) => ask(state, ctx(A, 90), textForm('Which?'))],
     ['update_step', (state: TaskState) => note(state, ctx(A, 90), { note: 'Progress' })],
   ])('refuses %s until it is unblocked', (_name, apply) => {
     expectRefusal(
@@ -150,7 +150,7 @@ describe('A blocked step', () => {
 
   test('is not a question you can answer', () => {
     expectRefusal(
-      answer(blockedState(), ctx('you', 90), 'Yes'),
+      answer(blockedState(), ctx('you', 90), typed('Yes')),
       'wrong_status',
       'Step 2 of T-012 is not waiting for an answer'
     )
@@ -189,19 +189,19 @@ describe('The invariants of 12', () => {
     ])
   })
 
-  test('a waiting agent step has exactly one of a question and a blocked reason', () => {
+  test('a waiting agent step has exactly one of a form and a blocked reason', () => {
     const state = blockedState()
     const both = state.steps.map((step, index) =>
-      index === 1 ? { ...step, question: 'Which?' } : step
+      index === 1 ? { ...step, form: textForm('Which?') } : step
     )
     expect(taskViolations({ ...state, steps: both })).toEqual([
-      'T-012: blocked: step 2 waits with both a question and a blocked reason',
+      'T-012: blocked: step 2 waits with both a form and a blocked reason',
     ])
     const neither = state.steps.map((step, index) =>
       index === 1 ? { ...step, blockedReason: null, blockedAt: null } : step
     )
     expect(taskViolations({ ...state, steps: neither })).toEqual([
-      'T-012: blocked: step 2 waits with neither a question nor a blocked reason',
+      'T-012: blocked: step 2 waits with neither a form nor a blocked reason',
     ])
   })
 })

@@ -1,3 +1,4 @@
+import { firstQuestion } from '../../../shared/form'
 import type { TaskEvent, TaskProps, TaskRef, TaskStep } from '../../../shared/props'
 import {
   TASK_EVENT_KINDS,
@@ -34,7 +35,7 @@ function toTimelineStep(step: TaskStep): TimelineStepData {
     status: step.status,
     detail: step.detail,
     sessionName: step.session?.name ?? null,
-    question: step.question,
+    question: step.form ? firstQuestion(step.form) : null,
     answer: step.answer,
     blocked: step.blocked,
     note: step.note,

@@ -12,7 +12,7 @@ import { read } from '../../../store/read.js'
 import * as services from '../../../store/services.js'
 import { sessionFromRow } from '../../../store/rows.js'
 import { registerLiveness, removeSession, touchSession } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, typed, textForm } from '../support/domain.js'
 import { allTaskStates } from '../support/store.js'
 
 const SESSIONS = ['session-a', 'session-b', 'session-c']
@@ -157,7 +157,7 @@ describe('Random operations on a real database', () => {
             'updateStep',
             () => services.updateStep(database, session, now(), task, { note: 'Progress' }),
           ],
-          ['askYou', () => services.askYou(database, session, now(), task, 'Which?')],
+          ['askYou', () => services.askYou(database, session, now(), task, textForm('Which?'))],
           [
             'askYou',
             () => {
@@ -168,8 +168,8 @@ describe('Random operations on a real database', () => {
               ) as Array<{ id: number; claimed_by: string }>
               const [held] = running.length > 0 ? [pick(running)] : []
               return held
-                ? services.askYou(database, held.claimed_by, now(), held.id, 'Which?')
-                : services.askYou(database, session, now(), task, 'Which?')
+                ? services.askYou(database, held.claimed_by, now(), held.id, textForm('Which?'))
+                : services.askYou(database, session, now(), task, textForm('Which?'))
             },
           ],
           [
@@ -210,7 +210,7 @@ describe('Random operations on a real database', () => {
           ],
           [
             'answerQuestion',
-            () => services.answerQuestion(database, 'you', now(), task, 'That one'),
+            () => services.answerQuestion(database, 'you', now(), task, typed('That one')),
           ],
           [
             'answerQuestion',
@@ -227,7 +227,7 @@ describe('Random operations on a real database', () => {
                 'you',
                 now(),
                 waiting.length > 0 ? pick(waiting).id : task,
-                'That one'
+                typed('That one')
               )
             },
           ],

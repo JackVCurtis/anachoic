@@ -1,3 +1,4 @@
+import { firstQuestion } from '../../shared/form.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import type { TaskEvent, TaskProps, TaskSession, TaskStep } from '../../shared/props.js'
 import { CHARS_PER_TOKEN, estimateTokens, since } from './board_summary.js'
@@ -104,7 +105,7 @@ function stepLines(
   }
   if (step.blocked) lines.push(`   Blocked: ${field(step.blocked.reason)}`)
   if (pastBlocks.length > 0) lines.push(`   History: ${pastBlocks.map(field).join('; ')}`)
-  add('Question', step.question)
+  add('Question', step.form && firstQuestion(step.form))
   add('Answer', step.answer)
   add('Note', step.note)
   add('Summary', step.summary)

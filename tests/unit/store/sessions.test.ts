@@ -18,7 +18,7 @@ import {
   type Identity,
 } from '../../../store/sessions.js'
 import { isWritten, write } from '../../../store/write.js'
-import { at } from '../support/domain.js'
+import { at, textForm } from '../support/domain.js'
 import { buildChild, forkChild } from '../support/child.js'
 import { addQueuedTask, allTaskStates, boardRevision, transition } from '../support/store.js'
 
@@ -136,7 +136,7 @@ describe('Liveness', () => {
     const taskId = addQueuedTask(database, ['agent', 'you'], { actor: 'you', now: now() })
     transition(database, taskId, (state) => claim(state, { actor: 'session-a', now: now() }))
     transition(database, taskId, (state) =>
-      ask(state, { actor: 'session-a', now: now() }, 'Which?')
+      ask(state, { actor: 'session-a', now: now() }, textForm('Which?'))
     )
 
     clock = 1
@@ -149,7 +149,7 @@ describe('Liveness', () => {
     read(database, (sqlite) => {
       const state = loadTaskState(sqlite, taskId)!
       expect(state.task).toMatchObject({ status: 'queue', queuePosition: 1 })
-      expect(state.steps[0]).toMatchObject({ status: 'pending', claimedBy: null, question: null })
+      expect(state.steps[0]).toMatchObject({ status: 'pending', claimedBy: null, form: null })
       expect(loadTaskState(sqlite, older)!.task.queuePosition).toBe(2)
       expect(
         sqlite.prepare("SELECT session_id, step_id FROM events WHERE kind = 'released'").all()

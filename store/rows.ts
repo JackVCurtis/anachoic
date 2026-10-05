@@ -2,7 +2,7 @@ import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { applyQueueEffect } from '../domain/queue_effect.js'
 import type { QueueOrder } from '../domain/queue_order.js'
 import type { Change } from '../domain/transitions.js'
-import type { Event, Link, Session, Step, Task, TaskState } from '../domain/types.js'
+import type { Event, Form, Link, Session, Step, Task, TaskState } from '../domain/types.js'
 
 /**
  * Between the tables' rows and the domain's entities, and the writes every
@@ -43,7 +43,7 @@ export function stepFromRow(row: Row): Step {
     status: row.status as Step['status'],
     origin: row.origin as Step['origin'],
     claimedBy: row.claimed_by as string | null,
-    question: row.question as string | null,
+    form: row.question === null ? null : (JSON.parse(row.question as string) as Form),
     answer: row.answer as string | null,
     note: row.note as string | null,
     summary: row.summary as string | null,
@@ -161,7 +161,7 @@ function writeStep(sqlite: DatabaseSync, step: Step) {
       status: step.status,
       origin: step.origin,
       claimed_by: step.claimedBy,
-      question: step.question,
+      question: step.form === null ? null : JSON.stringify(step.form),
       answer: step.answer,
       note: step.note,
       summary: step.summary,

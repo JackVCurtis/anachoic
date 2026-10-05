@@ -36,7 +36,7 @@ export function taskProps(revision = 1): TaskProps {
         origin: 'chain',
         current: true,
         session: null,
-        question: null,
+        form: null,
         answer: null,
         note: null,
         summary: null,

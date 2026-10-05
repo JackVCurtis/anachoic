@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { currentStep } from '../../domain/chain.js'
 import { canAct, counts, holdings, listOf, type BoardList } from '../../domain/derived.js'
 import { boardViolations } from '../../domain/invariants.js'
-import type { Step, Task, TaskState, TaskStatus } from '../../domain/types.js'
+import type { Form, Step, Task, TaskState, TaskStatus } from '../../domain/types.js'
 import { boardPropsSchema, type BoardProps, type Pip, type TaskRef } from '../../shared/props.js'
 import { NAMED_BOARD_PROPS } from '../../view/entries/board/fixtures.js'
 
@@ -13,7 +13,7 @@ interface ItemFacts {
   queuePosition?: number
   finishedAt?: string
   signedOffAt?: string
-  question?: string
+  form?: Form
   blocked?: { reason: string; since: string } | null
   runningSince?: string
   waitingSince?: string
@@ -76,7 +76,7 @@ function stateOf(
     status: pip.status,
     origin: 'chain',
     claimedBy: sessionId(pip.sessionName),
-    question: pip.status === 'waiting' ? (facts.question ?? null) : null,
+    form: pip.status === 'waiting' ? (facts.form ?? null) : null,
     answer: null,
     note: null,
     summary: null,
@@ -108,7 +108,7 @@ function entriesOf(board: BoardProps): Entry[] {
     ...board.yourTurn.map((item) => ({
       list: 'yourTurn' as const,
       state: stateOf(board, 'yourTurn', item.task, item.steps, {
-        question: item.step.question,
+        form: item.step.form,
         blocked: item.blocked,
         waitingSince: item.step.waitingSince,
       }),

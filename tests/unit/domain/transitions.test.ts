@@ -22,7 +22,16 @@ import {
   type Outcome,
 } from '../../../domain/transitions.js'
 import type { Owner, TaskState } from '../../../domain/types.js'
-import { accepted, at, backlogTask, ctx, refused, stateOf } from '../support/domain.js'
+import {
+  accepted,
+  at,
+  backlogTask,
+  ctx,
+  typed,
+  refused,
+  stateOf,
+  textForm,
+} from '../support/domain.js'
 
 const A = 'session-a'
 const B = 'session-b'
@@ -36,7 +45,7 @@ function claimedBy(owners: Owner[], session = A, seconds = 10) {
 }
 
 function asked(owners: Owner[], seconds = 20) {
-  return stateOf(ask(claimedBy(owners), ctx(A, seconds), 'Redis or in-process?'))
+  return stateOf(ask(claimedBy(owners), ctx(A, seconds), textForm('Redis or in-process?')))
 }
 
 function done(owners: Owner[] = ['agent']): TaskState {
@@ -313,14 +322,14 @@ describe('The task state machine', () => {
     })
   })
 
-  test('Park returns the current step to pending, clears the claim and question, and sends the task to the backlog', () => {
+  test('Park returns the current step to pending, clears the claim and form, and sends the task to the backlog', () => {
     const change = accepted(park(asked(['agent', 'you']), ctx('you', 50)))
     checkTask(change)
     expect(change.task.status).toBe('backlog')
     expect(change.steps[0]).toMatchObject({
       status: 'pending',
       claimedBy: null,
-      question: null,
+      form: null,
       answer: null,
       runningSince: null,
       waitingSince: null,
@@ -351,7 +360,7 @@ describe('The task state machine', () => {
     const change = accepted(release(asked(['agent']), ctx(A, 200)))
     checkTask(change)
     expect(change.task.status).toBe('queue')
-    expect(change.steps[0]).toMatchObject({ status: 'pending', claimedBy: null, question: null })
+    expect(change.steps[0]).toMatchObject({ status: 'pending', claimedBy: null, form: null })
     expect(change.queue).toEqual({ kind: 'join', placement: 'first' })
     expect(change.events[0]).toMatchObject({
       kind: 'released',
@@ -441,9 +450,7 @@ describe('The task state machine', () => {
       const before = make()
       const change = accepted(archive(before, ctx('you', 60)))
       expect(change.task).toMatchObject({ status: before.task.status, archivedAt: at(60) })
-      expect(change.steps.every((step) => step.claimedBy === null && step.question === null)).toBe(
-        true
-      )
+      expect(change.steps.every((step) => step.claimedBy === null && step.form === null)).toBe(true)
       expect(change.queue).toEqual(effect)
       checkTask(change)
     }
@@ -465,8 +472,8 @@ describe('The task state machine', () => {
     ['claim', (s: TaskState) => claim(s, ctx(A))],
     ['start', (s: TaskState) => start(s, ctx('you'))],
     ['note', (s: TaskState) => note(s, ctx(A), { note: 'x' })],
-    ['ask', (s: TaskState) => ask(s, ctx(A), 'x')],
-    ['answer', (s: TaskState) => answer(s, ctx('you'), 'x')],
+    ['ask', (s: TaskState) => ask(s, ctx(A), textForm('x'))],
+    ['answer', (s: TaskState) => answer(s, ctx('you'), typed('x'))],
     ['completeStep', (s: TaskState) => completeStep(s, ctx(A), { summary: 'x' })],
     ['completeMyStep', (s: TaskState) => completeMyStep(s, ctx('you'))],
     ['park', (s: TaskState) => park(s, ctx('you'))],
@@ -496,12 +503,12 @@ describe('The step state machine', () => {
     )
   })
 
-  test('running to waiting: ask_you stores the question and clears any old answer', () => {
+  test('running to waiting: ask_you stores the form and clears any old answer', () => {
     const state = asked(['agent'])
     checkTask(state)
     expect(state.steps[0]).toMatchObject({
       status: 'waiting',
-      question: 'Redis or in-process?',
+      form: textForm('Redis or in-process?'),
       answer: null,
       waitingSince: at(20),
       runningSince: null,
@@ -510,19 +517,19 @@ describe('The step state machine', () => {
 
   test('ask_you refuses a step already waiting', () => {
     expectRefusal(
-      ask(asked(['agent']), ctx(A), 'Again?'),
+      ask(asked(['agent']), ctx(A), textForm('Again?')),
       'unanswered',
       "Step 1 of T-012 is waiting for the user's answer"
     )
   })
 
-  test('waiting to running: you answer, the answer is stored and the question cleared', () => {
-    const change = accepted(answer(asked(['agent']), ctx('you', 50), 'Redis'))
+  test('waiting to running: you answer, the answer is stored as markdown and the form cleared', () => {
+    const change = accepted(answer(asked(['agent']), ctx('you', 50), typed('Redis')))
     checkTask(change)
     expect(change.steps[0]).toMatchObject({
       status: 'running',
-      answer: 'Redis',
-      question: null,
+      answer: '### Redis or in-process?\nRedis',
+      form: null,
       runningSince: at(50),
     })
     expect(change.events[0]).toMatchObject({ kind: 'answered', sessionId: 'you' })
@@ -531,17 +538,17 @@ describe('The step state machine', () => {
   test('answer refuses your step, a running step and a session', () => {
     const yours = stateOf(queue(backlogTask(['you']), ctx('you')))
     expectRefusal(
-      answer(yours, ctx('you'), 'x'),
+      answer(yours, ctx('you'), typed('x')),
       'wrong_status',
       "Step 1 of T-012 is the user's step, not a question"
     )
     expectRefusal(
-      answer(claimedBy(['agent']), ctx('you'), 'x'),
+      answer(claimedBy(['agent']), ctx('you'), typed('x')),
       'wrong_status',
       'Step 1 of T-012 is not waiting for an answer'
     )
     expectRefusal(
-      answer(asked(['agent']), ctx(A), 'x'),
+      answer(asked(['agent']), ctx(A), typed('x')),
       'not_yours',
       'Only the user can answer the question on T-012'
     )
@@ -591,8 +598,8 @@ describe('The step state machine', () => {
 describe('Time on a step', () => {
   test('running time closes into elapsedSeconds and waiting time into waitedSeconds on an agent step', () => {
     let state = claimedBy(['agent'], A, 10)
-    state = stateOf(ask(state, ctx(A, 70), 'Q?'))
-    state = stateOf(answer(state, ctx('you', 190), 'A'))
+    state = stateOf(ask(state, ctx(A, 70), textForm('Q?')))
+    state = stateOf(answer(state, ctx('you', 190), typed('A')))
     state = stateOf(completeStep(state, ctx(A, 200), { summary: 'S' }))
     expect(state.steps[0]).toMatchObject({ elapsedSeconds: 70, waitedSeconds: 120 })
   })

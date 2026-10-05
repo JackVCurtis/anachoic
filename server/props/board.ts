@@ -103,9 +103,7 @@ export function boardProps(snapshot: BoardSnapshot, now: Instant): BoardProps {
             number: step.number,
             title: step.title,
             owner: step.owner,
-            ...(step.owner === 'agent' && step.question !== null
-              ? { question: step.question }
-              : {}),
+            ...(step.owner === 'agent' && step.form !== null ? { form: step.form } : {}),
             ...(step.outputFormat === null ? {} : { outputFormat: step.outputFormat }),
             waitingSince: step.waitingSince ?? step.startedAt ?? now,
           },

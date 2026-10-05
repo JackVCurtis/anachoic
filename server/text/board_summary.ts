@@ -1,3 +1,4 @@
+import { firstQuestion } from '../../shared/form.js'
 import { OUTPUT_FORMAT_WORDS } from '../../shared/output_format.js'
 import type { Artifact, BoardProps, SessionItem, TaskRef } from '../../shared/props.js'
 
@@ -147,7 +148,9 @@ export function boardSummary(board: BoardProps): string {
           const who = session ? ` (${session.name})` : ''
           return `${head} is blocked${who}: ${cut(blocked.reason, QUESTION_CHARS)}`
         }
-        const asks = step.question ? ` asks: ${quoted(step.question, QUESTION_CHARS)}` : ' waits'
+        const asks = step.form
+          ? ` asks: ${quoted(firstQuestion(step.form), QUESTION_CHARS)}`
+          : ' waits'
         return `${head}${asks}${session ? ` (${session.name})` : ''}`
       })
     ),

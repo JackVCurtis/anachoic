@@ -5,7 +5,7 @@ import { describe, expect, test } from 'vitest'
 import type { ActionResult, BoardProps, YourTurnItem } from '../../../shared/props'
 import { boardResult, emptyBoardProps } from '../../bridge/testing/board_props'
 import { FakeApp } from '../../bridge/testing/fake_app'
-import { yourTurn } from '../../components/helpers/strings'
+import { questionForm, yourTurn } from '../../components/helpers/strings'
 import { ViewFrame } from '../../components/testing/view_frame'
 import { BoardEntry, loadBoard } from './board_entry'
 
@@ -24,7 +24,16 @@ const QUESTION: YourTurnItem = {
     number: 3,
     title: 'Pick a cache',
     owner: 'agent',
-    question: 'Redis or in-process?',
+    form: {
+      pages: [
+        {
+          id: 'cache',
+          question: 'Redis or in-process?',
+          choose: 'one',
+          options: [{ label: 'Redis' }, { label: 'In-process' }],
+        },
+      ],
+    },
     waitingSince: WAITING,
   },
   session: { id: 'session-a', name: 'api-server' },
@@ -106,19 +115,35 @@ describe('the actions on Waiting on user', () => {
     expect(app.calls.sendMessage).toEqual([])
   })
 
-  test('Answer calls answer_question with the answer and posts nothing', async () => {
+  test('Answer calls answer_question with the form responses and posts nothing', async () => {
     const app = fakeApp(written(board(4, [YOUR_STEP]), QUESTION))
     const user = await renderBoard(app)
 
-    await user.type(screen.getByRole('textbox', { name: yourTurn.answerLabel }), 'Redis ')
-    await user.click(screen.getByRole('button', { name: yourTurn.answer }))
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
+    await user.click(screen.getByRole('button', { name: questionForm.answer }))
 
     expect(app.callsTo('answer_question')).toEqual([
-      { name: 'answer_question', arguments: { task: 'T-014', answer: 'Redis' } },
+      {
+        name: 'answer_question',
+        arguments: { task: 'T-014', responses: [{ page: 'cache', picked: [0] }] },
+      },
     ])
     expect(screen.queryByText(QUESTION.task.title)).toBeNull()
     expect(app.callsTo('get_board')).toHaveLength(1)
     expect(app.calls.sendMessage).toEqual([])
+  })
+
+  test('Answer directly calls answer_question with the user’s own words', async () => {
+    const app = fakeApp(written(board(4, [YOUR_STEP]), QUESTION))
+    const user = await renderBoard(app)
+
+    await user.click(screen.getByRole('button', { name: questionForm.answerDirectly }))
+    await user.type(screen.getByRole('textbox', { name: yourTurn.answerLabel }), 'Neither ')
+    await user.click(screen.getByRole('button', { name: yourTurn.answer }))
+
+    expect(app.callsTo('answer_question')).toEqual([
+      { name: 'answer_question', arguments: { task: 'T-014', direct: 'Neither' } },
+    ])
   })
 
   test('Park, confirmed, calls move_to_backlog and posts nothing', async () => {
@@ -143,13 +168,13 @@ describe('the actions on Waiting on user', () => {
     })
     const user = await renderBoard(app)
 
-    await user.type(screen.getByRole('textbox', { name: yourTurn.answerLabel }), 'Redis')
-    await user.click(screen.getByRole('button', { name: yourTurn.answer }))
+    await user.click(screen.getByRole('radio', { name: 'Redis' }))
+    await user.click(screen.getByRole('button', { name: questionForm.answer }))
 
     expect(app.calls.sendMessage).toEqual([])
     expect(screen.getByRole('alert')).toHaveTextContent('Step 3 of T-014 is not the current step')
-    expect(screen.getByRole('textbox', { name: yourTurn.answerLabel })).toHaveValue('Redis')
-    expect(screen.getByRole('button', { name: yourTurn.answer })).toBeEnabled()
+    expect(screen.getByRole('radio', { name: 'Redis' })).toBeChecked()
+    expect(screen.getByRole('button', { name: questionForm.answer })).toBeEnabled()
   })
 })
 

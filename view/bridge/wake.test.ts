@@ -67,7 +67,7 @@ describe('your actions', () => {
     [
       'answer_question',
       (actions: ReturnType<typeof createYourActions>) =>
-        actions.answerQuestion(T012, 2, 'In-process'),
+        actions.answerQuestion(T012, 2, { direct: 'In-process' }),
       actionResult({ status: 'active', position: null }),
     ],
     [

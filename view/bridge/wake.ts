@@ -1,5 +1,5 @@
 import type { HostApp } from './connect'
-import { actions, type NewStep } from './tools'
+import { actions, type FormAnswer, type NewStep } from './tools'
 
 type ActionApp = Pick<HostApp, 'callServerTool'>
 
@@ -24,7 +24,7 @@ export function createYourActions(app: ActionApp) {
     moveToBacklog: (task: TaskName, _active: boolean) => actions.moveToBacklog(app, task.displayId),
     completeMyStep: (task: TaskName, _step: { number: number; title: string }, note?: string) =>
       actions.completeMyStep(app, task.displayId, note),
-    answerQuestion: (task: TaskName, _stepNumber: number, answer: string) =>
+    answerQuestion: (task: TaskName, _stepNumber: number, answer: FormAnswer) =>
       actions.answerQuestion(app, task.displayId, answer),
     signOff: (task: TaskName) => actions.signOff(app, task.displayId),
     addFollowUp: (task: TaskName, input: { steps: NewStep[]; placement: 'first' | 'last' }) =>

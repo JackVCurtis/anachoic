@@ -25,7 +25,7 @@ import {
   unblockStepText,
   updateStepText,
 } from '../../../server/text/model_tools.js'
-import { accepted, backlogTask, ctx, stateOf } from '../support/domain.js'
+import { accepted, backlogTask, ctx, stateOf, textForm } from '../support/domain.js'
 
 const A = 'session-a'
 
@@ -154,7 +154,7 @@ describe('the worker tools', () => {
     expect(updateStepText(stateOf(note(second, ctx(A), { note: 'Halfway' })))).toBe(
       'Noted on T-012 step 2'
     )
-    const asked = stateOf(ask(second, ctx(A), 'Redis?'))
+    const asked = stateOf(ask(second, ctx(A), textForm('Redis?')))
     expect(askYouText(asked)).toBe('Asked. Call wait_for_answer with task T-012 next.')
   })
 

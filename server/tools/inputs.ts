@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { Owner, StepInput } from '../../domain/types.js'
+import { FORM_CHOICES, FORM_PAGE_ID } from '../../shared/form.js'
 import { LIMITS } from '../../shared/limits.js'
 import { OUTPUT_FORMATS } from '../../shared/output_format.js'
 
@@ -86,7 +87,70 @@ export const assignToInput = z
 
 export const titleInput = text('title')
 export const noteInput = text('note')
-export const questionInput = text('question')
+
+const pageId = z
+  .string()
+  .regex(FORM_PAGE_ID)
+  .describe('A page id: 1–32 characters of a-z, 0-9, _ and -, unique in the form')
+
+/**
+ * The form ask_you takes. zod checks each field; validateForm then checks
+ * the form as a whole, such as that every next names a later page.
+ */
+export const formInput = z
+  .object({
+    pages: z
+      .array(
+        z.object({
+          id: pageId,
+          question: text('formQuestion').describe('One short question (1–250 characters)'),
+          choose: z
+            .enum(FORM_CHOICES)
+            .describe(
+              '"one": the user picks one option. "many": the user picks at least one. "text": the user types up to 500 characters, and the page takes no options'
+            ),
+          options: z
+            .array(
+              z.object({
+                label: text('formOption').describe('What the user picks (1–150 characters)'),
+                next: pageId
+                  .optional()
+                  .describe('On a "one" page only: the later page this option leads to'),
+              })
+            )
+            .min(LIMITS.formOptions.min)
+            .max(LIMITS.formOptions.max)
+            .optional()
+            .describe('2–6 options, on "one" and "many" pages'),
+          next: pageId
+            .optional()
+            .describe(
+              'The later page that follows when no option says otherwise. None ends the form.'
+            ),
+        })
+      )
+      .min(LIMITS.formPages.min)
+      .max(LIMITS.formPages.max)
+      .describe('1–10 pages. pages[0] comes first.'),
+  })
+  .describe(
+    'The form to ask the user, page by page. Example: {"pages":[{"id":"db","question":"Which database should the cache use?","choose":"one","options":[{"label":"Postgres","next":"pg"},{"label":"Redis"}],"next":"prefix"},{"id":"pg","question":"Which Postgres features may it rely on?","choose":"many","options":[{"label":"LISTEN/NOTIFY"},{"label":"JSONB"}],"next":"prefix"},{"id":"prefix","question":"What key prefix should it use?","choose":"text"}]}'
+  )
+
+/**
+ * The user's answers to a form, as the view sends them.
+ */
+export const formResponsesInput = z
+  .array(
+    z.object({
+      page: z.string().min(1),
+      picked: z.array(z.number().int().nonnegative()).max(LIMITS.formOptions.max).optional(),
+      text: text('formText').optional(),
+    })
+  )
+  .min(1)
+  .max(LIMITS.formPages.max)
+
 export const reasonInput = text('reason')
 export const summaryInput = text('summary')
 

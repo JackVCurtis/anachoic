@@ -23,7 +23,7 @@ import {
   type ServiceResult,
 } from '../../../store/services.js'
 import { registerLiveness, touchSession } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, textForm } from '../support/domain.js'
 
 const A = 'session-a'
 const B = 'session-b'
@@ -73,7 +73,7 @@ describe('Board props with assignment', () => {
     const plain = add('Plain', ['agent'])
     done(claimStep(database, A, now(), working))
     done(claimStep(database, A, now(), asking))
-    done(askYou(database, A, now(), asking, 'Which?'))
+    done(askYou(database, A, now(), asking, textForm('Which?')))
     const signOff = add('Sign off', ['agent'], B)
     done(claimStep(database, B, now(), signOff))
     done(completeStep(database, B, now(), signOff, { summary: 'Did it' }))

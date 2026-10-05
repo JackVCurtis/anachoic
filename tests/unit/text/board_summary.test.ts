@@ -86,7 +86,7 @@ const EXAMPLE: BoardProps = {
         number: 2,
         title: 'Choose the cache key',
         owner: 'agent',
-        question: 'Redis or in-process?',
+        form: { pages: [{ id: 'q', question: 'Redis or in-process?', choose: 'text' }] },
         waitingSince: minutesAgo(3),
       },
       session: API,

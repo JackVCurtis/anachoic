@@ -101,3 +101,11 @@ test('another session’s block_step or unblock_step on the step is refused with
     { status: 'waiting', blocked_reason: 'needs AWS credentials' },
   ])
 })
+
+test('a reason over 250 characters is refused and the step keeps running', async () => {
+  const refused = await call(api, 'block_step', { task: 'T-001', reason: 'x'.repeat(251) })
+  expect(refused.isError).toBe(true)
+  expect(query(dataDir, 'SELECT status, blocked_reason FROM steps')).toEqual([
+    { status: 'running', blocked_reason: null },
+  ])
+})

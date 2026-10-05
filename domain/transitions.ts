@@ -1,3 +1,10 @@
+import {
+  checkResponses,
+  firstQuestion,
+  renderAnswer,
+  renderDirectAnswer,
+  type FormResponse,
+} from '../shared/form.js'
 import { isWebAddress } from '../shared/output_format.js'
 import { stepId } from '../shared/step_id.js'
 import { formatTaskId } from '../shared/task_id.js'
@@ -30,6 +37,7 @@ import {
   type Actor,
   type Event,
   type EventKind,
+  type Form,
   type Instant,
   type Link,
   type SessionId,
@@ -130,7 +138,7 @@ function backToPending(step: Step, now: Instant): Step {
     ...closeInterval(step, now),
     status: 'pending',
     claimedBy: null,
-    question: null,
+    form: null,
     answer: null,
     blockedReason: null,
     blockedAt: null,
@@ -138,7 +146,7 @@ function backToPending(step: Step, now: Instant): Step {
 }
 
 /**
- * A blocked step waits on you without a question.
+ * A blocked step waits on you without a form.
  */
 export function isBlocked(step: Step): boolean {
   return step.blockedReason !== null
@@ -169,7 +177,7 @@ function newSteps(
     status: 'pending',
     origin,
     claimedBy: null,
-    question: null,
+    form: null,
     answer: null,
     note: null,
     summary: null,
@@ -629,10 +637,10 @@ export function note(state: TaskState, ctx: Context, input: NoteInput): Outcome 
 }
 
 /**
- * ask_you: the claiming session's running step waits on you with a question.
- * A new question replaces any answer not yet collected.
+ * ask_you: the claiming session's running step waits on you with a form.
+ * A new form replaces any answer not yet collected.
  */
-export function ask(state: TaskState, ctx: Context, question: string): Outcome {
+export function ask(state: TaskState, ctx: Context, form: Form): Outcome {
   const refused = preconditions.ask(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
@@ -640,30 +648,46 @@ export function ask(state: TaskState, ctx: Context, question: string): Outcome {
     ...closeInterval(step, ctx.now),
     status: 'waiting',
     waitingSince: ctx.now,
-    question,
+    form,
     answer: null,
   }
   return {
     task: state.task,
     steps: withStep(state.steps, index, asked),
     queue: NONE,
-    events: [event(ctx, state.task.id, asked, 'asked', brief(question))],
+    events: [event(ctx, state.task.id, asked, 'asked', brief(firstQuestion(form)))],
   }
 }
 
 /**
- * You answer an agent's question: the step runs again with the answer
- * stored until the agent collects it.
+ * How the user answers a form: with responses that walk it to an end, or
+ * directly in their own words instead.
  */
-export function answer(state: TaskState, ctx: Context, text: string): Outcome {
+export type AnswerInput = { responses: readonly FormResponse[] } | { direct: string }
+
+/**
+ * You answer an agent's form: the step runs again with the answer, as
+ * markdown, stored until the agent collects it.
+ */
+export function answer(state: TaskState, ctx: Context, input: AnswerInput): Outcome {
   const refused = preconditions.answer(state, ctx)
   if (refused) return refused
   const { index, step } = current(state)
+  let text: string
+  if ('direct' in input) {
+    text = renderDirectAnswer(input.direct)
+  } else {
+    // A waiting, unblocked agent step always has a form (invariant 7).
+    const form = step.form as Form
+    const problem = checkResponses(form, input.responses)
+    if (problem) return invalid(problem)
+    text = renderAnswer(form, input.responses)
+  }
   const answered: Step = {
     ...closeInterval(step, ctx.now),
     status: 'running',
     runningSince: ctx.now,
-    question: null,
+    form: null,
     answer: text,
   }
   return {

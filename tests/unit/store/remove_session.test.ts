@@ -26,7 +26,7 @@ import {
   touchKnownSession,
   touchSession,
 } from '../../../store/sessions.js'
-import { at } from '../support/domain.js'
+import { at, textForm } from '../support/domain.js'
 import { allTaskStates } from '../support/store.js'
 
 const A = 'session-a'
@@ -96,7 +96,7 @@ describe('removeSession', () => {
     for (const task of [running, waiting, blocked, handedBack]) {
       ok(claimStep(database, A, now(), task))
     }
-    ok(askYou(database, A, now(), waiting, 'Which?'))
+    ok(askYou(database, A, now(), waiting, textForm('Which?')))
     ok(blockStep(database, A, now(), blocked, 'needs AWS credentials'))
     ok(completeStep(database, A, now(), handedBack, { summary: 'Opened the PR' }))
     clock = 30
@@ -115,7 +115,7 @@ describe('removeSession', () => {
       expect(state.steps[0]).toMatchObject({
         status: 'pending',
         claimedBy: null,
-        question: null,
+        form: null,
         blockedReason: null,
         blockedAt: null,
       })

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
-import { assistive, reject, yourTurn } from '../../helpers/strings'
+import { assistive, questionForm, reject, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
@@ -53,17 +53,18 @@ export const YourStep: Story = {
 }
 
 export const Question: Story = {
-  name: "An agent's question",
+  name: "An agent's form",
   args: { item: YOUR_TURN.question },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('This chat asks')).toBeVisible()
-    await expect(canvas.getByText('Redis or in-process?')).toBeVisible()
+    await expect(canvas.getByText('Which cache should the search endpoint use?')).toBeVisible()
+    await expect(canvas.getByText('Question 1 of 3')).toBeVisible()
   },
 }
 
 export const LongQuestion: Story = {
-  name: 'A question of 2,000 characters',
+  name: 'A form page at its longest',
   args: { item: YOUR_TURN.longQuestion },
   play: async () => {
     await expectNoSidewaysScroll()
@@ -88,7 +89,7 @@ export const YourStepNarrow: Story = {
 }
 
 export const LongQuestionNarrow: Story = {
-  name: 'A question of 2,000 characters, narrow',
+  name: 'A form page at its longest, narrow',
   args: { item: YOUR_TURN.longQuestion },
   globals: NARROW,
   parameters: { frame: 'narrow' },
@@ -125,13 +126,40 @@ export const YourStepWithNote: Story = {
 }
 
 export const QuestionAnswered: Story = {
-  name: "An agent's question, with an answer typed",
+  name: "An agent's form, answered",
   args: { item: YOUR_TURN.question },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.type(canvas.getByRole('textbox', { name: yourTurn.answerLabel }), 'Redis')
+    await userEvent.click(canvas.getByRole('radio', { name: 'In-process' }))
+    await userEvent.click(canvas.getByRole('button', { name: questionForm.next }))
+    await userEvent.click(canvas.getByRole('checkbox', { name: 'Facet counts' }))
+    await userEvent.click(canvas.getByRole('button', { name: questionForm.next }))
+    await userEvent.click(canvas.getByRole('radio', { name: '1 minute' }))
+    await userEvent.click(canvas.getByRole('button', { name: questionForm.answer }))
+    await expect(args.onAnswer).toHaveBeenCalledWith(YOUR_TURN.question.task.id, {
+      responses: [
+        { page: 'cache', picked: [1] },
+        { page: 'scope', picked: [1] },
+        { page: 'ttl', picked: [0] },
+      ],
+    })
+  },
+}
+
+export const QuestionAnsweredDirectly: Story = {
+  name: "An agent's form, answered directly",
+  args: { item: YOUR_TURN.question },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: questionForm.answerDirectly }))
+    await userEvent.type(
+      canvas.getByRole('textbox', { name: yourTurn.answerLabel }),
+      'Neither, drop the cache'
+    )
     await userEvent.click(canvas.getByRole('button', { name: yourTurn.answer }))
-    await expect(args.onAnswer).toHaveBeenCalledWith(YOUR_TURN.question.task.id, 'Redis')
+    await expect(args.onAnswer).toHaveBeenCalledWith(YOUR_TURN.question.task.id, {
+      direct: 'Neither, drop the cache',
+    })
   },
 }
 
@@ -167,15 +195,15 @@ export const YourStepBusy: Story = {
 }
 
 export const QuestionBusy: Story = {
-  name: "An agent's question, answering",
+  name: "An agent's form, answering",
   args: { item: YOUR_TURN.question, busy: 'answer' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: yourTurn.answer })).toHaveAttribute(
+    await expect(canvas.getByRole('button', { name: questionForm.next })).toHaveAttribute(
       'aria-busy',
       'true'
     )
-    await expect(canvas.getByRole('textbox', { name: yourTurn.answerLabel })).toBeEnabled()
+    await expect(canvas.getByRole('button', { name: questionForm.answerDirectly })).toBeDisabled()
   },
 }
 
@@ -185,7 +213,7 @@ export const ParkBusy: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: yourTurn.park })).toBeDisabled()
-    await expect(canvas.getByRole('button', { name: yourTurn.answer })).toBeDisabled()
+    await expect(canvas.getByRole('button', { name: questionForm.next })).toBeDisabled()
   },
 }
 

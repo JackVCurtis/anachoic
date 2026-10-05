@@ -43,7 +43,7 @@ function question(id: string, title: string, session: string): YourTurnItem {
       number: 2,
       title: 'Pick a key',
       owner: 'agent',
-      question: 'Which key?',
+      form: { pages: [{ id: 'key', question: 'Which key?', choose: 'text' }] },
       waitingSince: START.toISOString(),
     },
     session: { id: `session-${session}`, name: session },

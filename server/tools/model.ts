@@ -35,7 +35,7 @@ import {
   fromModelSteps,
   linksInput,
   noteInput,
-  questionInput,
+  formInput,
   reasonInput,
   stepsInput,
   summaryInput,
@@ -185,14 +185,12 @@ export function registerModelTools(server: McpServer, context: ToolContext) {
       {
         title: 'Ask the user a question',
         description: TOOL_DESCRIPTIONS.worker.ask_you,
-        inputSchema: z.object({ task: taskInput, question: questionInput, ...sessionInput }),
+        inputSchema: z.object({ task: taskInput, form: formInput, ...sessionInput }),
       },
-      asCaller(context, 'ask_you', ({ task, question }, caller) =>
+      asCaller(context, 'ask_you', ({ task, form }, caller) =>
         caller.kind === 'dedicated'
           ? refusalResult(invalid(DEDICATED_ASK))
-          : answer(askYou(database, caller.id, now(), task, question), ({ state }) =>
-              askYouText(state)
-            )
+          : answer(askYou(database, caller.id, now(), task, form), ({ state }) => askYouText(state))
       )
     ),
 

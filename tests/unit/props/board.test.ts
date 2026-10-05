@@ -22,7 +22,7 @@ import {
 } from '../../../store/services.js'
 import { registerLiveness, touchSession } from '../../../store/sessions.js'
 import { write } from '../../../store/write.js'
-import { at } from '../support/domain.js'
+import { at, textForm } from '../support/domain.js'
 
 const A = 'session-a'
 const B = 'session-b'
@@ -86,7 +86,7 @@ function everyList() {
     done(claimStep(database, actor, now(), id))
   }
   done(updateStep(database, A, now(), ids.working, { note: 'Halfway' }))
-  done(askYou(database, B, now(), ids.asks, 'Which one?'))
+  done(askYou(database, B, now(), ids.asks, textForm('Which one?')))
   done(
     completeStep(database, A, now(), ids.toSignOff, {
       summary: 'Done',
@@ -157,7 +157,7 @@ describe('boardProps', () => {
           number: 1,
           title: 'Asks 1',
           owner: 'agent',
-          question: 'Which one?',
+          form: textForm('Which one?'),
           waitingSince: at(0),
         },
         session: { id: B, name: 'web-client' },
@@ -285,7 +285,7 @@ describe('a blocked step in the props', () => {
       blocked: { reason: 'needs AWS credentials', since: at(MINUTE) },
       canAct: { complete: false, answer: false, park: true },
     })
-    expect(props.yourTurn[0].step).not.toHaveProperty('question')
+    expect(props.yourTurn[0].step).not.toHaveProperty('form')
     expect(props.working).toEqual([])
     expect(props.counts.yourTurn).toBe(1)
     expect(props.sessions.find((session) => session.id === A)?.holding).toMatchObject({
@@ -298,7 +298,7 @@ describe('a blocked step in the props', () => {
     touch(A, '/w/api-server')
     const task = add('Ask', ['agent'])
     done(claimStep(database, A, now(), task))
-    done(askYou(database, A, now(), task, 'Which?'))
+    done(askYou(database, A, now(), task, textForm('Which?')))
     add('Mine', ['you'])
 
     const props = readBoardProps(database, now())
