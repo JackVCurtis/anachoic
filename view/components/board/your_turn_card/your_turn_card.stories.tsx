@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
-import { assistive, questionForm, reject, yourTurn } from '../../helpers/strings'
+import { assistive, questionForm, reject, sessions, yourTurn } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import type { YourTurnTask } from '../board_data'
 import { YourTurnCard } from './your_turn_card'
@@ -309,6 +309,25 @@ export const BlockedNarrow: Story = {
   play: async ({ canvasElement }) => {
     await expectBlockedCard(canvasElement, YOUR_TURN.blocked)
   },
+}
+
+export const BlockedStopAndRemove: Story = {
+  name: 'Blocked by its worker, with Stop and Remove',
+  args: { item: YOUR_TURN.blocked, onRemoveSession: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: sessions.stopAndRemove }))
+    await userEvent.click(canvas.getByRole('button', { name: sessions.stopAndRemove }))
+    await expect(args.onRemoveSession).toHaveBeenCalledWith(YOUR_TURN.blocked.workerId)
+    await expectNoSidewaysScroll()
+  },
+}
+
+export const BlockedStopAndRemoveNarrow: Story = {
+  ...BlockedStopAndRemove,
+  name: 'Blocked by its worker, with Stop and Remove, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
 }
 
 export const BlockedLong: Story = {

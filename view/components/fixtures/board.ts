@@ -41,6 +41,7 @@ export interface YourTurnSample {
   }
   input?: ArtifactSample | null
   sessionName?: string
+  workerId?: string | null
   blocked?: { reason: string; since: string }
   steps: readonly PipStepSample[]
   canAct: { complete?: boolean; answer?: boolean; park: boolean; reject?: boolean }
@@ -56,6 +57,7 @@ export interface WorkingSample {
     runningSince: string
   }
   sessionName: string
+  workerId?: string | null
   steps: readonly PipStepSample[]
   artifacts?: ArtifactSample[]
 }
@@ -199,6 +201,11 @@ export function agentAsks(
  * An agent step its worker blocked, waiting since it was blocked. The server
  * may still allow Park on it; the card offers nothing.
  */
+/** The id a worker's session has in these fixtures, or null for this chat. */
+function workerIdOf(sessionName: string | null | undefined): string | null {
+  return sessionName && sessionName !== THIS_CHAT ? `worker-${sessionName}` : null
+}
+
 export function workerBlocks(
   number: number,
   title: string,
@@ -218,6 +225,7 @@ export function workerBlocks(
       waitingSince: since,
     },
     sessionName: current.step.sessionName ?? undefined,
+    workerId: workerIdOf(current.step.sessionName),
     blocked: { reason, since },
     steps,
     canAct: { complete: false, answer: false, park: true },
@@ -241,6 +249,7 @@ export function running(
     task,
     step: { number: current.number, title: current.step.title, note, runningSince },
     sessionName: current.step.sessionName,
+    workerId: workerIdOf(current.step.sessionName),
     steps,
   }
 }

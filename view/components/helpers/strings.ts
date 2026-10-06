@@ -146,7 +146,7 @@ export const reject = {
 } as const
 
 export const sessions = {
-  title: 'Sessions',
+  idleTitle: 'Idle',
   session: 'Session',
   thisChat: 'This chat',
   kindWorker: 'Worker',
@@ -161,10 +161,12 @@ export const sessions = {
   ended: 'Ended {when}',
   released: 'Released',
   releasedTasks: 'Released {n tasks}',
-  nothingLive: 'No session is connected',
+  nothingIdle: 'No session is idle',
   remove: 'Remove',
   removeQuestion: 'Remove {name}? Its step on {id} goes back to the queue.',
   keepWorker: 'Keep worker',
+  stopAndRemove: 'Stop and Remove',
+  stopQuestion: 'Stop and remove {name}? Its step on {id} goes back to the queue.',
 } as const
 
 export const working = {

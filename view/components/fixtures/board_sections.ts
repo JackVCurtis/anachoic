@@ -121,8 +121,8 @@ const [, API_SERVER_BLOCKED] = BLOCKED_BOARD.sessions
 
 /**
  * Sessions: this chat holding a step, workers running, waiting and blocked, idle
- * sessions, an ended session that released two tasks, twelve live sessions
- * and long names.
+ * sessions, an ended session that released two tasks, twelve live sessions,
+ * twelve idle workers and long names.
  */
 export const SESSIONS = {
   thisChat: THIS_CHAT_WAITING,
@@ -189,6 +189,7 @@ export const SESSIONS = {
           status: index % 3 === 1 ? 'running' : 'waiting',
         })
   ),
+  manyIdle: Array.from({ length: 12 }, (_, index) => worker(`idle-${index + 1}`)),
   long: LONG_TEXT_BOARD.sessions,
 } as const satisfies Record<string, SessionSample | readonly SessionSample[]>
 

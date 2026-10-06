@@ -12,6 +12,7 @@ import { ArtifactLinks } from '../artifact_links/artifact_links'
 import { assignmentFact } from '../assignment'
 import type { WorkingTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
+import { StopAndRemove } from '../stop_and_remove/stop_and_remove'
 import styles from './working_card.module.css'
 import { SymbolText } from '../../primitives/symbol_text/symbol_text'
 
@@ -20,15 +21,25 @@ export interface WorkingCardProps {
   onOpenTask: (taskId: string) => void
   /** Asks the host to open an artifact link. Without it the card draws no links. */
   onOpenLink?: (url: string) => void
+  /** Stops and removes the worker holding the step. Without it the card offers no "Stop and Remove". */
+  onRemoveSession?: (sessionId: string) => void
+  /** The removal of that worker is in flight. */
+  removing?: boolean
 }
 
 /**
  * An active task whose current step is running: the session that claimed it,
  * how long it has run, the worker it is assigned to, the step and what it
- * will produce, the session's latest note, and the links its done steps
- * produced.
+ * will produce, the session's latest note, the links its done steps
+ * produced, and "Stop and Remove" when a worker holds the step.
  */
-export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) {
+export function WorkingCard({
+  item,
+  onOpenTask,
+  onOpenLink,
+  onRemoveSession,
+  removing = false,
+}: WorkingCardProps) {
   const now = useNow(LABEL_TICK.elapsed)
   const { task, step, sessionName, steps } = item
   const assignment = assignmentFact(task)
@@ -78,6 +89,14 @@ export function WorkingCard({ item, onOpenTask, onOpenLink }: WorkingCardProps) 
       {steps.length > 0 && <StepPips steps={pipsOf(steps)} />}
       {item.artifacts && onOpenLink && (
         <ArtifactLinks artifacts={item.artifacts} onOpenLink={onOpenLink} />
+      )}
+      {item.workerId && onRemoveSession && (
+        <StopAndRemove
+          workerName={sessionName}
+          taskDisplayId={task.displayId}
+          busy={removing}
+          onConfirm={() => onRemoveSession(item.workerId!)}
+        />
       )}
     </ActionCard>
   )

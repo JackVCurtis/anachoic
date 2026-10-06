@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { OUTPUTS, WORKING } from '../../fixtures/board_sections'
 import { artifactLinkLabel } from '../../helpers/output_format'
-import { assistive } from '../../helpers/strings'
+import { assistive, sessions } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
 import { WorkingCard } from './working_card'
 import { spoken } from '../../testing/text'
@@ -43,6 +43,24 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole('button', { name: WORKING.one.task.title }))
     await expect(args.onOpenTask).toHaveBeenCalledWith(WORKING.one.task.id)
   },
+}
+
+export const StopAndRemove: Story = {
+  name: 'A worker running a step, with Stop and Remove',
+  args: { onRemoveSession: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: sessions.stopAndRemove }))
+    await userEvent.click(canvas.getByRole('button', { name: sessions.stopAndRemove }))
+    await expect(args.onRemoveSession).toHaveBeenCalledWith(WORKING.one.workerId)
+  },
+}
+
+export const StopAndRemoveNarrow: Story = {
+  ...StopAndRemove,
+  name: 'A worker running a step, with Stop and Remove, narrow',
+  globals: NARROW,
+  parameters: { frame: 'narrow' },
 }
 
 export const ThisChat: Story = {

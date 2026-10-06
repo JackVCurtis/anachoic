@@ -4,7 +4,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { SESSIONS } from '../../fixtures/board_sections'
 import { sessions as strings } from '../../helpers/strings'
 import { ViewFrame, windowOverflow } from '../../testing/view_frame'
-import { SessionsSection } from './sessions_section'
+import { IdleSection } from './idle_section'
 
 const NARROW = { viewport: { value: 'narrow', isRotated: false } }
 
@@ -13,8 +13,8 @@ async function expectNoCap(canvasElement: HTMLElement) {
 }
 
 const meta = {
-  title: 'Board/SessionsSection',
-  component: SessionsSection,
+  title: 'Board/IdleSection',
+  component: IdleSection,
   args: {
     sessions: SESSIONS.busy,
     onOpenTask: fn(),
@@ -27,27 +27,18 @@ const meta = {
       </ViewFrame>
     ),
   ],
-} satisfies Meta<typeof SessionsSection>
+} satisfies Meta<typeof IdleSection>
 
 export default meta
 
 type Story = StoryObj<typeof meta>
 
 export const Busy: Story = {
-  name: 'This chat holding a step, a worker running, one idle and one ended',
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Ended 4m ago')).toBeVisible()
-    await expectNoCap(canvasElement)
-  },
-}
-
-export const SeveralWorkers: Story = {
-  name: 'Several workers running and waiting',
-  args: { sessions: SESSIONS.severalWorkers },
+  name: 'Two sessions holding a step left out, one idle and one ended',
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getAllByText('Running')).toHaveLength(3)
-    await expect(canvas.getAllByText('Waiting on user')).toHaveLength(1)
+    await expect(canvas.getByText('Ended 4m ago')).toBeVisible()
+    await expect(canvas.queryByText('Running')).toBeNull()
     await expectNoCap(canvasElement)
   },
 }
@@ -71,8 +62,8 @@ export const EndedReleasedTwo: Story = {
 }
 
 export const Many: Story = {
-  name: 'Twelve sessions, folded after eight',
-  args: { sessions: SESSIONS.many },
+  name: 'Twelve idle sessions, folded after eight',
+  args: { sessions: SESSIONS.manyIdle },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Show all 12' }))
@@ -81,16 +72,16 @@ export const Many: Story = {
 }
 
 export const Empty: Story = {
-  name: 'No session',
-  args: { sessions: [] },
+  name: 'Every session holding a step',
+  args: { sessions: SESSIONS.severalWorkers },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(strings.nothingLive)).toBeVisible()
+    await expect(within(canvasElement).getByText(strings.nothingIdle)).toBeVisible()
   },
 }
 
 export const LongNames: Story = {
   name: 'Long names',
-  args: { sessions: SESSIONS.long },
+  args: { sessions: SESSIONS.long.map((session) => ({ ...session, holding: null })) },
   play: async () => {
     const [sideways] = await windowOverflow()
     await expect(sideways).toBe(0)
@@ -99,14 +90,7 @@ export const LongNames: Story = {
 
 export const BusyNarrow: Story = {
   ...Busy,
-  name: 'This chat holding a step, a worker running, one idle and one ended, narrow',
-  globals: NARROW,
-  parameters: { frame: 'narrow' },
-}
-
-export const SeveralWorkersNarrow: Story = {
-  ...SeveralWorkers,
-  name: 'Several workers running and waiting, narrow',
+  name: 'Two sessions holding a step left out, one idle and one ended, narrow',
   globals: NARROW,
   parameters: { frame: 'narrow' },
 }

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import { OUTPUTS, REJECTABLE, YOUR_TURN } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
-import { assistive, questionForm, reject, yourTurn } from '../../helpers/strings'
+import { assistive, questionForm, reject, sessions, yourTurn } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { YourTurnTask } from '../board_data'
@@ -414,6 +414,33 @@ describe('YourTurnCard, blocked', () => {
     ])
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByText(yourTurn.park)).toBeNull()
+  })
+
+  test('with a remove handler it offers Stop and Remove, which removes the worker once confirmed', async () => {
+    const onRemoveSession = vi.fn()
+    const { user } = renderComponent(
+      <YourTurnCard
+        item={YOUR_TURN.blocked}
+        onOpenTask={vi.fn()}
+        onRemoveSession={onRemoveSession}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: sessions.stopAndRemove }))
+    expect(
+      screen.getByText('Stop and remove api-server? Its step on T-030 goes back to the queue.')
+    ).toBeVisible()
+    await user.click(screen.getByRole('button', { name: sessions.stopAndRemove }))
+
+    expect(onRemoveSession).toHaveBeenCalledExactlyOnceWith(YOUR_TURN.blocked.workerId)
+  })
+
+  test('a step waiting on an answer offers no Stop and Remove', () => {
+    renderComponent(
+      <YourTurnCard item={YOUR_TURN.question} onOpenTask={vi.fn()} onRemoveSession={vi.fn()} />
+    )
+
+    expect(screen.queryByRole('button', { name: sessions.stopAndRemove })).toBeNull()
   })
 
   test('pressing the title raises onOpenTask with the task id', async () => {

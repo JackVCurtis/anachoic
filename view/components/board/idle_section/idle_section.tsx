@@ -4,9 +4,9 @@ import { EmptyState } from '../../patterns/empty_state/empty_state'
 import type { BoardSession } from '../board_data'
 import { BoardSection } from '../board_section/board_section'
 import { SessionCard } from '../session_card/session_card'
-import styles from './sessions_section.module.css'
+import styles from './idle_section.module.css'
 
-export interface SessionsSectionProps {
+export interface IdleSectionProps {
   /** The live sessions and those that ended in the last 10 minutes, in the server's order. */
   sessions: readonly BoardSession[]
   onOpenTask: (taskId: string) => void
@@ -17,17 +17,18 @@ export interface SessionsSectionProps {
 }
 
 /**
- * Each live session in the server's order, counted in the header, then the
- * sessions that ended recently with what they released. When a card that
- * held focus is removed, focus goes to the section's heading.
+ * Each live session that holds no step, in the server's order, counted in the
+ * header, then the sessions that ended recently with what they released. A
+ * session holding a step shows in Working or Waiting on user instead. When a
+ * card that held focus is removed, focus goes to the section's heading.
  */
-export function SessionsSection({
+export function IdleSection({
   sessions,
   onOpenTask,
   onRemoveSession,
   removingSessionId = null,
-}: SessionsSectionProps) {
-  const live = sessions.filter((session) => session.live)
+}: IdleSectionProps) {
+  const idle = sessions.filter((session) => session.live && !session.holding)
   const ended = sessions.filter((session) => !session.live)
 
   function card(session: BoardSession) {
@@ -43,10 +44,10 @@ export function SessionsSection({
 
   return (
     <BoardSection
-      title={strings.title}
-      count={live.length}
-      empty={<EmptyState variant="dashed" message={strings.nothingLive} />}
-      cards={live.map((session) => ({
+      title={strings.idleTitle}
+      count={idle.length}
+      empty={<EmptyState variant="dashed" message={strings.nothingIdle} />}
+      cards={idle.map((session) => ({
         id: session.id,
         card: card(session),
       }))}

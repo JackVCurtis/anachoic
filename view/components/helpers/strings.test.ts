@@ -81,12 +81,12 @@ describe('the words of 07', () => {
   test('each section of the board has its title', () => {
     expect([
       yourTurn.title,
-      sessions.title,
+      sessions.idleTitle,
       queue.title,
       backlog.title,
       done.title,
       strings.working.title,
-    ]).toEqual(['Waiting on user', 'Sessions', 'Queue', 'Backlog', 'Done', 'Working'])
+    ]).toEqual(['Waiting on user', 'Idle', 'Queue', 'Backlog', 'Done', 'Working'])
   })
 
   test('the time words are kept as anachoic has them', () => {
@@ -203,6 +203,7 @@ describe('voice and punctuation', () => {
     'yourTurn.parkQuestion',
     'done.archiveQuestion',
     'sessions.removeQuestion',
+    'sessions.stopQuestion',
     'taskView.parkQuestion',
     'taskView.archiveQuestion',
   ])

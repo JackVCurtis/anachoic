@@ -10,13 +10,15 @@ import {
 
 export interface YourTurnSectionProps extends Pick<
   YourTurnCardProps,
-  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onReject' | 'onOpenLink'
+  'onCompleteStep' | 'onAnswer' | 'onPark' | 'onReject' | 'onOpenLink' | 'onRemoveSession'
 > {
   /** In the server's order. */
   tasks: readonly YourTurnTask[]
   onOpenTask: (taskId: string) => void
   /** The Waiting on user action in flight, if any. */
   pending?: YourTurnPending | null
+  /** The session whose removal is in flight, if any. */
+  removingSessionId?: string | null
 }
 
 /** What waits on the user. It folds after eight cards. */
@@ -28,7 +30,9 @@ export function YourTurnSection({
   onPark,
   onReject,
   onOpenLink,
+  onRemoveSession,
   pending = null,
+  removingSessionId = null,
 }: YourTurnSectionProps) {
   return (
     <BoardSection
@@ -47,6 +51,8 @@ export function YourTurnSection({
             onReject={onReject}
             onOpenLink={onOpenLink}
             busy={pending?.taskId === item.task.id ? pending.action : null}
+            onRemoveSession={onRemoveSession}
+            removing={Boolean(item.workerId) && removingSessionId === item.workerId}
           />
         ),
       }))}

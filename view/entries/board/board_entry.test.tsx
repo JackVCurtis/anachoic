@@ -300,7 +300,7 @@ describe('the board entry', () => {
     expect(liveRegion().textContent).toBe('Session 2 asks about “Cache keys”')
   })
 
-  test('draws a blocked step as a blocked card and its worker as blocked, until it is unblocked', async () => {
+  test('draws a blocked step as a blocked card, leaving its worker out of Idle, until it is unblocked', async () => {
     const holdingBlocked = (revision: number, items: YourTurnItem[]): BoardProps => ({
       ...board(revision, items),
       sessions: [
@@ -332,13 +332,13 @@ describe('the board entry', () => {
       within(yourTurnSection)
         .getAllByRole('button')
         .map((button) => button.textContent)
-    ).toEqual(['Ship it'])
-    expect(screen.getByText('Blocked on T-012 step 2')).toBeTruthy()
+    ).toEqual(['Ship it', 'Stop and Remove'])
+    const idleSection = screen.getByRole('heading', { level: 2, name: 'Idle' }).closest('section')!
+    expect(within(idleSection).queryByText('api-server')).toBeNull()
 
     await advance(POLL_MS)
 
     expect(screen.queryByText('Needs AWS credentials')).toBeNull()
-    expect(screen.queryByText('Blocked on T-012 step 2')).toBeNull()
     expect(app.calls.sendMessage).toEqual([])
   })
 

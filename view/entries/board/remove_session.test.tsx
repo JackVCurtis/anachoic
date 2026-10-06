@@ -12,7 +12,30 @@ const IDLE_WORKER: SessionItem = { id: 'worker-1', kind: 'worker', name: 'api-se
 
 const FIRST: BoardProps = { ...emptyBoardProps(3), sessions: [IDLE_WORKER] }
 
-function fakeApp(removeAnswer: CallToolResult) {
+const RUNNING: BoardProps = {
+  ...emptyBoardProps(3),
+  working: [
+    {
+      task: { id: 'task-12', displayId: 'T-012', title: 'Ship the retries' },
+      step: { number: 1, title: 'Add retries', runningSince: '2026-03-12T09:30:00.000Z' },
+      session: { id: IDLE_WORKER.id, name: IDLE_WORKER.name },
+      steps: [],
+    },
+  ],
+  sessions: [
+    {
+      ...IDLE_WORKER,
+      holding: {
+        task: { id: 'task-12', displayId: 'T-012', title: 'Ship the retries' },
+        step: { number: 1, title: 'Add retries' },
+        status: 'running',
+      },
+    },
+  ],
+  counts: { yourTurn: 0, working: 1, queue: 0, toSignOff: 0 },
+}
+
+function fakeApp(removeAnswer: CallToolResult, first: BoardProps = FIRST) {
   return new FakeApp({
     hostContext: { displayMode: 'inline', timeZone: 'UTC' },
     answer: (params) => {
@@ -21,7 +44,7 @@ function fakeApp(removeAnswer: CallToolResult) {
       }
       const since = params.arguments?.sinceRevision as number | undefined
       return since === undefined
-        ? boardResult(FIRST)
+        ? boardResult(first)
         : boardResult({ changed: false, revision: since })
     },
   })
@@ -69,5 +92,20 @@ describe('Remove on a worker card', () => {
     expect(screen.getByText('api-server')).toBeTruthy()
     expect(screen.getByText('The board is busy. Try again.')).toBeTruthy()
     expect(app.calls.sendMessage).toEqual([])
+  })
+
+  test('Stop and Remove on a Working card calls remove_session with the worker holding the step', async () => {
+    const app = fakeApp(boardResult(emptyBoardProps(4)), RUNNING)
+    const { user } = await renderBoard(app)
+    const card = screen.getByRole('button', { name: 'Ship the retries' }).closest('article')!
+
+    await user.click(within(card).getByRole('button', { name: 'Stop and Remove' }))
+    await user.click(within(card).getByRole('button', { name: 'Stop and Remove' }))
+    await act(() => Promise.resolve())
+
+    expect(app.callsTo('remove_session')).toEqual([
+      { name: 'remove_session', arguments: { session: 'worker-1' } },
+    ])
+    expect(screen.queryByText('Ship the retries')).toBeNull()
   })
 })

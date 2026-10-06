@@ -15,6 +15,7 @@ import { TextArea } from '../../primitives/text_area/text_area'
 import { ArtifactLink } from '../artifact_links/artifact_links'
 import { QuestionForm } from '../question_form/question_form'
 import { RejectForm } from '../reject_form/reject_form'
+import { StopAndRemove } from '../stop_and_remove/stop_and_remove'
 import type { BoardBlock, YourTurnTask } from '../board_data'
 import { pipsOf, stepCount } from '../pips'
 import styles from './your_turn_card.module.css'
@@ -44,6 +45,10 @@ export interface YourTurnCardProps {
   busy?: YourTurnAction | null
   /** Asks the host to open the step's input link. Without it the card draws no link. */
   onOpenLink?: (url: string) => void
+  /** Stops and removes the worker that blocked the step. Without it a blocked card offers no "Stop and Remove". */
+  onRemoveSession?: (sessionId: string) => void
+  /** The removal of that worker is in flight. */
+  removing?: boolean
 }
 
 /** The longest note the tools take, as shared/limits.ts sets it. */
@@ -74,9 +79,19 @@ export function YourTurnCard({
   onReject,
   busy = null,
   onOpenLink,
+  onRemoveSession,
+  removing = false,
 }: YourTurnCardProps) {
   if (item.blocked) {
-    return <BlockedCard item={item} blocked={item.blocked} onOpenTask={onOpenTask} />
+    return (
+      <BlockedCard
+        item={item}
+        blocked={item.blocked}
+        onOpenTask={onOpenTask}
+        onRemoveSession={onRemoveSession}
+        removing={removing}
+      />
+    )
   }
   return (
     <WaitingCard
@@ -92,7 +107,7 @@ export function YourTurnCard({
   )
 }
 
-interface BlockedCardProps {
+interface BlockedCardProps extends Pick<YourTurnCardProps, 'onRemoveSession' | 'removing'> {
   item: YourTurnTask
   blocked: BoardBlock
   onOpenTask: (taskId: string) => void
@@ -101,9 +116,16 @@ interface BlockedCardProps {
 /**
  * A step its worker blocked: the worker, the step, the reason in full, how
  * long it has been blocked, and where to unblock it. It is unblocked in the
- * worker's session, so the card has no action but opening the task.
+ * worker's session, so the card's only other action is "Stop and Remove",
+ * which gives up on the worker and sends the step back to the queue.
  */
-function BlockedCard({ item, blocked, onOpenTask }: BlockedCardProps) {
+function BlockedCard({
+  item,
+  blocked,
+  onOpenTask,
+  onRemoveSession,
+  removing = false,
+}: BlockedCardProps) {
   const now = useNow(LABEL_TICK.waited)
   const { task, step, steps, sessionName } = item
 
@@ -142,6 +164,15 @@ function BlockedCard({ item, blocked, onOpenTask }: BlockedCardProps) {
           ? fillTemplate(yourTurn.unblockIn, { session: sessionName })
           : yourTurn.unblockInUnnamed}
       </p>
+      {item.workerId && sessionName && onRemoveSession && (
+        <StopAndRemove
+          tone="inverse"
+          workerName={sessionName}
+          taskDisplayId={task.displayId}
+          busy={removing}
+          onConfirm={() => onRemoveSession(item.workerId!)}
+        />
+      )}
     </ActionCard>
   )
 }

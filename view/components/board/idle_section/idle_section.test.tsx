@@ -5,49 +5,45 @@ import { SESSIONS } from '../../fixtures/board_sections'
 import { sessions as strings } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import type { BoardSession } from '../board_data'
-import { SessionsSection } from './sessions_section'
+import { IdleSection } from './idle_section'
 
 function renderSection(sessions: readonly BoardSession[]) {
   const onOpenTask = vi.fn()
-  const rendered = renderComponent(<SessionsSection sessions={sessions} onOpenTask={onOpenTask} />)
-  const section = screen.getByRole('heading', { level: 2, name: strings.title }).closest('section')!
+  const rendered = renderComponent(<IdleSection sessions={sessions} onOpenTask={onOpenTask} />)
+  const section = screen
+    .getByRole('heading', { level: 2, name: strings.idleTitle })
+    .closest('section')!
   return { ...rendered, onOpenTask, section }
 }
 
-describe('SessionsSection', () => {
-  test('counts the live sessions and shows the ended one after them', () => {
+describe('IdleSection', () => {
+  test('counts the idle sessions, leaves out those holding a step and shows the ended one after them', () => {
     const { section } = renderSection(SESSIONS.busy)
     const header = within(section).getByRole('heading', { level: 2 }).parentElement!
 
-    expect(within(header).getByText('3')).toBeVisible()
+    expect(within(header).getByText('1')).toBeVisible()
     const states = [...section.querySelectorAll('li')]
       .filter((item) => item.parentElement?.closest('li') === null)
       .map((item) => item.querySelector('.text-status')?.textContent)
-    expect(states).toEqual(['Waiting on user', 'Running', 'Idle', 'Ended 4m ago'])
+    expect(states).toEqual(['Idle', 'Ended 4m ago'])
   })
 
-  test('with no session it shows the empty state', () => {
-    const { section } = renderSection([])
+  test.each([
+    ['no session', []],
+    ['only sessions holding a step', [...SESSIONS.severalWorkers, SESSIONS.blocked]],
+  ])('with %s it shows the empty state', (_, sessions) => {
+    const { section } = renderSection(sessions)
 
-    expect(within(section).getByText(strings.nothingLive)).toBeVisible()
+    expect(within(section).getByText(strings.nothingIdle)).toBeVisible()
     expect(within(section).getByText('0')).toBeVisible()
   })
 
-  test('twelve live sessions fold after eight', async () => {
-    const { user, section } = renderSection(SESSIONS.many)
+  test('twelve idle sessions fold after eight', async () => {
+    const { user, section } = renderSection(SESSIONS.manyIdle)
 
     expect(within(section).getAllByText('Worker')).toHaveLength(8)
     await user.click(within(section).getByRole('button', { name: 'Show all 12' }))
     expect(within(section).getAllByText('Worker')).toHaveLength(12)
-  })
-
-  test("pressing a holding card's title raises onOpenTask with the task id", async () => {
-    const { user, onOpenTask } = renderSection(SESSIONS.severalWorkers)
-    const holding = SESSIONS.severalWorkers[2].holding!
-
-    await user.click(screen.getByRole('button', { name: holding.task.title }))
-
-    expect(onOpenTask).toHaveBeenCalledExactlyOnceWith(holding.task.id)
   })
 
   test('nothing reads Cancel step, Capped or a cap figure', () => {
@@ -57,13 +53,13 @@ describe('SessionsSection', () => {
   })
 
   test.each([
-    ['a live worker', SESSIONS.idle],
+    ['an idle worker', SESSIONS.idle],
     ['an ended worker', SESSIONS.endedTwo],
   ])('when %s is removed, focus moves to the section heading', async (_, removed) => {
     const all = [SESSIONS.running, SESSIONS.idle, SESSIONS.endedTwo]
     const onRemoveSession = vi.fn()
     const section = (list: readonly BoardSession[]) => (
-      <SessionsSection sessions={list} onOpenTask={vi.fn()} onRemoveSession={onRemoveSession} />
+      <IdleSection sessions={list} onOpenTask={vi.fn()} onRemoveSession={onRemoveSession} />
     )
     const { user, rerender } = renderComponent(section(all))
     const card = screen.getByText(removed.name).closest('li')!
@@ -72,12 +68,12 @@ describe('SessionsSection', () => {
     expect(onRemoveSession).toHaveBeenCalledExactlyOnceWith(removed.id)
     rerender(section(all.filter((session) => session.id !== removed.id)))
 
-    expect(screen.getByRole('heading', { level: 2, name: strings.title })).toHaveFocus()
+    expect(screen.getByRole('heading', { level: 2, name: strings.idleTitle })).toHaveFocus()
   })
 
   test('the dedicated session offers no Remove', () => {
     renderComponent(
-      <SessionsSection
+      <IdleSection
         sessions={SESSIONS.idleSessions}
         onOpenTask={vi.fn()}
         onRemoveSession={vi.fn()}

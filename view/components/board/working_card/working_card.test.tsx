@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 import { OUTPUTS, WORKING } from '../../fixtures/board_sections'
 import { FIXED_NOW } from '../../fixtures/clock'
+import { sessions as sessionStrings } from '../../helpers/strings'
 import { renderComponent } from '../../testing/render'
 import { resolvedColor } from '../../testing/resolved_color'
 import type { WorkingTask } from '../board_data'
@@ -20,6 +21,29 @@ afterEach(() => {
 })
 
 describe('WorkingCard', () => {
+  test('a worker’s card offers Stop and Remove, which removes that worker once confirmed', async () => {
+    const onRemoveSession = vi.fn()
+    const { user } = renderComponent(
+      <WorkingCard item={WORKING.one} onOpenTask={vi.fn()} onRemoveSession={onRemoveSession} />
+    )
+
+    await user.click(screen.getByRole('button', { name: sessionStrings.stopAndRemove }))
+    await user.click(screen.getByRole('button', { name: sessionStrings.stopAndRemove }))
+
+    expect(onRemoveSession).toHaveBeenCalledExactlyOnceWith(WORKING.one.workerId)
+  })
+
+  test.each([
+    ['this chat holds the step', WORKING.thisChat, vi.fn()],
+    ['no handler is given', WORKING.one, undefined],
+  ])('there is no Stop and Remove when %s', (_, item, onRemoveSession) => {
+    renderComponent(
+      <WorkingCard item={item} onOpenTask={vi.fn()} onRemoveSession={onRemoveSession} />
+    )
+
+    expect(screen.queryByRole('button', { name: sessionStrings.stopAndRemove })).toBeNull()
+  })
+
   test('the elapsed time advances from "6m 12s elapsed" to "6m 13s elapsed" with the fixed clock', () => {
     vi.useFakeTimers({
       now: Date.parse(FIXED_NOW),

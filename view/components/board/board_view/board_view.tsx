@@ -9,7 +9,7 @@ import { BacklogSection } from '../backlog_section/backlog_section'
 import { BoardHeader } from '../board_header/board_header'
 import { DoneSection } from '../done_section/done_section'
 import { QueueSection } from '../queue_section/queue_section'
-import { SessionsSection } from '../sessions_section/sessions_section'
+import { IdleSection } from '../idle_section/idle_section'
 import { TaskEntry, type TaskEntryProps } from '../task_entry/task_entry'
 import { WorkingSection } from '../working_section/working_section'
 import type { YourTurnCardProps, YourTurnPending } from '../your_turn_card/your_turn_card'
@@ -43,7 +43,7 @@ export interface BoardViewActions {
   pending?: PendingCardAction | null
   /** Asks the host to open an artifact link. Without it no card draws its links. */
   onOpenLink?: (url: string) => void
-  /** "Remove" on a worker's card in Sessions. Without it no card offers the button. */
+  /** "Remove" on a worker's card in Idle, or "Stop and Remove" on a card whose step a worker holds. Without it no card offers either. */
   onRemoveSession?: (sessionId: string) => void
   /** The session whose removal is in flight, if any. */
   removingSessionId?: string | null
@@ -165,14 +165,22 @@ export function BoardView({
         onReject={onReject}
         onOpenLink={onOpenLink}
         pending={yourTurnPending}
+        onRemoveSession={onRemoveSession}
+        removingSessionId={removingSessionId}
       />
-      <SessionsSection
+      <IdleSection
         sessions={sessionList}
         onOpenTask={onOpenTask}
         onRemoveSession={onRemoveSession}
         removingSessionId={removingSessionId}
       />
-      <WorkingSection tasks={workingTasks} onOpenTask={onOpenTask} onOpenLink={onOpenLink} />
+      <WorkingSection
+        tasks={workingTasks}
+        onOpenTask={onOpenTask}
+        onOpenLink={onOpenLink}
+        onRemoveSession={onRemoveSession}
+        removingSessionId={removingSessionId}
+      />
       <QueueSection
         tasks={queueTasks}
         busy={reordering}

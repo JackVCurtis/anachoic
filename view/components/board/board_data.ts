@@ -64,6 +64,8 @@ export interface YourTurnTask {
   input?: BoardArtifact | null
   /** The session that asks, or the worker that blocked the step. Absent for a user step. */
   sessionName?: string | null
+  /** The id of that session when it is a worker, which can be removed. */
+  workerId?: string | null
   /**
    * Set when the worker blocked its step: why, and since when. It is
    * unblocked in the worker's session, so the card offers no action.
@@ -93,6 +95,8 @@ export interface WorkingTask {
     runningSince: string
   }
   sessionName: string
+  /** The id of that session when it is a worker, which can be removed. */
+  workerId?: string | null
   steps: readonly BoardStep[]
   /** The links from its done steps. */
   artifacts?: readonly BoardArtifact[]

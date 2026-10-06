@@ -1,0 +1,8 @@
+.control {
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  min-width: 0;
+}

@@ -59,7 +59,7 @@ describe('BoardView', () => {
     expect(h1[0].getBoundingClientRect().height).toBeLessThanOrEqual(1)
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
       'Waiting on user',
-      'Sessions',
+      'Idle',
       'Working',
       'Queue',
       'Backlog',
@@ -70,15 +70,15 @@ describe('BoardView', () => {
   test('each empty section counts 0, and Waiting on user has a header like the others', () => {
     renderBoard()
 
-    for (const title of ['Waiting on user', 'Sessions', 'Working', 'Queue', 'Backlog', 'Done']) {
+    for (const title of ['Waiting on user', 'Idle', 'Working', 'Queue', 'Backlog', 'Done']) {
       expect(within(section(title)).getByText('0')).toBeTruthy()
     }
     const yourTurnHeading = screen.getByRole('heading', { level: 2, name: 'Waiting on user' })
     expect(yourTurnHeading.closest('[data-tone]')).toBeNull()
-    const sessionsHeading = screen.getByRole('heading', { level: 2, name: 'Sessions' })
-    expect(getComputedStyle(yourTurnHeading).color).toBe(getComputedStyle(sessionsHeading).color)
+    const idleHeading = screen.getByRole('heading', { level: 2, name: 'Idle' })
+    expect(getComputedStyle(yourTurnHeading).color).toBe(getComputedStyle(idleHeading).color)
     expect(getComputedStyle(yourTurnHeading.nextElementSibling!).color).toBe(
-      getComputedStyle(sessionsHeading.nextElementSibling!).color
+      getComputedStyle(idleHeading.nextElementSibling!).color
     )
     expect(within(section('Waiting on user')).getByText(yourTurn.nothingWaiting)).toBeTruthy()
     expect(within(section('Done')).getByText('Nothing waiting for sign-off')).toBeTruthy()
