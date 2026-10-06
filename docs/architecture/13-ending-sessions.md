@@ -1,6 +1,6 @@
 # 13. Ending and removing sessions
 
-Added on 2026-10-02, at the product owner's request: when a worker session is deleted, it should leave the Sessions list. The preferred way is a hook. Because a hook cannot be relied on alone, there is also a way to deregister a worker by hand.
+Added on 2026-10-02, at the product owner's request: when a worker session is deleted, it should leave the board. The preferred way is a hook. Because a hook cannot be relied on alone, there is also a way to deregister a worker by hand.
 
 This document is the authority for ending and removing sessions. It is built after [12](12-blocked-steps.md) and before phase 3.
 
@@ -28,7 +28,7 @@ From the Claude Code documentation ([hooks](https://code.claude.com/docs/en/hook
 |---|---|---|
 | **The hook** | The worker's Claude Code session ends normally and the hook runs | Removed at once |
 | **Liveness** (unchanged, [05](05-sessions.md#liveness)) | The server process stops heartbeating for 2 minutes, for example after a crash, a kill, or a deleted session that didn't fire the hook | Listed as ended for 10 minutes, with what was released, then gone |
-| **Remove** | You press Remove on a worker's card, or the worker calls `leave_board` | Removed at once |
+| **Remove** | You press Remove on an idle or ended worker's card, or Stop and Remove on the card of a step a worker holds, or the worker calls `leave_board` | Removed at once |
 
 ## Domain
 
@@ -46,7 +46,8 @@ The heartbeat never revives a removed session, even if its server process is sti
 
 **Who can remove whom:**
 - **The hook** can remove only the session id it is given.
-- **Remove on the board** works for any worker card, live or ended. On a live worker holding work, Remove asks first in an InlineConfirm: "Remove api-server? Its step on T-012 goes back to the queue."
+- **Remove on the board** works for any worker card in Idle, live or ended.
+- **Stop and Remove on the board** works for any worker holding a step, from that step's card ([below](#stop-and-remove)).
 - **The dedicated session** cannot be removed.
 
 ## The hook
@@ -75,5 +76,14 @@ The heartbeat never revives a removed session, even if its server process is sti
 |---|---|
 | `leave_board` | A new worker tool with no input. It ends and removes the calling session: "Left the board. Your claims went back to the queue." The worker instructions say to call it before a session is closed on purpose. |
 | `remove_session` | A new app-only tool, `session` (an id). It ends and removes that worker and returns the fresh board props. It refuses the dedicated session with `invalid` and an unknown session with `not_found`. |
-| SessionCard | A ghost "Remove" button on every worker card. On a worker holding a step it sits behind an InlineConfirm with the question above. |
+| SessionCard | A ghost "Remove" button on every worker card in Idle. A worker there holds no step, so it removes at once. |
+| WorkingCard, blocked YourTurnCard | "Stop and Remove" when a worker holds the step ([below](#stop-and-remove)) |
 | Props | Removed sessions are never in `sessions`. Ended but not removed sessions are listed for 10 minutes, as before. |
+
+## Stop and Remove
+
+Added on 2026-10-06, at the product owner's request: the board lists a worker holding a step only on that step's card, so the card offers a way to remove it.
+
+- **Where.** On a WorkingCard, and on a blocked YourTurnCard, when the session holding the step is a worker. Never for the dedicated session, and never on an agent's question.
+- **Asks first.** It sits behind an InlineConfirm: "Stop and remove api-server? Its step on T-012 goes back to the queue." Confirming calls `remove_session`, the same as Remove.
+- **What stops.** The worker leaves the board and its step goes back to the queue, by End and remove above. Its Claude Code session keeps running. Its next call on that step is refused with `not_yours` ([06](06-tools-and-views.md#worker-tools)), and the worker instructions tell it to stop work on that task. A later tool call from the same session revives it, as above.

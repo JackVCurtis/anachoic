@@ -34,7 +34,7 @@ A session is **live** while its server process is alive. A Claude Code session k
 - **A session id that comes back.** If `claude --resume` brings back a dead session's id, the next tool call clears `ended_at`. The released claims stay released.
 - **Exit.** A process that exits cleanly, on SIGINT, SIGTERM or the end of stdin, stops its heartbeat but does not end its session. Claude Code may restart a server within a session, and the 2-minute window covers that.
 
-The board shows each live session, with its name, kind and current step. It also lists recently ended sessions for 10 minutes, so you can see that work was released.
+The board names every live session. A session holding a step is named on that step's card, in Working or Your turn. A session holding none is listed in Idle, with its name and kind. Idle also lists recently ended sessions for 10 minutes, so you can see that work was released.
 
 ## Claiming
 

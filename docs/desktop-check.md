@@ -13,7 +13,7 @@ The server writes its log to `~/Library/Application Support/Anachoic MCP/logs/`.
 ## B. The board renders (phase 0)
 
 1. Send `Call show_board.`
-   - The board appears inline, as a light card inside the chat, with the four counts, then Your turn on a dark band, Sessions, Working, Queue, Backlog and Done.
+   - The board appears inline, as a light card inside the chat, with the four counts, then Your turn on a dark band, Idle, Working, Queue, Backlog and Done.
    - In phase 0 every count is 0, and Your turn says "Nothing waiting on you".
    - Claude's reply describes the board from the text result. It begins "Board, revision 0" in phase 0.
 2. Look at the view for 20 s. Its height stays put: it does not grow, shrink or flicker.
@@ -60,12 +60,13 @@ Then check each item. Nothing on the board may address the user as "you": the se
 4. **A question.** Have a worker ask you something ("Claim the next step, then ask me which colour to use"). Answer on the board, and the worker continues with your answer.
 5. **Blocked.**
    - Have a worker block a step ("Claim the next step, then block it: you need AWS credentials").
-   - The board shows a Blocked card with the worker, step and reason, and no buttons. The worker's Sessions card says "Blocked on …".
+   - The board shows a Blocked card with the worker, step and reason, and a Stop and Remove button. The worker is not listed in Idle.
    - Talk to the worker in its terminal until it unblocks. The card leaves Your turn.
 6. **Park, sign off, follow-up and archive.** Park a task from Your turn. Sign off a finished task, add a follow-up to another, and archive a third.
 7. **Removing workers.**
-   - End one worker with `/exit`. It disappears from Sessions within one poll, and its step, if it held one, goes back to the queue.
-   - Press Remove on the other worker's card. It asks first if the worker holds a step, then the card disappears.
+   - End one worker with `/exit`. It disappears from the board within one poll, and its step, if it held one, goes back to the queue.
+   - While the other worker runs a step, press Stop and Remove on its Working card. It asks first, then the card leaves Working and the task goes back to the queue. The worker's next call on that step is refused and it stops work on that task.
+   - Once a worker is idle, press Remove on its card in Idle. The card disappears at once.
 8. **What the docs leave open.** Note the answers in [13](architecture/13-ending-sessions.md#what-claude-code-offers):
    - Did the hook remove the worker, as opposed to the 2-minute liveness check? The board would show it as "ended" if liveness did it.
    - Does deleting a session in desktop's Code tab remove it?

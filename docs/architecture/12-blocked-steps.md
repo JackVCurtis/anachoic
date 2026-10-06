@@ -42,7 +42,7 @@ A blocked step is an agent step that is `waiting` because its worker blocked it.
 
 **List membership.** A blocked step is waiting on you, so its task is in **Your turn** ([03](03-domain-model.md#list-membership)), and it counts towards the Your turn count.
 
-**What you can do on the board.** Nothing. A blocked card offers no action, so anything that might set the block aside goes through the worker. If the worker's session ends, the claim is released as usual ([05](05-sessions.md#liveness)).
+**What you can do on the board.** Only give up on the worker. A blocked card offers Stop and Remove, which removes the worker and sends the step back to the queue ([13](13-ending-sessions.md#stop-and-remove)). Anything that might set the block aside goes through the worker. If the worker's session ends, the claim is released as usual ([05](05-sessions.md#liveness)).
 
 ## Tools
 
@@ -64,8 +64,8 @@ Both are worker tools ([06](06-tools-and-views.md#worker-tools)). The dedicated 
 | Where | What |
 |---|---|
 | Props | A Your turn item carries `blocked: {reason, since}` or null. Its `session` is the blocked worker. |
-| YourTurnCard | A third kind of card, beside your step and an agent's question. It has a "Blocked" Tag, the worker's name, the step number and title, the reason in full, the time blocked ("Blocked 14m"), and the line "Unblock it in api-server's session". It has no buttons. |
-| Sessions section | The blocked worker's card says "Blocked on T-012 step 2" |
+| YourTurnCard | A third kind of card, beside your step and an agent's question. It has a "Blocked" Tag, the worker's name, the step number and title, the reason in full, the time blocked ("Blocked 14m"), and the line "Unblock it in api-server's session". Its only button is Stop and Remove ([13](13-ending-sessions.md#stop-and-remove)). |
+| Idle section | The blocked worker is not in Idle, since it holds a step. Its blocked card names it. |
 | Working section | A blocked task is not in Working. It is in Your turn. |
 | Text summary | "T-012 step 2 “Deploy” is blocked (api-server): needs AWS credentials" in the Your turn line |
 | Announcement | A task that a poll brings into Your turn as blocked is announced: "T-012 is blocked in api-server" |

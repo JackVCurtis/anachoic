@@ -34,7 +34,7 @@ These are specified in anachoic but not yet built there, so they are written her
 
 [11](11-assignment-and-outputs.md) adds the Worker and Output fields to TaskEntry, the artifact field to YourTurnCard, and artifact links and the assigned worker to the cards.
 
-[12](12-blocked-steps.md#board) adds a third kind of YourTurnCard, a step a worker blocked, with no action, and the blocked worker's line in Sessions.
+[12](12-blocked-steps.md#board) adds a third kind of YourTurnCard, a step a worker blocked, whose only action is Stop and Remove ([13](13-ending-sessions.md#stop-and-remove)).
 
 | Component | Layer | Is |
 |---|---|---|
@@ -42,8 +42,9 @@ These are specified in anachoic but not yet built there, so they are written her
 | BoardHeader | `board/` | The counts (Your turn, Working, Queue, To sign off), a quiet "Updated" cue, and the "Can't reach the board" line ([06](06-tools-and-views.md#polling)) |
 | TaskEntry | `board/` | Title and a chain composer: an ordered list of steps, each with a title, an owner (you or an agent) and optional detail. Add, and Add to queue. Adapted from anachoic's TaskEntryForm, without repo, workflow or prompt. |
 | YourTurnCard | `board/` | Your step, with Mark done and a note. Or an agent's question, with the asking session's name and a free-text answer field. Park is under InlineConfirm. Adapted from anachoic's three kinds of Your turn card into two. |
-| SessionsSection, SessionCard | `board/` | Adapted from AgentsSection and AgentSlotCard. A card per live session, showing its name and kind and the step it holds (running, or waiting on you), or "Idle". Recently ended sessions show what was released. There is no cap and no slot bars. |
-| WorkingCard | `board/` | An active task with a running step: the pips, the step, the session, its latest note and the elapsed time |
+| IdleSection, SessionCard | `board/` | Adapted from AgentsSection and AgentSlotCard. A card per live session that holds no step, showing its name and kind and "Idle". A session holding a step is left out, since its step's card in Working or Your turn names it. Recently ended sessions show what was released. There is no cap and no slot bars. |
+| StopAndRemove | `board/` | "Stop and Remove" behind an InlineConfirm, on a WorkingCard or blocked YourTurnCard whose step a worker holds ([13](13-ending-sessions.md#stop-and-remove)) |
+| WorkingCard | `board/` | An active task with a running step: the pips, the step, the session, its latest note, the elapsed time, and Stop and Remove when a worker holds the step |
 | DoneSection, SignOffCard | `board/` | Tasks to sign off, each with its times, link count, Sign off, Follow-up and Archive. Below them, the recently signed-off tasks folded under a Disclosure. Adapted from anachoic's SignOffCard and follow-up composer. |
 | TaskView, ChainTimeline, TimelineStep, EventList | `task/` | The task view ([06](06-tools-and-views.md#views)) |
 
@@ -56,7 +57,7 @@ Anachoic's layout assumes a window at least 1100 × 700 px (`anachoic:ui/14-layo
 2. Message region
 3. TaskEntry, collapsed to an "Add task" button until opened
 4. Your turn
-5. Sessions
+5. Idle
 6. Working
 7. Queue
 8. Backlog
@@ -140,7 +141,7 @@ The clock (`use_now`) takes `timeZone` from the host context, so times are shown
 - buttons that are verbs
 - "Cancel" only for closing something
 
-`view/components/helpers/strings.ts` is a new catalogue for this app's screens: board header, task entry, Your turn, Sessions, Working, Queue, Backlog, Done, task view, messages, times, and strings for assistive technology. It uses anachoic's `fillTemplate` and `Placeholders` types.
+`view/components/helpers/strings.ts` is a new catalogue for this app's screens: board header, task entry, Your turn, Idle, Working, Queue, Backlog, Done, task view, messages, times, and strings for assistive technology. It uses anachoic's `fillTemplate` and `Placeholders` types.
 
 **New words:**
 - "Session", for any session, and "This chat", for the dedicated session

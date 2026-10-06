@@ -209,7 +209,7 @@ The server computes these and sends them in the props ([06](06-tools-and-views.m
 | Done: signed off | `done`, and `signedOffAt` is set. The board shows the 10 most recent. |
 | None | `archivedAt` is set |
 
-Every task that is not archived is in exactly one list. The Sessions section is not a list of tasks. It is the live sessions, each showing the step it holds.
+Every task that is not archived is in exactly one list. The Idle section is not a list of tasks. It is the live sessions that hold no step, then the sessions that ended in the last 10 minutes. A session that holds a step is named on that step's card, in Working or Your turn.
 
 ## Refusals
 

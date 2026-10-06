@@ -127,7 +127,7 @@ The task with every step in full, its events, its derived times, and `canAct` fo
 
 | View | Resource | Entry | Shows |
 |---|---|---|---|
-| Board | `ui://anachoic/board-<hash>.html` | `view/entries/board/` | Your turn, Sessions, Working, Queue, Backlog and Done, in one column inside 735 px ([07](07-ui-port.md#layout)) |
+| Board | `ui://anachoic/board-<hash>.html` | `view/entries/board/` | Your turn, Idle, Working, Queue, Backlog and Done, in one column inside 735 px ([07](07-ui-port.md#layout)) |
 | Task | `ui://anachoic/task-<hash>.html` | `view/entries/task/` | One task's chain as a timeline, with each step's notes, question and answer, summary and links, and the event log. It asks for fullscreen when the host offers it, and offers to return inline. |
 
 **Each address carries a hash of its HTML,** the first 12 hex digits of its SHA-256, which the server works out at startup (`server/views.ts`). Claude desktop caches a view's HTML by its address and does not read it again after the extension is reinstalled. With a fixed address, a reinstalled build went on drawing the previous build's board. A changed view therefore always arrives under a new address. A view tool's `_meta.ui.resourceUri` names the current address.
