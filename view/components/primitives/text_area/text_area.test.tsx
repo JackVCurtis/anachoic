@@ -78,7 +78,7 @@ describe('TextArea', () => {
     expect(style.borderTopColor).toBe(resolvedColor('--inverse-border'))
     expect(style.color).toBe(resolvedColor('--inverse-fg'))
     expect(style.caretColor).toBe(resolvedColor('--color-accent-300'))
-    expect(getComputedStyle(field(), '::placeholder').color).toBe('rgba(242, 242, 243, 0.6)')
+    expect(getComputedStyle(field(), '::placeholder').color).toBe(resolvedColor('--inverse-fg'))
   })
 
   test('disabled dims it, and invalid sets aria-invalid', () => {

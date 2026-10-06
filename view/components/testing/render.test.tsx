@@ -54,7 +54,7 @@ describe('renderInTone', () => {
     expect(frame.dataset.tone).toBe('inverse')
     expect(style.backgroundColor).toBe(resolvedColor('--inverse-bg'))
     expect(style.color).toBe(resolvedColor('--tone-fg', frame))
-    expect(style.color).toBe(resolvedColor('--color-bg'))
+    expect(style.color).toBe(resolvedColor('--inverse-fg'))
     expect(frame.contains(screen.getByRole('button'))).toBe(true)
   })
 
