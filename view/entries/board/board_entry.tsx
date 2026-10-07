@@ -212,19 +212,6 @@ function Board({ app, source }: LiveBoardProps) {
     }
   }
 
-  async function queueTask(taskId: string) {
-    const item = board.backlog.find((backlogged) => backlogged.task.id === taskId)
-    if (!item) {
-      return
-    }
-    const outcome = await yourActions.queueTask(item.task)
-    if (outcome.ok) {
-      source.replace(outcome.props)
-    } else {
-      reportFailure(outcome)
-    }
-  }
-
   /*
    * The board stays mounted, hidden, while the task panel shows, so the card
    * that opened the task can take focus back.
@@ -240,7 +227,7 @@ function Board({ app, source }: LiveBoardProps) {
           announcement={said}
           onReorder={(taskId, position) => void reorder(taskId, position)}
           reordering={reordering}
-          onQueueTask={(taskId) => void queueTask(taskId)}
+          workers={board.workers}
           onOpenLink={(url) => void openArtifact(url)}
           taskEntry={taskEntry}
           {...yourTurnActions}

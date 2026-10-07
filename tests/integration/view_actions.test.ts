@@ -194,6 +194,22 @@ test('each action performs its transition as you and returns the next board', as
   expect(archived.props.backlog.map((item) => item.task.displayId)).toEqual(['T-001'])
 })
 
+test('queue_task_from_view assigns the backlog task afresh to the worker chosen', async () => {
+  await ok(await worker('worker-a', 'api-server'), 'join_board')
+  await ok(await worker('worker-b', 'web-client'), 'join_board')
+  await act('add_task_from_view', {
+    title: 'Add retries',
+    steps: [AGENT_STEP],
+    queue: false,
+    assignTo: 'worker-a',
+  })
+
+  const queued = await act('queue_task_from_view', { task: 'T-001', assignTo: 'worker-b' })
+  expect(queued.kinds).toEqual(['assigned', 'queued'])
+  expect(task(1)).toMatchObject({ status: 'queue', assigned_to: 'worker-b' })
+  expect(queued.props.queue[0].task.assignedTo).toEqual({ id: 'worker-b', name: 'web-client' })
+})
+
 test('answer_question makes the waiting step run again with the answer for its worker', async () => {
   const api = await worker()
   await act('add_task_from_view', { title: 'Cache', steps: [AGENT_STEP] })

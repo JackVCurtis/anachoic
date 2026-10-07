@@ -18,6 +18,7 @@ import {
   archiveTask,
   claimStep,
   completeStep,
+  queueTask,
   type Acted,
   type ServiceResult,
 } from '../../../store/services.js'
@@ -145,6 +146,61 @@ describe('Add and Add to queue with a worker', () => {
     touch(A)
     expect(allSessions().find((session) => session.id === B)).toMatchObject({ endedAt: at(200) })
     refuses(assign(B), 'invalid', 'session-b is not a live worker')
+  })
+})
+
+describe('Queue with a worker chosen afresh', () => {
+  test('reassigns a backlog task to the worker chosen and records an assigned event', () => {
+    const id = add(A, ['agent'], false)
+    expect(ok(queueTask(database, 'you', now(), id, B)).state.task).toMatchObject({
+      status: 'queue',
+      assignedTo: B,
+    })
+    expect(eventsOf(id).slice(-2)).toEqual([
+      ['assigned', 'Assigned to session-b'],
+      ['queued', 'Joined the back of the queue'],
+    ])
+  })
+
+  test('null leaves the task to any worker, and an unchanged worker records no event', () => {
+    const unassigned = add(A, ['agent'], false)
+    expect(ok(queueTask(database, 'you', now(), unassigned, null)).state.task.assignedTo).toBe(null)
+    expect(eventsOf(unassigned).slice(-2)).toEqual([
+      ['unassigned', 'Unassigned: any worker may take it'],
+      ['queued', 'Joined the back of the queue'],
+    ])
+
+    const kept = add(A, ['agent'], false)
+    ok(queueTask(database, 'you', now(), kept, A))
+    expect(eventsOf(kept).map(([kind]) => kind)).toEqual(['added', 'assigned', 'queued'])
+  })
+
+  test('left out, the task keeps its worker', () => {
+    const id = add(A, ['agent'], false)
+    expect(ok(queueTask(database, 'you', now(), id)).state.task.assignedTo).toBe(A)
+  })
+
+  test('refuses a worker that is not live, changing nothing', () => {
+    const id = add(null, ['agent'], false)
+    refuses(
+      () => queueTask(database, 'you', now(), id, 'dedicated'),
+      'invalid',
+      'This chat is not a live worker'
+    )
+    refuses(
+      () => queueTask(database, 'you', now(), id, 'nobody'),
+      'invalid',
+      'nobody is not a live worker'
+    )
+  })
+
+  test('refuses a task not in the backlog before it checks the worker', () => {
+    const id = add(null)
+    refuses(
+      () => queueTask(database, 'you', now(), id, 'nobody'),
+      'wrong_status',
+      'T-001 is in the queue, not in the backlog'
+    )
   })
 })
 

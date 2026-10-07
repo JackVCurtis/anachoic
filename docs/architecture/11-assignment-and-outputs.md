@@ -18,7 +18,7 @@ This document is the authority for both. The other documents point here where th
 ### Who can be assigned
 
 - **Live workers only.** A task can be assigned only to a worker session that is live ([05](05-sessions.md#liveness)). Assigning it to the dedicated session, to an ended session or to an unknown one is refused.
-- **Fixed once created.** Like everything else about a task, the assignment cannot be changed after the task is added ([03](03-domain-model.md#task)). It ends in only two ways: the worker's session ends, or the task is archived.
+- **Chosen again when queued from the backlog.** Queuing a backlog task from the board asks for the worker afresh, from the live workers, with the task's own worker chosen at first while it is still live. Otherwise the assignment cannot be changed after the task is added ([03](03-domain-model.md#task)), and it ends only when the worker's session ends or the task is archived.
 - **Follow-ups.** A follow-up keeps the task's assignment, if it still has one.
 
 ### Domain
@@ -32,6 +32,7 @@ This document is the authority for both. The other documents point here where th
 | Transition | Rule |
 |---|---|
 | **Add, Add to queue** | Takes an optional worker. Refused with `invalid` when that session is not a live worker: "api-server is not a live worker". An `assigned` event is recorded. |
+| **Queue** | Takes an optional worker, or none for any worker. Given one, it is checked as for Add, and an `assigned` or `unassigned` event is recorded when the assignment changes. Left out, the task keeps its assignment. |
 | **Claim** | Refused with `not_yours` when the task is assigned to another session: "T-012 is assigned to api-server". |
 | **`claim_step()` with no task** | Takes the first queued task whose current step is an agent's and that is assigned to the caller. Failing that, it takes the first such task that is unassigned. It never takes a task assigned to someone else. When nothing qualifies, it refuses with `nothing_to_claim`. |
 | **Release** (the worker's session has ended) | As before, every step the session had claimed is released ([05](05-sessions.md#liveness)). In the same transaction, `assignedTo` is cleared on every task assigned to it, and an `unassigned` event is recorded for each. |
@@ -62,6 +63,7 @@ The worker instructions add a rule: a worker with nothing to do calls `wait_for_
 |---|---|
 | `add_task` | New optional `assign_to`: a session's id or its name, as the board shows it |
 | `add_task_from_view` | New optional `assignTo`: a session id |
+| `queue_task_from_view` | New optional `assignTo`: a session id, or null for any worker |
 | `wait_for_work` | New worker tool, as above |
 | `claim_step` | Follows the rules above |
 
@@ -71,6 +73,7 @@ The worker instructions add a rule: a worker with nothing to do calls `wait_for_
 |---|---|
 | Props | A task carries `assignedTo: {id, name} \| null` wherever the board lists it. The board props gain `workers: [{id, name}]`, the live workers you can assign to. |
 | TaskEntry | A field "Worker", a native select with "Any worker" first and then every live worker by name. It is shown only when at least one worker is live. |
+| Backlog card | "Queue →" opens a "Worker" select, as in TaskEntry, with "Queue →" and "Cancel", while any worker is live; with none it queues the task for any worker at once. |
 | Queue, Backlog and Working cards | "Assigned to api-server" in the meta line, when the task is assigned |
 | Text summary | "→ api-server" after an assigned task |
 

@@ -152,13 +152,34 @@ export function addTask(
   })
 }
 
+/**
+ * Queue a backlog task. Given a worker's id, or null for any worker, the task
+ * is assigned afresh, and only to a live worker; left out, it keeps its
+ * assignment.
+ */
 export function queueTask(
   database: Database,
   actor: Actor,
   now: Instant,
-  task: TaskRef
+  task: TaskRef,
+  assignTo?: string | null
 ): ServiceResult {
-  return act(database, actor, now, task, transitions.queue)
+  const id = taskNumber(task)
+  if (isRefusal(id)) return id
+  return write(database, (sqlite) => {
+    const state = loadTaskState(sqlite, id)
+    if (!state) return notFound(id)
+    const ctx = contextFor(sqlite, actor, now)
+    const refused = transitions.preconditions.queue(state, ctx)
+    if (refused) return refused
+    if (assignTo !== undefined && assignTo !== null) {
+      const worker = loadSession(sqlite, assignTo)
+      if (!worker || worker.kind !== 'worker' || worker.endedAt !== null) {
+        return notALiveWorker(worker?.name ?? assignTo)
+      }
+    }
+    return commit(sqlite, transitions.queue(state, ctx, assignTo))
+  })
 }
 
 export function reorderQueue(

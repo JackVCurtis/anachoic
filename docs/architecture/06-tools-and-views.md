@@ -55,7 +55,7 @@ These are your actions, together with the view's reads. Each write returns the f
 | `get_board` | `sinceRevision` (optional) | Returns `{changed: false, revision}` when nothing changed since `sinceRevision`, else the board props |
 | `get_task` | `task`, `sinceRevision` (optional) | Returns `{changed: false, revision}` when the board has not changed since `sinceRevision`, else the task props. The task view polls it as the board view polls `get_board`. |
 | `add_task_from_view` | as `add_task` | Add or Add to queue, with `createdBy` set to `you` |
-| `queue_task_from_view` | `task` | Queue |
+| `queue_task_from_view` | `task`, `assignTo?` (a live worker's id, or null for any worker) | Queue |
 | `reorder_queue` | `task`, `position` | Reorder |
 | `move_to_backlog` | `task` | Park, for an active task. For a queued task, it moves the task back to the backlog. |
 | `complete_my_step` | `task`, `note` (optional) | Mark your step done |

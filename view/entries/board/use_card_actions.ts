@@ -10,7 +10,12 @@ import type { FailedWrite } from './use_board_messages'
 type CardActionProps = Required<
   Pick<
     BoardViewActions,
-    'onMoveToBacklog' | 'onSignOff' | 'onFollowUp' | 'onArchive' | 'onRejectFinished'
+    | 'onQueueTask'
+    | 'onMoveToBacklog'
+    | 'onSignOff'
+    | 'onFollowUp'
+    | 'onArchive'
+    | 'onRejectFinished'
   >
 > &
   Pick<BoardViewActions, 'pending'>
@@ -23,7 +28,7 @@ type CardActionProps = Required<
 export function useCardActions(
   yourActions: Pick<
     YourActions,
-    'moveToBacklog' | 'signOff' | 'addFollowUp' | 'archiveTask' | 'rejectStep'
+    'queueTask' | 'moveToBacklog' | 'signOff' | 'addFollowUp' | 'archiveTask' | 'rejectStep'
   >,
   source: Pick<BoardSource, 'replace'>,
   board: BoardProps,
@@ -55,6 +60,12 @@ export function useCardActions(
 
   return {
     pending,
+    onQueueTask: (taskId, assignTo) => {
+      const item = board.backlog.find((backlogged) => backlogged.task.id === taskId)
+      if (item) {
+        void run(taskId, 'queue', () => yourActions.queueTask(item.task, assignTo))
+      }
+    },
     onMoveToBacklog: (taskId) => {
       const item = board.queue.find((queued) => queued.task.id === taskId)
       if (item) {

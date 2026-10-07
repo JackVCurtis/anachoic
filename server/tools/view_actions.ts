@@ -146,9 +146,9 @@ export function registerViewActions(server: McpServer, context: ToolContext) {
     queue_task_from_view: register(
       'queue_task_from_view',
       'Queue a task',
-      'Queues a backlog task.',
-      task,
-      ({ task: ref }, at) => queueTask(database, YOU, at, ref),
+      'Queues a backlog task, assigned afresh to the live worker whose session id is assignTo, or to any worker when assignTo is null.',
+      { ...task, assignTo: z.string().min(1).max(100).nullable().optional() },
+      ({ task: ref, assignTo }, at) => queueTask(database, YOU, at, ref, assignTo),
       ({ state }) => viewActionText.queueTask(state)
     ),
     reorder_queue: register(

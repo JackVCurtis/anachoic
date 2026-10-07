@@ -17,7 +17,8 @@ export function createYourActions(app: ActionApp) {
   return {
     addTask: (input: { title: string; steps: NewStep[]; queue: boolean; assignTo?: string }) =>
       actions.addTask(app, input),
-    queueTask: (task: TaskName) => actions.queueTask(app, task.displayId),
+    queueTask: (task: TaskName, assignTo: string | null) =>
+      actions.queueTask(app, task.displayId, assignTo),
     reorderQueue: (task: TaskName, position: number) =>
       actions.reorderQueue(app, task.displayId, position),
     /** `active`: the task was active, so moving it parks it. */

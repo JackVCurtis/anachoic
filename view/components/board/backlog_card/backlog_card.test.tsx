@@ -36,7 +36,7 @@ describe('BacklogCard', () => {
 
     await user.click(screen.getByRole('button', { name: 'Queue' }))
 
-    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(RENAME.task.id)
+    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(RENAME.task.id, null)
     expect(onOpenTask).not.toHaveBeenCalled()
   })
 
@@ -90,6 +90,81 @@ describe('BacklogCard', () => {
     expect(style.rowGap).toBe(space('--space-2'))
     await userEvent.hover(title)
     expect(getComputedStyle(card).backgroundColor).toBe(resolvedColor('--color-accent-100'))
+  })
+})
+
+describe('BacklogCard worker choice', () => {
+  const WORKERS = [
+    { id: 'worker-api', name: 'api-server' },
+    { id: 'worker-web', name: 'web-client' },
+  ]
+
+  test('with live workers, "Queue →" asks for the worker before it queues', async () => {
+    const { user, onQueueTask } = renderCard({ workers: WORKERS })
+
+    await user.click(screen.getByRole('button', { name: 'Queue' }))
+    expect(onQueueTask).not.toHaveBeenCalled()
+    const form = screen.getByRole('form', { name: 'Worker' })
+    const select = within(form).getByRole('combobox', { name: 'Worker' })
+    expect(document.activeElement).toBe(select)
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((option) => option.textContent)
+    ).toEqual(['Any worker', 'api-server', 'web-client'])
+
+    await user.selectOptions(select, 'worker-web')
+    await user.click(within(form).getByRole('button', { name: 'Queue' }))
+
+    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(RENAME.task.id, 'worker-web')
+  })
+
+  test('the task\'s own worker is chosen at first while it is live, else "Any worker"', async () => {
+    const assigned = { ...RENAME, task: { ...RENAME.task, assignedTo: WORKERS[0] } }
+    const { user, onQueueTask } = renderCard({ task: assigned, workers: WORKERS })
+
+    await user.click(screen.getByRole('button', { name: 'Queue' }))
+    expect(screen.getByRole('combobox', { name: 'Worker' })).toHaveValue('worker-api')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Worker' }), '')
+    await user.click(
+      within(screen.getByRole('form', { name: 'Worker' })).getByRole('button', { name: 'Queue' })
+    )
+
+    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(RENAME.task.id, null)
+  })
+
+  test('Cancel queues nothing and returns focus to "Queue →"', async () => {
+    const { user, onQueueTask } = renderCard({ workers: WORKERS })
+
+    await user.click(screen.getByRole('button', { name: 'Queue' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(onQueueTask).not.toHaveBeenCalled()
+    expect(screen.queryByRole('form', { name: 'Worker' })).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Queue' }))
+  })
+
+  test('while the queueing is in flight its button is busy and Cancel disabled', async () => {
+    const { user, rerender } = renderCard({ workers: WORKERS })
+    await user.click(screen.getByRole('button', { name: 'Queue' }))
+
+    rerender(
+      <div style={{ width: 600 }}>
+        <BacklogCard
+          task={RENAME}
+          onOpenTask={() => {}}
+          onQueueTask={() => {}}
+          workers={WORKERS}
+          pending="queue"
+        />
+      </div>
+    )
+
+    const form = screen.getByRole('form', { name: 'Worker' })
+    expect(within(form).getByRole('button', { name: 'Queue' }).getAttribute('aria-busy')).toBe(
+      'true'
+    )
+    expect(within(form).getByRole('button', { name: 'Cancel' })).toBeDisabled()
   })
 })
 

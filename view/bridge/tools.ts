@@ -107,8 +107,9 @@ export const actions = {
     app: App,
     input: { title: string; steps: NewStep[]; queue: boolean; assignTo?: string }
   ) => callAppTool<ActionResult>(app, 'add_task_from_view', { ...input }),
-  queueTask: (app: App, task: TaskArg) =>
-    callAppTool<ActionResult>(app, 'queue_task_from_view', { task }),
+  /** `assignTo`: a live worker's id, or null for any worker. */
+  queueTask: (app: App, task: TaskArg, assignTo: string | null) =>
+    callAppTool<ActionResult>(app, 'queue_task_from_view', { task, assignTo }),
   reorderQueue: (app: App, task: TaskArg, position: number) =>
     callAppTool<ActionResult>(app, 'reorder_queue', { task, position }),
   moveToBacklog: (app: App, task: TaskArg) =>

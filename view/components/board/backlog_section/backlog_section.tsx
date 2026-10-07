@@ -1,5 +1,6 @@
 // Copied from anachoic inertia/components/board/backlog_section/backlog_section.tsx at fd99e0d
 import { backlog } from '../../helpers/strings'
+import type { TaskEntryWorker } from '../../helpers/task_entry'
 import type { BacklogTask, PendingCardAction } from '../board_data'
 import { BacklogCard } from '../backlog_card/backlog_card'
 import { BoardSection } from '../board_section/board_section'
@@ -11,8 +12,10 @@ export interface BacklogSectionProps {
   /** The task open in the task panel, so its card shows as selected. */
   selectedTaskId?: string | null
   onOpenTask: (taskId: string) => void
-  /** Sends a task to the Queue. Without it no card offers "Queue →". */
-  onQueueTask?: (taskId: string) => void
+  /** Sends a task to the Queue, for the worker chosen or any worker. Without it no card offers "Queue →". */
+  onQueueTask?: (taskId: string, assignTo: string | null) => void
+  /** The live workers "Queue →" asks to choose between. */
+  workers?: readonly TaskEntryWorker[]
   /** Archives a task once confirmed. Without it no card offers "Archive". */
   onArchive?: (taskId: string) => void
   /** The card action in flight, if any. */
@@ -31,6 +34,7 @@ export function BacklogSection({
   onOpenTask,
   onQueueTask,
   onArchive,
+  workers,
   pending = null,
   onOpenLink,
 }: BacklogSectionProps) {
@@ -49,6 +53,7 @@ export function BacklogSection({
             onOpenTask={onOpenTask}
             onQueueTask={onQueueTask}
             onArchive={onArchive}
+            workers={workers}
             pending={pending?.taskId === task.task.id ? pending.action : null}
             onOpenLink={onOpenLink}
           />

@@ -312,9 +312,35 @@ describe('queueing a backlog task', () => {
     await act(() => Promise.resolve())
 
     expect(app.callsTo('queue_task_from_view')).toEqual([
-      { name: 'queue_task_from_view', arguments: { task: 'T-003' } },
+      { name: 'queue_task_from_view', arguments: { task: 'T-003', assignTo: null } },
     ])
     expect(screen.queryByRole('button', { name: BACKLOGGED.task.title })).toBeNull()
+  })
+
+  test('with live workers, Queue → sends the worker chosen', async () => {
+    const workers = [API_SERVER, WEB_CLIENT]
+    const app = fakeApp(
+      { ...boardWithBacklog(3, [BACKLOGGED]), workers },
+      {
+        queue_task_from_view: actionResult(
+          { ...boardWithBacklog(4, []), workers },
+          { task: BACKLOGGED.task, status: 'queue', position: 2 }
+        ),
+      }
+    )
+    const { user } = await renderBoard(app)
+    const queueName = backlogWords.toQueue.replace(' →', '')
+
+    await user.click(screen.getByRole('button', { name: queueName }))
+    expect(app.callsTo('queue_task_from_view')).toEqual([])
+    const form = screen.getByRole('form', { name: 'Worker' })
+    await user.selectOptions(within(form).getByRole('combobox'), WEB_CLIENT.id)
+    await user.click(within(form).getByRole('button', { name: queueName }))
+    await act(() => Promise.resolve())
+
+    expect(app.callsTo('queue_task_from_view')).toEqual([
+      { name: 'queue_task_from_view', arguments: { task: 'T-003', assignTo: WEB_CLIENT.id } },
+    ])
   })
 })
 

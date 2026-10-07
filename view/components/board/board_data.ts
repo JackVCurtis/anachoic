@@ -139,7 +139,7 @@ export interface SignOffTask {
  * An action pressed on a card that waits for the server: sign off, follow-up,
  * archive, move to the backlog, or reject.
  */
-export type CardAction = 'signOff' | 'followUp' | 'archive' | 'backlog' | 'reject'
+export type CardAction = 'signOff' | 'followUp' | 'archive' | 'backlog' | 'reject' | 'queue'
 
 /** The card action in flight, and the task it acts on. */
 export interface PendingCardAction {

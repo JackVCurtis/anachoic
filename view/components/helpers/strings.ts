@@ -193,6 +193,7 @@ export const backlog = {
   title: 'Backlog',
   empty: 'The backlog is empty',
   toQueue: 'Queue →',
+  cancel: 'Cancel',
   showAll: 'Show all {n}',
   showFewer: 'Show fewer',
 } as const

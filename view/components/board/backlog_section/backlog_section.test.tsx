@@ -36,7 +36,7 @@ describe('BacklogSection', () => {
 
     await user.click(within(card).getByRole('button', { name: 'Queue' }))
 
-    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(second.task.id)
+    expect(onQueueTask).toHaveBeenCalledExactlyOnceWith(second.task.id, null)
     expect(onOpenTask).not.toHaveBeenCalled()
   })
 })

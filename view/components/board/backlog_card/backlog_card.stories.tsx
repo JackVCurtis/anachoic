@@ -55,7 +55,7 @@ export const Default: Story = {
     await expect(canvas.queryByRole('img')).toBeNull()
 
     await userEvent.click(queue)
-    await expect(args.onQueueTask).toHaveBeenCalledWith(RENAME.task.id)
+    await expect(args.onQueueTask).toHaveBeenCalledWith(RENAME.task.id, null)
     await expect(args.onOpenTask).not.toHaveBeenCalled()
   },
 }
@@ -120,6 +120,28 @@ export const Archiving: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: 'Archive' })).toBeDisabled()
     await expect(canvas.getByRole('button', { name: 'Queue' })).toBeDisabled()
+  },
+}
+
+export const ChoosingWorker: Story = {
+  name: 'Queue, choosing the worker',
+  args: {
+    task: DARK_MODE,
+    workers: [
+      { id: 'worker-api-server', name: 'api-server' },
+      { id: 'worker-web-client', name: 'web-client' },
+    ],
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Queue' }))
+    await expect(args.onQueueTask).not.toHaveBeenCalled()
+    const form = canvas.getByRole('form', { name: 'Worker' })
+    const select = within(form).getByRole('combobox', { name: 'Worker' })
+    await expect(select).toHaveFocus()
+    await userEvent.selectOptions(select, 'worker-api-server')
+    await userEvent.click(within(form).getByRole('button', { name: 'Queue' }))
+    await expect(args.onQueueTask).toHaveBeenCalledWith(DARK_MODE.task.id, 'worker-api-server')
   },
 }
 

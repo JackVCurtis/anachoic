@@ -35,12 +35,12 @@ describe('your actions', () => {
     ],
     [
       'queue_task_from_view',
-      (actions: ReturnType<typeof createYourActions>) => actions.queueTask(T012),
+      (actions: ReturnType<typeof createYourActions>) => actions.queueTask(T012, 'worker-a'),
       actionResult({ position: 4 }),
     ],
     [
       'queue_task_from_view',
-      (actions: ReturnType<typeof createYourActions>) => actions.queueTask(T012),
+      (actions: ReturnType<typeof createYourActions>) => actions.queueTask(T012, null),
       actionResult({ status: 'active', position: null }),
     ],
     [

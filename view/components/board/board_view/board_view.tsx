@@ -1,5 +1,6 @@
 import { useRef, type CSSProperties } from 'react'
 import type { FollowUpInput } from '../../helpers/follow_up'
+import type { TaskEntryWorker } from '../../helpers/task_entry'
 import { assistive } from '../../helpers/strings'
 import type { FlashMessageData } from '../../patterns/flash_message/flash_message'
 import { FlashMessages } from '../../patterns/flash_message/flash_messages'
@@ -19,8 +20,10 @@ import styles from './board_view.module.css'
 export interface BoardViewActions {
   /** A card's title was pressed, to open its task. */
   onOpenTask?: (taskId: string) => void
-  /** "Queue →" was pressed. Without it no Backlog card offers the button. */
-  onQueueTask?: (taskId: string) => void
+  /** "Queue →" was pressed, with the worker chosen or null for any. Without it no Backlog card offers the button. */
+  onQueueTask?: (taskId: string, assignTo: string | null) => void
+  /** The live workers a Backlog task can be queued for. */
+  workers?: readonly TaskEntryWorker[]
   /** A Queue card was dropped in a new place. Without it no Queue card has a Move handle. */
   onReorder?: (taskId: string, position: number) => void
   /** A change of the Queue's order is in flight. */
@@ -121,6 +124,7 @@ export function BoardView({
   safeAreaInsets,
   onOpenTask = ignore,
   onQueueTask,
+  workers,
   onReorder,
   reordering = false,
   selectedTaskId = null,
@@ -196,6 +200,7 @@ export function BoardView({
         selectedTaskId={selectedTaskId}
         onOpenTask={onOpenTask}
         onQueueTask={onQueueTask}
+        workers={workers}
         onArchive={onArchive}
         pending={pending}
         onOpenLink={onOpenLink}

@@ -547,10 +547,21 @@ export function addToQueue(input: NewTask, ctx: Context): Change {
 
 /**
  * Queue: a backlog task joins the back of the queue, or starts at once when
- * its current step is yours.
+ * its current step is yours. Given a worker, or null for none, the task is
+ * assigned afresh as it goes; the caller has checked that the worker is live.
  */
-export function queue(state: TaskState, ctx: Context): Outcome {
-  return preconditions.queue(state, ctx) ?? queueOrStart(state, ctx, 'last')
+export function queue(state: TaskState, ctx: Context, assignTo?: SessionId | null): Outcome {
+  const refused = preconditions.queue(state, ctx)
+  if (refused) return refused
+  if (assignTo === undefined || assignTo === state.task.assignedTo) {
+    return queueOrStart(state, ctx, 'last')
+  }
+  const reassigned = { ...state, task: { ...state.task, assignedTo: assignTo } }
+  const assignment =
+    assignTo === null
+      ? event(ctx, state.task.id, null, 'unassigned', 'Unassigned: any worker may take it')
+      : event(ctx, state.task.id, null, 'assigned', `Assigned to ${nameOf(ctx, assignTo)}`)
+  return withEvents(queueOrStart(reassigned, ctx, 'last'), assignment)
 }
 
 /**
